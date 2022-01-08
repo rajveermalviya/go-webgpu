@@ -10,15 +10,24 @@ import "unsafe"
 
 type Queue struct{ ref C.WGPUQueue }
 
-func (p *Queue) Submit(commands []CommandBuffer) {
+func (p *Queue) Submit(commands []*CommandBuffer) {
 	commandCount := len(commands)
 	if commandCount == 0 {
 		C.wgpuQueueSubmit(p.ref, 0, nil)
 	} else {
+		commandRefs := C.malloc(C.size_t(commandCount) * C.size_t(unsafe.Sizeof(C.WGPUCommandBuffer(nil))))
+		defer C.free(commandRefs)
+
+		commandRefsSlice := (*[1 << 30]C.WGPUCommandBuffer)(commandRefs)[:commandCount:commandCount]
+
+		for i, v := range commands {
+			commandRefsSlice[i] = v.ref
+		}
+
 		C.wgpuQueueSubmit(
 			p.ref,
 			C.uint32_t(commandCount),
-			(*C.WGPUCommandBuffer)(unsafe.Pointer(&commands[0])),
+			(*C.WGPUCommandBuffer)(commandRefs),
 		)
 	}
 }
@@ -39,7 +48,7 @@ func (p *Queue) WriteTexture(destination ImageCopyTexture, data []byte, dataLayo
 	C.wgpuQueueWriteTexture(
 		p.ref,
 		&C.WGPUImageCopyTexture{
-			texture:  C.WGPUTexture(destination.Texture.ref),
+			texture:  destination.Texture.ref,
 			mipLevel: C.uint32_t(destination.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(destination.Origin.X),

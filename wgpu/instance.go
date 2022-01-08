@@ -31,7 +31,7 @@ func RequestAdapter(options RequestAdapterOptions) (*Adapter, error) {
 	var opts C.WGPURequestAdapterOptions
 
 	if options.CompatibleSurface != nil {
-		opts.compatibleSurface = C.WGPUSurface(options.CompatibleSurface.ref)
+		opts.compatibleSurface = options.CompatibleSurface.ref
 	}
 	opts.powerPreference = C.WGPUPowerPreference(options.PowerPreference)
 

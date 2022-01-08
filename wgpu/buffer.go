@@ -27,6 +27,10 @@ func (p *Buffer) Destroy() {
 	C.wgpuBufferDestroy(p.ref)
 }
 
+func (p *Buffer) Drop() {
+	C.wgpuBufferDrop(p.ref)
+}
+
 type BufferMapCallback func(BufferMapAsyncStatus)
 
 func (p *Buffer) MapAsync(mode MapMode, offset uint64, size uint64, callback BufferMapCallback) {

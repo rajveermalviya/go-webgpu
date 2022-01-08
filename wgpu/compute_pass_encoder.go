@@ -22,18 +22,18 @@ func (p *ComputePassEncoder) EndPass() {
 	C.wgpuComputePassEncoderEndPass(p.ref)
 }
 
-func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	dynamicOffsetCount := len(dynamicOffsets)
 	if dynamicOffsetCount == 0 {
-		C.wgpuComputePassEncoderSetBindGroup(p.ref, C.uint32_t(groupIndex), group, 0, nil)
+		C.wgpuComputePassEncoderSetBindGroup(p.ref, C.uint32_t(groupIndex), group.ref, 0, nil)
 	} else {
 		C.wgpuComputePassEncoderSetBindGroup(
-			p.ref, C.uint32_t(groupIndex), group,
+			p.ref, C.uint32_t(groupIndex), group.ref,
 			C.uint32_t(dynamicOffsetCount), (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0])),
 		)
 	}
 }
 
-func (p *ComputePassEncoder) SetPipeline(pipeline ComputePipeline) {
-	C.wgpuComputePassEncoderSetPipeline(p.ref, pipeline)
+func (p *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
+	C.wgpuComputePassEncoderSetPipeline(p.ref, pipeline.ref)
 }

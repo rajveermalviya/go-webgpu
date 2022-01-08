@@ -86,7 +86,7 @@ func main() {
 	})
 
 	pipelineLayout := device.CreatePipelineLayout(wgpu.PipelineLayoutDescriptor{
-		BindGroupLayouts: []wgpu.BindGroupLayout{bindGroupLayout},
+		BindGroupLayouts: []*wgpu.BindGroupLayout{bindGroupLayout},
 	})
 
 	computePipeline := device.CreateComputePipeline(wgpu.ComputePipelineDescriptor{
@@ -117,7 +117,7 @@ func main() {
 
 	queue.WriteBuffer(storageBuffer, 0, wgpu.Uint32StoByteS(numbers))
 
-	queue.Submit([]wgpu.CommandBuffer{cmdBuffer})
+	queue.Submit([]*wgpu.CommandBuffer{cmdBuffer})
 
 	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, numbersSize, func(status wgpu.BufferMapAsyncStatus) {
 		fmt.Println("MapAsync status: ", status)

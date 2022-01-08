@@ -46,15 +46,15 @@ type Color struct {
 }
 
 type RenderPassColorAttachment struct {
-	View          TextureView
-	ResolveTarget TextureView
+	View          *TextureView
+	ResolveTarget *TextureView
 	LoadOp        LoadOp
 	StoreOp       StoreOp
 	ClearColor    Color
 }
 
 type RenderPassDepthStencilAttachment struct {
-	View            TextureView
+	View            *TextureView
 	DepthLoadOp     LoadOp
 	DepthStoreOp    StoreOp
 	ClearDepth      float32
@@ -99,11 +99,9 @@ func (p *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *Rende
 		colorAttachmentsSlice := (*[1 << 30]C.WGPURenderPassColorAttachment)(colorAttachments)[:colorAttachmentCount:colorAttachmentCount]
 
 		for i, v := range descriptor.ColorAttachments {
-			colorAttachmentsSlice[i] = C.WGPURenderPassColorAttachment{
-				view:          C.WGPUTextureView(v.View),
-				resolveTarget: C.WGPUTextureView(v.ResolveTarget),
-				loadOp:        C.WGPULoadOp(v.LoadOp),
-				storeOp:       C.WGPUStoreOp(v.StoreOp),
+			colorAttachment := C.WGPURenderPassColorAttachment{
+				loadOp:  C.WGPULoadOp(v.LoadOp),
+				storeOp: C.WGPUStoreOp(v.StoreOp),
 				clearColor: C.WGPUColor{
 					r: C.double(v.ClearColor.R),
 					g: C.double(v.ClearColor.G),
@@ -111,6 +109,14 @@ func (p *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *Rende
 					a: C.double(v.ClearColor.A),
 				},
 			}
+			if v.View != nil {
+				colorAttachment.view = v.View.ref
+			}
+			if v.ResolveTarget != nil {
+				colorAttachment.resolveTarget = v.ResolveTarget.ref
+			}
+
+			colorAttachmentsSlice[i] = colorAttachment
 		}
 
 		desc.colorAttachmentCount = C.uint32_t(colorAttachmentCount)
@@ -121,7 +127,9 @@ func (p *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *Rende
 		depthStencilAttachment := (*C.WGPURenderPassDepthStencilAttachment)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURenderPassDepthStencilAttachment{}))))
 		defer C.free(unsafe.Pointer(depthStencilAttachment))
 
-		depthStencilAttachment.view = C.WGPUTextureView(descriptor.DepthStencilAttachment.View)
+		if descriptor.DepthStencilAttachment.View != nil {
+			depthStencilAttachment.view = descriptor.DepthStencilAttachment.View.ref
+		}
 		depthStencilAttachment.depthLoadOp = C.WGPULoadOp(descriptor.DepthStencilAttachment.DepthLoadOp)
 		depthStencilAttachment.depthStoreOp = C.WGPUStoreOp(descriptor.DepthStencilAttachment.DepthStoreOp)
 		depthStencilAttachment.clearDepth = C.float(descriptor.DepthStencilAttachment.ClearDepth)
@@ -186,7 +194,7 @@ func (p *CommandEncoder) CopyBufferToTexture(source ImageCopyBuffer, destination
 			buffer: source.Buffer.ref,
 		},
 		&C.WGPUImageCopyTexture{
-			texture:  C.WGPUTexture(destination.Texture.ref),
+			texture:  destination.Texture.ref,
 			mipLevel: C.uint32_t(destination.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(destination.Origin.X),
@@ -207,7 +215,7 @@ func (p *CommandEncoder) CopyTextureToBuffer(source ImageCopyTexture, destinatio
 	C.wgpuCommandEncoderCopyTextureToBuffer(
 		p.ref,
 		&C.WGPUImageCopyTexture{
-			texture:  C.WGPUTexture(source.Texture.ref),
+			texture:  source.Texture.ref,
 			mipLevel: C.uint32_t(source.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(source.Origin.X),
@@ -236,7 +244,7 @@ func (p *CommandEncoder) CopyTextureToTexture(source ImageCopyTexture, destinati
 	C.wgpuCommandEncoderCopyTextureToTexture(
 		p.ref,
 		&C.WGPUImageCopyTexture{
-			texture:  C.WGPUTexture(source.Texture.ref),
+			texture:  source.Texture.ref,
 			mipLevel: C.uint32_t(source.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(source.Origin.X),
@@ -246,7 +254,7 @@ func (p *CommandEncoder) CopyTextureToTexture(source ImageCopyTexture, destinati
 			aspect: C.WGPUTextureAspect(source.Aspect),
 		},
 		&C.WGPUImageCopyTexture{
-			texture:  C.WGPUTexture(destination.Texture.ref),
+			texture:  destination.Texture.ref,
 			mipLevel: C.uint32_t(destination.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(destination.Origin.X),
@@ -267,7 +275,7 @@ type CommandBufferDescriptor struct {
 	Label string
 }
 
-func (p *CommandEncoder) Finish(descriptor CommandBufferDescriptor) CommandBuffer {
+func (p *CommandEncoder) Finish(descriptor CommandBufferDescriptor) *CommandBuffer {
 	var desc C.WGPUCommandBufferDescriptor
 
 	if descriptor.Label != "" {
@@ -277,5 +285,13 @@ func (p *CommandEncoder) Finish(descriptor CommandBufferDescriptor) CommandBuffe
 		desc.label = label
 	}
 
-	return CommandBuffer(C.wgpuCommandEncoderFinish(p.ref, &desc))
+	ref := C.wgpuCommandEncoderFinish(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &CommandBuffer{ref}
+}
+
+func (p *CommandEncoder) Drop() {
+	C.wgpuCommandEncoderDrop(p.ref)
 }

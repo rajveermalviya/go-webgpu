@@ -8,19 +8,10 @@ package wgpu
 import "C"
 
 type (
-	BindGroup           C.WGPUBindGroup
-	BindGroupLayout     C.WGPUBindGroupLayout
-	CommandBuffer       C.WGPUCommandBuffer
-	ComputePipeline     C.WGPUComputePipeline
 	Instance            C.WGPUInstance
 	PipelineLayout      C.WGPUPipelineLayout
 	QuerySet            C.WGPUQuerySet
-	RenderBundle        C.WGPURenderBundle
 	RenderBundleEncoder C.WGPURenderBundleEncoder
-	RenderPipeline      C.WGPURenderPipeline
-	Sampler             C.WGPUSampler
-	ShaderModule        C.WGPUShaderModule
-	TextureView         C.WGPUTextureView
 )
 
 type Limits struct {

@@ -120,56 +120,78 @@ func main() {
 	})
 
 	for !window.ShouldClose() {
-		width, height := window.GetSize()
-
-		if width != prevWidth || height != prevHeight {
-			prevWidth = width
-			prevHeight = height
-
-			swapChain = device.CreateSwapChain(surface, wgpu.SwapChainDescriptor{
-				Usage:       wgpu.TextureUsage_RenderAttachment,
-				Format:      swapChainFormat,
-				Width:       uint32(prevWidth),
-				Height:      uint32(prevHeight),
-				PresentMode: wgpu.PresentMode_Fifo,
-			})
-		}
-
-		nextTexture := swapChain.GetCurrentTextureView()
-		if nextTexture == nil {
-			panic("Cannot acquire next swap chain texture")
-		}
-
-		encoder := device.CreateCommandEncoder(wgpu.CommandEncoderDescriptor{
-			Label: "Command Encoder",
-		})
-
-		renderPass := encoder.BeginRenderPass(wgpu.RenderPassDescriptor{
-			ColorAttachments: []wgpu.RenderPassColorAttachment{{
-				View:    nextTexture,
-				LoadOp:  wgpu.LoadOp_Clear,
-				StoreOp: wgpu.StoreOp_Store,
-				ClearColor: wgpu.Color{
-					R: 0,
-					G: 1,
-					B: 0,
-					A: 1,
-				},
-			}},
-		})
-
-		renderPass.SetPipeline(pipeline)
-		renderPass.Draw(3, 1, 0, 0)
-		renderPass.EndPass()
-
-		queue := device.GetQueue()
-		cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
-		queue.Submit([]wgpu.CommandBuffer{cmdBuffer})
-		swapChain.Present()
-
-		glfw.PollEvents()
+		render(
+			window,
+			swapChain,
+			device,
+			surface,
+			swapChainFormat,
+			pipeline,
+			&prevWidth, &prevHeight,
+		)
 	}
 
 	window.Destroy()
 	glfw.Terminate()
+}
+
+func render(
+	window *glfw.Window,
+	swapChain *wgpu.SwapChain,
+	device *wgpu.Device,
+	surface *wgpu.Surface,
+	swapChainFormat wgpu.TextureFormat,
+	pipeline *wgpu.RenderPipeline,
+	prevWidth, prevHeight *int,
+) {
+	width, height := window.GetSize()
+
+	if width != *prevWidth || height != *prevHeight {
+		prevWidth = &width
+		prevHeight = &height
+
+		swapChain = device.CreateSwapChain(surface, wgpu.SwapChainDescriptor{
+			Usage:       wgpu.TextureUsage_RenderAttachment,
+			Format:      swapChainFormat,
+			Width:       uint32(*prevWidth),
+			Height:      uint32(*prevHeight),
+			PresentMode: wgpu.PresentMode_Fifo,
+		})
+	}
+
+	nextTexture := swapChain.GetCurrentTextureView()
+	if nextTexture == nil {
+		panic("Cannot acquire next swap chain texture")
+	}
+	defer nextTexture.Drop()
+
+	encoder := device.CreateCommandEncoder(wgpu.CommandEncoderDescriptor{
+		Label: "Command Encoder",
+	})
+
+	renderPass := encoder.BeginRenderPass(wgpu.RenderPassDescriptor{
+		ColorAttachments: []wgpu.RenderPassColorAttachment{{
+			View:    nextTexture,
+			LoadOp:  wgpu.LoadOp_Clear,
+			StoreOp: wgpu.StoreOp_Store,
+			ClearColor: wgpu.Color{
+				R: 0,
+				G: 1,
+				B: 0,
+				A: 1,
+			},
+		}},
+	})
+
+	renderPass.SetPipeline(pipeline)
+	renderPass.Draw(3, 1, 0, 0)
+	renderPass.EndPass()
+
+	queue := device.GetQueue()
+
+	cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
+	queue.Submit([]*wgpu.CommandBuffer{cmdBuffer})
+	swapChain.Present()
+
+	glfw.PollEvents()
 }

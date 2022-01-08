@@ -63,13 +63,13 @@ func (p *RenderPassEncoder) EndPass() {
 	C.wgpuRenderPassEncoderEndPass(p.ref)
 }
 
-func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dynamicOffsets []uint32) {
+func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
 	dynamicOffsetCount := len(dynamicOffsets)
 	if dynamicOffsetCount == 0 {
 		C.wgpuRenderPassEncoderSetBindGroup(
 			p.ref,
 			C.uint32_t(groupIndex),
-			group,
+			group.ref,
 			0,
 			nil,
 		)
@@ -77,7 +77,7 @@ func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group BindGroup, dyn
 		C.wgpuRenderPassEncoderSetBindGroup(
 			p.ref,
 			C.uint32_t(groupIndex),
-			group,
+			group.ref,
 			C.uint32_t(dynamicOffsetCount),
 			(*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0])),
 		)
@@ -103,8 +103,8 @@ func (p *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, o
 	)
 }
 
-func (p *RenderPassEncoder) SetPipeline(pipeline RenderPipeline) {
-	C.wgpuRenderPassEncoderSetPipeline(p.ref, pipeline)
+func (p *RenderPassEncoder) SetPipeline(pipeline *RenderPipeline) {
+	C.wgpuRenderPassEncoderSetPipeline(p.ref, pipeline.ref)
 }
 
 func (p *RenderPassEncoder) SetScissorRect(x, y, width, height uint32) {

@@ -21,7 +21,7 @@ type TextureViewDescriptor struct {
 	Aspect          TextureAspect
 }
 
-func (p *Texture) CreateView(descriptor TextureViewDescriptor) TextureView {
+func (p *Texture) CreateView(descriptor TextureViewDescriptor) *TextureView {
 	desc := C.WGPUTextureViewDescriptor{
 		format:          C.WGPUTextureFormat(descriptor.Format),
 		dimension:       C.WGPUTextureViewDimension(descriptor.Dimension),
@@ -39,9 +39,17 @@ func (p *Texture) CreateView(descriptor TextureViewDescriptor) TextureView {
 		desc.label = label
 	}
 
-	return TextureView(C.wgpuTextureCreateView(p.ref, &desc))
+	ref := C.wgpuTextureCreateView(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &TextureView{ref}
 }
 
 func (p *Texture) Destroy() {
 	C.wgpuTextureDestroy(p.ref)
+}
+
+func (p *Texture) Drop() {
+	C.wgpuTextureDrop(p.ref)
 }

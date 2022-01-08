@@ -50,7 +50,7 @@ type BindGroupLayoutDescriptor struct {
 	Entries []BindGroupLayoutEntry
 }
 
-func (p *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) BindGroupLayout {
+func (p *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) *BindGroupLayout {
 	var desc C.WGPUBindGroupLayoutDescriptor
 
 	if descriptor.Label != "" {
@@ -101,7 +101,11 @@ func (p *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) Bin
 		desc.entries = (*C.WGPUBindGroupLayoutEntry)(entries)
 	}
 
-	return BindGroupLayout(C.wgpuDeviceCreateBindGroupLayout(p.ref, &desc))
+	ref := C.wgpuDeviceCreateBindGroupLayout(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &BindGroupLayout{ref}
 }
 
 type BindGroupEntry struct {
@@ -109,17 +113,17 @@ type BindGroupEntry struct {
 	Buffer      *Buffer
 	Offset      uint64
 	Size        uint64
-	Sampler     Sampler
-	TextureView TextureView
+	Sampler     *Sampler
+	TextureView *TextureView
 }
 
 type BindGroupDescriptor struct {
 	Label   string
-	Layout  BindGroupLayout
+	Layout  *BindGroupLayout
 	Entries []BindGroupEntry
 }
 
-func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) BindGroup {
+func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
 	var desc C.WGPUBindGroupDescriptor
 
 	if descriptor.Label != "" {
@@ -129,7 +133,7 @@ func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) BindGroup {
 		desc.label = label
 	}
 
-	desc.layout = C.WGPUBindGroupLayout(descriptor.Layout)
+	desc.layout = descriptor.Layout.ref
 
 	entryCount := len(descriptor.Entries)
 	if entryCount > 0 {
@@ -140,15 +144,19 @@ func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) BindGroup {
 
 		for i, v := range descriptor.Entries {
 			entry := C.WGPUBindGroupEntry{
-				binding:     C.uint32_t(v.Binding),
-				offset:      C.uint64_t(v.Offset),
-				size:        C.uint64_t(v.Size),
-				sampler:     C.WGPUSampler(v.Sampler),
-				textureView: C.WGPUTextureView(v.TextureView),
+				binding: C.uint32_t(v.Binding),
+				offset:  C.uint64_t(v.Offset),
+				size:    C.uint64_t(v.Size),
 			}
 
 			if v.Buffer != nil {
-				entry.buffer = C.WGPUBuffer(v.Buffer.ref)
+				entry.buffer = v.Buffer.ref
+			}
+			if v.Sampler != nil {
+				entry.sampler = v.Sampler.ref
+			}
+			if v.TextureView != nil {
+				entry.textureView = v.TextureView.ref
 			}
 
 			entriesSlice[i] = entry
@@ -158,7 +166,11 @@ func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) BindGroup {
 		desc.entries = (*C.WGPUBindGroupEntry)(entries)
 	}
 
-	return BindGroup(C.wgpuDeviceCreateBindGroup(p.ref, &desc))
+	ref := C.wgpuDeviceCreateBindGroup(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &BindGroup{ref}
 }
 
 type BufferDescriptor struct {
@@ -218,7 +230,7 @@ type ConstantEntry struct {
 }
 
 type ProgrammableStageDescriptor struct {
-	Module     ShaderModule
+	Module     *ShaderModule
 	EntryPoint string
 
 	// unused in wgpu
@@ -231,7 +243,7 @@ type ComputePipelineDescriptor struct {
 	Compute ProgrammableStageDescriptor
 }
 
-func (p *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) ComputePipeline {
+func (p *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) *ComputePipeline {
 	var desc C.WGPUComputePipelineDescriptor
 
 	if descriptor.Label != "" {
@@ -243,8 +255,9 @@ func (p *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) Com
 
 	desc.layout = C.WGPUPipelineLayout(descriptor.Layout)
 
-	compute := C.WGPUProgrammableStageDescriptor{
-		module: C.WGPUShaderModule(descriptor.Compute.Module),
+	var compute C.WGPUProgrammableStageDescriptor
+	if descriptor.Compute.Module != nil {
+		compute.module = descriptor.Compute.Module.ref
 	}
 	if descriptor.Compute.EntryPoint != "" {
 		entryPoint := C.CString(descriptor.Compute.EntryPoint)
@@ -254,12 +267,16 @@ func (p *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) Com
 	}
 	desc.compute = compute
 
-	return ComputePipeline(C.wgpuDeviceCreateComputePipeline(p.ref, &desc))
+	ref := C.wgpuDeviceCreateComputePipeline(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &ComputePipeline{ref}
 }
 
 type PipelineLayoutDescriptor struct {
 	Label            string
-	BindGroupLayouts []BindGroupLayout
+	BindGroupLayouts []*BindGroupLayout
 }
 
 func (p *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) PipelineLayout {
@@ -280,7 +297,7 @@ func (p *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) Pipel
 		bindGroupLayoutsSlice := (*[1 << 30]C.WGPUBindGroupLayout)(bindGroupLayouts)[:bindGroupLayoutCount:bindGroupLayoutCount]
 
 		for i, v := range descriptor.BindGroupLayouts {
-			bindGroupLayoutsSlice[i] = C.WGPUBindGroupLayout(v)
+			bindGroupLayoutsSlice[i] = v.ref
 		}
 
 		desc.bindGroupLayoutCount = C.uint32_t(bindGroupLayoutCount)
@@ -303,7 +320,7 @@ type VertexBufferLayout struct {
 }
 
 type VertexState struct {
-	Module     ShaderModule
+	Module     *ShaderModule
 	EntryPoint string
 	Buffers    []VertexBufferLayout
 
@@ -362,7 +379,7 @@ type ColorTargetState struct {
 }
 
 type FragmentState struct {
-	Module     ShaderModule
+	Module     *ShaderModule
 	EntryPoint string
 	Targets    []ColorTargetState
 
@@ -380,7 +397,7 @@ type RenderPipelineDescriptor struct {
 	Fragment     *FragmentState
 }
 
-func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) RenderPipeline {
+func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *RenderPipeline {
 	var desc C.WGPURenderPipelineDescriptor
 
 	if descriptor.Label != "" {
@@ -396,8 +413,10 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) Rende
 	{
 		vertex := descriptor.Vertex
 
-		vert := C.WGPUVertexState{
-			module: C.WGPUShaderModule(vertex.Module),
+		var vert C.WGPUVertexState
+
+		if vertex.Module != nil {
+			vert.module = vertex.Module.ref
 		}
 
 		if vertex.EntryPoint != "" {
@@ -507,7 +526,9 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) Rende
 			frag.entryPoint = entryPoint
 		}
 
-		frag.module = C.WGPUShaderModule(fragment.Module)
+		if fragment.Module != nil {
+			frag.module = fragment.Module.ref
+		}
 
 		targetCount := len(fragment.Targets)
 		if targetCount > 0 {
@@ -553,7 +574,11 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) Rende
 		desc.fragment = frag
 	}
 
-	return RenderPipeline(C.wgpuDeviceCreateRenderPipeline(p.ref, &desc))
+	ref := C.wgpuDeviceCreateRenderPipeline(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &RenderPipeline{ref}
 }
 
 type SamplerDescriptor struct {
@@ -570,7 +595,7 @@ type SamplerDescriptor struct {
 	MaxAnisotrophy uint16
 }
 
-func (p *Device) CreateSampler(descriptor SamplerDescriptor) Sampler {
+func (p *Device) CreateSampler(descriptor SamplerDescriptor) *Sampler {
 	desc := C.WGPUSamplerDescriptor{
 		addressModeU:  C.WGPUAddressMode(descriptor.AddressModeU),
 		addressModeV:  C.WGPUAddressMode(descriptor.AddressModeV),
@@ -591,7 +616,11 @@ func (p *Device) CreateSampler(descriptor SamplerDescriptor) Sampler {
 		desc.label = label
 	}
 
-	return Sampler(C.wgpuDeviceCreateSampler(p.ref, &desc))
+	ref := C.wgpuDeviceCreateSampler(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &Sampler{ref}
 }
 
 type ShaderModuleSPIRVDescriptor struct {
@@ -612,7 +641,7 @@ type ShaderModuleDescriptor struct {
 	WGSLDescriptor *ShaderModuleWGSLDescriptor
 }
 
-func (p *Device) CreateShaderModule(descriptor ShaderModuleDescriptor) ShaderModule {
+func (p *Device) CreateShaderModule(descriptor ShaderModuleDescriptor) *ShaderModule {
 	var desc C.WGPUShaderModuleDescriptor
 
 	if descriptor.Label != "" {
@@ -656,7 +685,11 @@ func (p *Device) CreateShaderModule(descriptor ShaderModuleDescriptor) ShaderMod
 		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(wgsl))
 	}
 
-	return ShaderModule(C.wgpuDeviceCreateShaderModule(p.ref, &desc))
+	ref := C.wgpuDeviceCreateShaderModule(p.ref, &desc)
+	if ref == nil {
+		return nil
+	}
+	return &ShaderModule{ref}
 }
 
 type SwapChainDescriptor struct {
@@ -744,4 +777,8 @@ func (p *Device) GetQueue() *Queue {
 		return nil
 	}
 	return &Queue{ref}
+}
+
+func (p *Device) Drop() {
+	C.wgpuDeviceDrop(p.ref)
 }
