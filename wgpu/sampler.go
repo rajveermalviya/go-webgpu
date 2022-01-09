@@ -2,7 +2,8 @@ package wgpu
 
 /*
 
-#include "wrapper.h"
+#include "./lib/webgpu.h"
+#include "./lib/wgpu.h"
 
 */
 import "C"

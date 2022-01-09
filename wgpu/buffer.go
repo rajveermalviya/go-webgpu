@@ -2,7 +2,10 @@ package wgpu
 
 /*
 
-#include "wrapper.h"
+#include "./lib/webgpu.h"
+#include "./lib/wgpu.h"
+
+extern void bufferMapCallback_cgo(WGPUBufferMapAsyncStatus status, void *userdata);
 
 */
 import "C"
@@ -16,7 +19,7 @@ type Buffer struct{ ref C.WGPUBuffer }
 
 func (p *Buffer) GetMappedRange(offset uint64, size uint64) []byte {
 	bufSlice := C.wgpuBufferGetMappedRange(p.ref, C.size_t(offset), C.size_t(size))
-	return C.GoBytes(bufSlice, C.int(size))
+	return unsafe.Slice((*byte)(bufSlice), size)
 }
 
 func (p *Buffer) Unmap() {

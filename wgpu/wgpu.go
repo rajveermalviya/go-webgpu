@@ -12,7 +12,10 @@ package wgpu
 #cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin/amd64
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
 
-#include "wrapper.h"
+#include "./lib/webgpu.h"
+#include "./lib/wgpu.h"
+
+extern void logCallback_cgo(WGPULogLevel level, char const *msg);
 
 */
 import "C"

@@ -2,13 +2,21 @@ package wgpu
 
 /*
 
-#include "wrapper.h"
+#include <stdlib.h>
+
+#include "./lib/webgpu.h"
+#include "./lib/wgpu.h"
+
+extern void requestAdapterCallback_cgo(WGPURequestAdapterStatus status,
+                                WGPUAdapter adapter, char const *message,
+                                void *userdata);
 
 */
 import "C"
 
 import (
 	"errors"
+	"runtime/cgo"
 	"unsafe"
 )
 
@@ -26,6 +34,8 @@ type RequestAdapterOptions struct {
 	// unused in wgpu
 	// ForceFallbackAdapter bool
 }
+
+type requestAdapterCB func(status RequestAdapterStatus, adapter *Adapter, message string)
 
 func RequestAdapter(options RequestAdapterOptions) (*Adapter, error) {
 	var opts C.WGPURequestAdapterOptions
@@ -46,12 +56,20 @@ func RequestAdapter(options RequestAdapterOptions) (*Adapter, error) {
 		opts.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(adapterExtras))
 	}
 
-	res := C.request_adapter(&opts)
-	if res.status != C.WGPURequestAdapterStatus_Success {
+	var status RequestAdapterStatus
+	var adapter *Adapter
+
+	var cb requestAdapterCB = func(s RequestAdapterStatus, a *Adapter, _ string) {
+		status = s
+		adapter = a
+	}
+	handle := cgo.NewHandle(cb)
+	C.wgpuInstanceRequestAdapter(nil, &opts, C.WGPURequestAdapterCallback(C.requestAdapterCallback_cgo), unsafe.Pointer(&handle))
+
+	if status != RequestAdapterStatus_Success {
 		return nil, errors.New("failed to request adapter")
 	}
-
-	return &Adapter{res.adapter}, nil
+	return adapter, nil
 }
 
 type SurfaceDescriptorFromWindowsHWND struct {

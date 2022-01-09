@@ -2,7 +2,14 @@ package wgpu
 
 /*
 
-#include "wrapper.h"
+#include <stdlib.h>
+
+#include "./lib/webgpu.h"
+#include "./lib/wgpu.h"
+
+extern void requestDeviceCallback_cgo(WGPURequestDeviceStatus status,
+                               WGPUDevice device, char const *message,
+                               void *userdata);
 
 */
 import "C"
@@ -10,6 +17,7 @@ import "C"
 import (
 	"errors"
 	"runtime"
+	"runtime/cgo"
 	"unsafe"
 )
 
@@ -73,6 +81,8 @@ type DeviceDescriptor struct {
 	DeviceExtras *DeviceExtras
 }
 
+type requestDeviceCB func(status RequestDeviceStatus, device *Device, message string)
+
 func (p *Adapter) RequestDevice(descriptor DeviceDescriptor) (*Device, error) {
 	var desc C.WGPUDeviceDescriptor
 	defer runtime.KeepAlive(desc)
@@ -116,10 +126,18 @@ func (p *Adapter) RequestDevice(descriptor DeviceDescriptor) (*Device, error) {
 		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(deviceExtras))
 	}
 
-	res := C.request_device(p.ref, &desc)
-	if res.status != C.WGPURequestDeviceStatus_Success || res.device == nil {
+	var status RequestDeviceStatus
+	var device *Device
+
+	var cb requestDeviceCB = func(s RequestDeviceStatus, d *Device, _ string) {
+		status = s
+		device = d
+	}
+	handle := cgo.NewHandle(cb)
+	C.wgpuAdapterRequestDevice(p.ref, &desc, C.WGPURequestDeviceCallback(C.requestDeviceCallback_cgo), unsafe.Pointer(&handle))
+
+	if status != RequestDeviceStatus_Success {
 		return nil, errors.New("failed to request device")
 	}
-
-	return &Device{res.device}, nil
+	return device, nil
 }
