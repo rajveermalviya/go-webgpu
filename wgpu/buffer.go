@@ -48,14 +48,21 @@ func (p *Buffer) MapAsync(mode MapMode, offset uint64, size uint64, callback Buf
 
 func ByteStoUint32S(src []byte) []uint32 {
 	l := len(src)
+	if l == 0 {
+		return nil
+	}
 	if l%4 != 0 {
 		panic("invalid src")
 	}
-	l /= 4
-	return (*[1 << 30]uint32)(unsafe.Pointer(&src[0]))[:l:l]
+
+	return unsafe.Slice((*uint32)(unsafe.Pointer(&src[0])), l/4)
 }
 
 func Uint32StoByteS(src []uint32) []byte {
-	l := len(src) * 4
-	return (*[1 << 30]byte)(unsafe.Pointer(&src[0]))[:l:l]
+	l := len(src)
+	if l == 0 {
+		return nil
+	}
+
+	return unsafe.Slice((*byte)(unsafe.Pointer(&src[0])), l*4)
 }

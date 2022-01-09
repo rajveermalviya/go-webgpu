@@ -13,8 +13,8 @@ var shader string
 
 func main() {
 	numbers := []uint32{1, 2, 3, 4}
-	const numbersSize = 4 * 4
-	const numbersLength = 4
+	numbersSize := len(numbers) * (4 /* size of uint32 */)
+	numbersLength := len(numbers)
 
 	adapter, err := wgpu.RequestAdapter(wgpu.RequestAdapterOptions{})
 	if err != nil {
@@ -45,13 +45,13 @@ func main() {
 	stagingBuffer := device.CreateBuffer(wgpu.BufferDescriptor{
 		Label: "StagingBuffer",
 		Usage: wgpu.BufferUsage_MapRead | wgpu.BufferUsage_CopyDst,
-		Size:  numbersSize,
+		Size:  uint64(numbersSize),
 	})
 
 	storageBuffer := device.CreateBuffer(wgpu.BufferDescriptor{
 		Label: "StorageBuffer",
 		Usage: wgpu.BufferUsage_Storage | wgpu.BufferUsage_CopyDst | wgpu.BufferUsage_CopySrc,
-		Size:  numbersSize,
+		Size:  uint64(numbersSize),
 	})
 
 	bindGroupLayout := device.CreateBindGroupLayout(wgpu.BindGroupLayoutDescriptor{
@@ -81,7 +81,7 @@ func main() {
 			Binding: 0,
 			Buffer:  storageBuffer,
 			Offset:  0,
-			Size:    numbersSize,
+			Size:    uint64(numbersSize),
 		}},
 	})
 
@@ -107,10 +107,10 @@ func main() {
 
 	computePass.SetPipeline(computePipeline)
 	computePass.SetBindGroup(0, bindGroup, nil)
-	computePass.Dispatch(numbersLength, 1, 1)
+	computePass.Dispatch(uint32(numbersLength), 1, 1)
 	computePass.EndPass()
 
-	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, numbersSize)
+	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, uint64(numbersSize))
 
 	queue := device.GetQueue()
 	cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
@@ -119,12 +119,12 @@ func main() {
 
 	queue.Submit([]*wgpu.CommandBuffer{cmdBuffer})
 
-	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, numbersSize, func(status wgpu.BufferMapAsyncStatus) {
+	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, uint64(numbersSize), func(status wgpu.BufferMapAsyncStatus) {
 		fmt.Println("MapAsync status: ", status)
 	})
 	device.Poll(true)
 
-	times := stagingBuffer.GetMappedRange(0, numbersSize)
+	times := stagingBuffer.GetMappedRange(0, uint64(numbersSize))
 	fmt.Println(wgpu.ByteStoUint32S(times))
 
 	stagingBuffer.Unmap()

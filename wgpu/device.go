@@ -65,7 +65,7 @@ func (p *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) *Bi
 		entries := C.malloc(C.size_t(entryCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupLayoutEntry{})))
 		defer C.free(entries)
 
-		entriesSlice := (*[1 << 30]C.WGPUBindGroupLayoutEntry)(entries)[:entryCount:entryCount]
+		entriesSlice := unsafe.Slice((*C.WGPUBindGroupLayoutEntry)(entries), entryCount)
 
 		for i, v := range descriptor.Entries {
 			entriesSlice[i] = C.WGPUBindGroupLayoutEntry{
@@ -140,7 +140,7 @@ func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
 		entries := C.malloc(C.size_t(entryCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupEntry{})))
 		defer C.free(entries)
 
-		entriesSlice := (*[1 << 30]C.WGPUBindGroupEntry)(entries)[:entryCount:entryCount]
+		entriesSlice := unsafe.Slice((*C.WGPUBindGroupEntry)(entries), entryCount)
 
 		for i, v := range descriptor.Entries {
 			entry := C.WGPUBindGroupEntry{
@@ -294,7 +294,7 @@ func (p *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) Pipel
 		bindGroupLayouts := C.malloc(C.size_t(bindGroupLayoutCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupLayout(nil))))
 		defer C.free(bindGroupLayouts)
 
-		bindGroupLayoutsSlice := (*[1 << 30]C.WGPUBindGroupLayout)(bindGroupLayouts)[:bindGroupLayoutCount:bindGroupLayoutCount]
+		bindGroupLayoutsSlice := unsafe.Slice((*C.WGPUBindGroupLayout)(bindGroupLayouts), bindGroupLayoutCount)
 
 		for i, v := range descriptor.BindGroupLayouts {
 			bindGroupLayoutsSlice[i] = v.ref
@@ -431,7 +431,7 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *Rend
 			buffers := C.malloc(C.size_t(bufferCount) * C.size_t(unsafe.Sizeof(C.WGPUVertexBufferLayout{})))
 			defer C.free(buffers)
 
-			buffersSlice := (*[1 << 30]C.WGPUVertexBufferLayout)(buffers)[:bufferCount:bufferCount]
+			buffersSlice := unsafe.Slice((*C.WGPUVertexBufferLayout)(buffers), bufferCount)
 
 			for i, v := range vertex.Buffers {
 				buffer := C.WGPUVertexBufferLayout{
@@ -444,7 +444,7 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *Rend
 					attributes := C.malloc(C.size_t(attributeCount) * C.size_t(unsafe.Sizeof(C.WGPUVertexAttribute{})))
 					defer C.free(attributes)
 
-					attributesSlice := (*[1 << 30]C.WGPUVertexAttribute)(attributes)[:attributeCount:attributeCount]
+					attributesSlice := unsafe.Slice((*C.WGPUVertexAttribute)(attributes), attributeCount)
 
 					for j, attribute := range v.Attributes {
 						attributesSlice[j] = C.WGPUVertexAttribute{
@@ -535,7 +535,7 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *Rend
 			targets := C.malloc(C.size_t(targetCount) * C.size_t(unsafe.Sizeof(C.WGPUColorTargetState{})))
 			defer C.free(targets)
 
-			targetsSlice := (*[1 << 30]C.WGPUColorTargetState)(targets)[:targetCount:targetCount]
+			targetsSlice := unsafe.Slice((*C.WGPUColorTargetState)(targets), targetCount)
 
 			for i, v := range fragment.Targets {
 				target := C.WGPUColorTargetState{

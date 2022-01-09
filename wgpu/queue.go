@@ -18,7 +18,7 @@ func (p *Queue) Submit(commands []*CommandBuffer) {
 		commandRefs := C.malloc(C.size_t(commandCount) * C.size_t(unsafe.Sizeof(C.WGPUCommandBuffer(nil))))
 		defer C.free(commandRefs)
 
-		commandRefsSlice := (*[1 << 30]C.WGPUCommandBuffer)(commandRefs)[:commandCount:commandCount]
+		commandRefsSlice := unsafe.Slice((*C.WGPUCommandBuffer)(commandRefs), commandCount)
 
 		for i, v := range commands {
 			commandRefsSlice[i] = v.ref

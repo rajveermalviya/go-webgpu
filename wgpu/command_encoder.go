@@ -96,7 +96,7 @@ func (p *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *Rende
 		colorAttachments := C.malloc(C.size_t(unsafe.Sizeof(C.WGPURenderPassColorAttachment{})) * C.size_t(colorAttachmentCount))
 		defer C.free(colorAttachments)
 
-		colorAttachmentsSlice := (*[1 << 30]C.WGPURenderPassColorAttachment)(colorAttachments)[:colorAttachmentCount:colorAttachmentCount]
+		colorAttachmentsSlice := unsafe.Slice((*C.WGPURenderPassColorAttachment)(colorAttachments), colorAttachmentCount)
 
 		for i, v := range descriptor.ColorAttachments {
 			colorAttachment := C.WGPURenderPassColorAttachment{
