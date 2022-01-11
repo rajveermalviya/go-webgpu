@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"unsafe"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -144,6 +145,8 @@ func render(
 	pipeline *wgpu.RenderPipeline,
 	prevWidth, prevHeight *int,
 ) {
+	defer glfw.WaitEvents()
+
 	width, height := window.GetSize()
 
 	if width != *prevWidth || height != *prevHeight {
@@ -161,7 +164,8 @@ func render(
 
 	nextTexture := swapChain.GetCurrentTextureView()
 	if nextTexture == nil {
-		panic("Cannot acquire next swap chain texture")
+		fmt.Println("Cannot acquire next swap chain texture")
+		return
 	}
 	defer nextTexture.Drop()
 
@@ -192,6 +196,4 @@ func render(
 	cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
 	queue.Submit([]*wgpu.CommandBuffer{cmdBuffer})
 	swapChain.Present()
-
-	glfw.PollEvents()
 }
