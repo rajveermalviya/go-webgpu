@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"unsafe"
 
 	"github.com/rajveermalviya/go-webgpu/wgpu"
 
@@ -13,7 +14,7 @@ var shader string
 
 func main() {
 	numbers := []uint32{1, 2, 3, 4}
-	numbersSize := len(numbers) * (4 /* size of uint32 */)
+	numbersSize := len(numbers) * int(unsafe.Sizeof(uint32(0)))
 	numbersLength := len(numbers)
 
 	adapter, err := wgpu.RequestAdapter(wgpu.RequestAdapterOptions{})
