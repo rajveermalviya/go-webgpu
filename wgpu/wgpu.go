@@ -25,6 +25,26 @@ import (
 	"strconv"
 )
 
+const (
+	CopyBytesPerRowAlignment    = 256
+	QueryResolveBufferAlignment = 256
+	CopyBufferAlignment         = 4
+	MapAlignment                = 8
+	VertexStrideAlignment       = 4
+	PushConstantAlignment       = 4
+	QuerySetMaxQueries          = 8192
+	QuerySize                   = 8
+)
+
+var (
+	Color_Transparent = Color{0, 0, 0, 0}
+	Color_Black       = Color{0, 0, 0, 1}
+	Color_White       = Color{1, 1, 1, 1}
+	Color_Red         = Color{1, 0, 0, 1}
+	Color_Green       = Color{0, 1, 0, 1}
+	Color_Blue        = Color{0, 0, 1, 1}
+)
+
 func init() {
 	C.wgpuSetLogCallback(C.WGPULogCallback(C.logCallback_cgo))
 }

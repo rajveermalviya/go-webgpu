@@ -13,7 +13,7 @@ type SwapChain struct{ ref C.WGPUSwapChain }
 func (p *SwapChain) GetCurrentTextureView() *TextureView {
 	ref := C.wgpuSwapChainGetCurrentTextureView(p.ref)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire TextureView")
 	}
 	return &TextureView{ref}
 }

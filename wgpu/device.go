@@ -106,7 +106,7 @@ func (p *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) *Bi
 
 	ref := C.wgpuDeviceCreateBindGroupLayout(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire BindGroupLayout")
 	}
 	return &BindGroupLayout{ref}
 }
@@ -171,7 +171,7 @@ func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
 
 	ref := C.wgpuDeviceCreateBindGroup(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire BindGroup")
 	}
 	return &BindGroup{ref}
 }
@@ -199,7 +199,7 @@ func (p *Device) CreateBuffer(descriptor BufferDescriptor) *Buffer {
 
 	ref := C.wgpuDeviceCreateBuffer(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire Buffer")
 	}
 
 	return &Buffer{ref}
@@ -221,7 +221,7 @@ func (p *Device) CreateCommandEncoder(descriptor CommandEncoderDescriptor) *Comm
 
 	ref := C.wgpuDeviceCreateCommandEncoder(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire CommandEncoder")
 	}
 
 	return &CommandEncoder{ref}
@@ -272,7 +272,7 @@ func (p *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) *Co
 
 	ref := C.wgpuDeviceCreateComputePipeline(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire ComputePipeline")
 	}
 	return &ComputePipeline{ref}
 }
@@ -579,7 +579,7 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *Rend
 
 	ref := C.wgpuDeviceCreateRenderPipeline(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire RenderPipeline")
 	}
 	return &RenderPipeline{ref}
 }
@@ -621,7 +621,7 @@ func (p *Device) CreateSampler(descriptor SamplerDescriptor) *Sampler {
 
 	ref := C.wgpuDeviceCreateSampler(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire Sampler")
 	}
 	return &Sampler{ref}
 }
@@ -690,7 +690,7 @@ func (p *Device) CreateShaderModule(descriptor ShaderModuleDescriptor) *ShaderMo
 
 	ref := C.wgpuDeviceCreateShaderModule(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire ShaderModule")
 	}
 	return &ShaderModule{ref}
 }
@@ -717,7 +717,7 @@ func (p *Device) CreateSwapChain(surface *Surface, descriptor SwapChainDescripto
 
 	ref := C.wgpuDeviceCreateSwapChain(p.ref, surface.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire SwapChain")
 	}
 	return &SwapChain{ref}
 }
@@ -761,7 +761,7 @@ func (p *Device) CreateTexture(descriptor TextureDescriptor) *Texture {
 
 	ref := C.wgpuDeviceCreateTexture(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire Texture")
 	}
 	return &Texture{ref}
 }
@@ -777,7 +777,7 @@ func (p *Device) GetLimits() SupportedLimits {
 func (p *Device) GetQueue() *Queue {
 	ref := C.wgpuDeviceGetQueue(p.ref)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire Queue")
 	}
 	return &Queue{ref}
 }

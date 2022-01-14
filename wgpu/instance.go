@@ -146,7 +146,7 @@ func CreateSurface(descriptor SurfaceDescriptor) *Surface {
 
 	ref := C.wgpuInstanceCreateSurface(nil, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire Surface")
 	}
 	return &Surface{ref}
 }

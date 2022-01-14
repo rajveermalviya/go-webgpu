@@ -38,7 +38,7 @@ func (p *CommandEncoder) BeginComputePass(descriptor ComputePassDescriptor) *Com
 
 	ref := C.wgpuCommandEncoderBeginComputePass(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire ComputePassEncoder")
 	}
 
 	return &ComputePassEncoder{ref}
@@ -147,7 +147,7 @@ func (p *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *Rende
 
 	ref := C.wgpuCommandEncoderBeginRenderPass(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire RenderPassEncoder")
 	}
 	return &RenderPassEncoder{ref}
 }
@@ -290,7 +290,7 @@ func (p *CommandEncoder) Finish(descriptor CommandBufferDescriptor) *CommandBuff
 
 	ref := C.wgpuCommandEncoderFinish(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire CommandBuffer")
 	}
 	return &CommandBuffer{ref}
 }

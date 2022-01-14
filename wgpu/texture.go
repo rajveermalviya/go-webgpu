@@ -44,7 +44,7 @@ func (p *Texture) CreateView(descriptor TextureViewDescriptor) *TextureView {
 
 	ref := C.wgpuTextureCreateView(p.ref, &desc)
 	if ref == nil {
-		return nil
+		panic("Failed to acquire TextureView")
 	}
 	return &TextureView{ref}
 }
@@ -55,4 +55,13 @@ func (p *Texture) Destroy() {
 
 func (p *Texture) Drop() {
 	C.wgpuTextureDrop(p.ref)
+}
+
+func (p *Texture) AsImageCopy() ImageCopyTexture {
+	return ImageCopyTexture{
+		Texture:  p,
+		MipLevel: 0,
+		Origin:   Origin3D{},
+		Aspect:   TextureAspect_All,
+	}
 }

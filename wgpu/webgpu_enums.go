@@ -367,9 +367,9 @@ const (
 type StoreOp C.WGPUStoreOp
 
 const (
-	StoreOp_Store   = C.WGPUStoreOp_Store
-	StoreOp_Discard = C.WGPUStoreOp_Discard
-	StoreOp_Force32 = C.WGPUStoreOp_Force32
+	StoreOp_Store   StoreOp = C.WGPUStoreOp_Store
+	StoreOp_Discard StoreOp = C.WGPUStoreOp_Discard
+	StoreOp_Force32 StoreOp = C.WGPUStoreOp_Force32
 )
 
 type TextureAspect C.WGPUTextureAspect
@@ -613,21 +613,21 @@ const (
 type ShaderStage C.WGPUShaderStage
 
 const (
-	ShaderStage_None     = C.WGPUShaderStage_None
-	ShaderStage_Vertex   = C.WGPUShaderStage_Vertex
-	ShaderStage_Fragment = C.WGPUShaderStage_Fragment
-	ShaderStage_Compute  = C.WGPUShaderStage_Compute
-	ShaderStage_Force32  = C.WGPUShaderStage_Force32
+	ShaderStage_None     ShaderStage = C.WGPUShaderStage_None
+	ShaderStage_Vertex   ShaderStage = C.WGPUShaderStage_Vertex
+	ShaderStage_Fragment ShaderStage = C.WGPUShaderStage_Fragment
+	ShaderStage_Compute  ShaderStage = C.WGPUShaderStage_Compute
+	ShaderStage_Force32  ShaderStage = C.WGPUShaderStage_Force32
 )
 
 type TextureUsage C.WGPUTextureUsage
 
 const (
-	TextureUsage_None             = C.WGPUTextureUsage_None
-	TextureUsage_CopySrc          = C.WGPUTextureUsage_CopySrc
-	TextureUsage_CopyDst          = C.WGPUTextureUsage_CopyDst
-	TextureUsage_TextureBinding   = C.WGPUTextureUsage_TextureBinding
-	TextureUsage_StorageBinding   = C.WGPUTextureUsage_StorageBinding
-	TextureUsage_RenderAttachment = C.WGPUTextureUsage_RenderAttachment
-	TextureUsage_Force32          = C.WGPUTextureUsage_Force32
+	TextureUsage_None             TextureUsage = C.WGPUTextureUsage_None
+	TextureUsage_CopySrc          TextureUsage = C.WGPUTextureUsage_CopySrc
+	TextureUsage_CopyDst          TextureUsage = C.WGPUTextureUsage_CopyDst
+	TextureUsage_TextureBinding   TextureUsage = C.WGPUTextureUsage_TextureBinding
+	TextureUsage_StorageBinding   TextureUsage = C.WGPUTextureUsage_StorageBinding
+	TextureUsage_RenderAttachment TextureUsage = C.WGPUTextureUsage_RenderAttachment
+	TextureUsage_Force32          TextureUsage = C.WGPUTextureUsage_Force32
 )
