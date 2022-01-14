@@ -2,7 +2,7 @@ package wgpu
 
 /*
 
-#cgo CFLAGS: -fPIC -Wall
+#cgo CFLAGS: -fPIC -flto -Wall
 #cgo LDFLAGS: -lwgpu_static -lm
 
 #cgo linux,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64
