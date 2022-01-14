@@ -16,7 +16,6 @@ import "C"
 
 import (
 	"errors"
-	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -85,16 +84,15 @@ type requestDeviceCB func(status RequestDeviceStatus, device *Device, message st
 
 func (p *Adapter) RequestDevice(descriptor DeviceDescriptor) (*Device, error) {
 	var desc C.WGPUDeviceDescriptor
-	defer runtime.KeepAlive(desc)
 
 	requiredLimits := (*C.WGPURequiredLimits)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimits{}))))
 	defer C.free(unsafe.Pointer(requiredLimits))
-
 	requiredLimits.nextInChain = nil
 	if descriptor.RequiredLimits != nil {
 		requiredLimits.limits = descriptor.RequiredLimits.Limits.toC()
+	} else {
+		requiredLimits.limits = C.WGPULimits{}
 	}
-
 	desc.requiredLimits = requiredLimits
 
 	if descriptor.DeviceExtras != nil {

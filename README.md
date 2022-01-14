@@ -27,3 +27,10 @@ This uses glfw so you will need [some libraries installed](https://github.com/go
 ```shell
 go run github.com/rajveermalviya/go-webgpu/examples/triangle@latest
 ```
+### [capture](./examples/capture/main.go)
+
+Creates `./image.png` with all pixels red and size 100x200
+
+```shell
+go run github.com/rajveermalviya/go-webgpu/examples/capture@latest
+```
