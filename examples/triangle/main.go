@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"unsafe"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -17,20 +16,19 @@ func main() {
 	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
+	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
 	window, err := glfw.CreateWindow(640, 480, "go-webgpu with glfw", nil, nil)
 	if err != nil {
 		panic(err)
 	}
-
-	x11Display := glfw.GetX11Display()
-	x11Window := window.GetX11Window()
+	defer window.Destroy()
 
 	surface := wgpu.CreateSurface(wgpu.SurfaceDescriptor{
 		Xlib: &wgpu.SurfaceDescriptorFromXlib{
-			Display: unsafe.Pointer(x11Display),
-			Window:  uint32(x11Window),
+			Display: unsafe.Pointer(glfw.GetX11Display()),
+			Window:  uint32(window.GetX11Window()),
 		},
 	})
 	if surface == nil {
@@ -49,14 +47,13 @@ func main() {
 			Label: "Device",
 		},
 		RequiredLimits: &wgpu.RequiredLimits{
-			Limits: wgpu.Limits{
-				MaxBindGroups: 1,
-			},
+			Limits: wgpu.Limits{MaxBindGroups: 1},
 		},
 	})
 	if err != nil {
 		panic(err)
 	}
+	queue := device.GetQueue()
 
 	shader := device.CreateShaderModule(wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
@@ -71,7 +68,6 @@ func main() {
 
 	mask := ^0
 	pipeline := device.CreateRenderPipeline(wgpu.RenderPipelineDescriptor{
-		Label:  "Render pipeline",
 		Layout: pipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     shader,
@@ -117,36 +113,35 @@ func main() {
 		Format:      swapChainFormat,
 		Width:       uint32(prevWidth),
 		Height:      uint32(prevHeight),
-		PresentMode: wgpu.PresentMode_Fifo,
+		PresentMode: wgpu.PresentMode_Mailbox,
 	})
 
 	for !window.ShouldClose() {
+		glfw.WaitEvents()
+
 		render(
 			window,
 			swapChain,
 			device,
+			queue,
 			surface,
 			swapChainFormat,
 			pipeline,
 			&prevWidth, &prevHeight,
 		)
 	}
-
-	window.Destroy()
-	glfw.Terminate()
 }
 
 func render(
 	window *glfw.Window,
 	swapChain *wgpu.SwapChain,
 	device *wgpu.Device,
+	queue *wgpu.Queue,
 	surface *wgpu.Surface,
 	swapChainFormat wgpu.TextureFormat,
 	pipeline *wgpu.RenderPipeline,
 	prevWidth, prevHeight *int,
 ) {
-	defer glfw.WaitEvents()
-
 	width, height := window.GetSize()
 
 	if width != *prevWidth || height != *prevHeight {
@@ -164,8 +159,7 @@ func render(
 
 	nextTexture := swapChain.GetCurrentTextureView()
 	if nextTexture == nil {
-		fmt.Println("Cannot acquire next swap chain texture")
-		return
+		panic("Failed to acquire next swap chain texture")
 	}
 	defer nextTexture.Drop()
 
@@ -190,8 +184,6 @@ func render(
 	renderPass.SetPipeline(pipeline)
 	renderPass.Draw(3, 1, 0, 0)
 	renderPass.EndPass()
-
-	queue := device.GetQueue()
 
 	cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
 	queue.Submit([]*wgpu.CommandBuffer{cmdBuffer})
