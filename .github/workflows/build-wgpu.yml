@@ -20,8 +20,7 @@ jobs:
   #     - name: Install Rust toolchain
   #       uses: actions-rs/toolchain@v1
   #       with:
-  #         toolchain: stable
-  #         target: x86_64-unknown-linux-gnu
+  #         toolchain: stable-x86_64-unknown-linux-gnu
   #         default: true
   #     # Build
   #     - name: Build
@@ -60,8 +59,7 @@ jobs:
   #     - name: Install Rust toolchain
   #       uses: actions-rs/toolchain@v1
   #       with:
-  #         toolchain: stable
-  #         target: x86_64-apple-darwin
+  #         toolchain: stable-x86_64-apple-darwin
   #         default: true
   #     # Build
   #     - name: Build
@@ -100,8 +98,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          target: x86_64-pc-windows-gnu
+          toolchain: stable-x86_64-pc-windows-gnu
           default: true
       # Build
       - name: Install llvm
