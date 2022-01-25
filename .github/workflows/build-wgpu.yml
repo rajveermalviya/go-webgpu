@@ -99,6 +99,11 @@ jobs:
           toolchain: stable
           target: x86_64-pc-windows-gnu
       # Build
+      - name: Install llvm
+        run: |
+          choco install -y --force llvm | exit 0
+          echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
+        shell: bash
       - name: Build
         run: |
           git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
