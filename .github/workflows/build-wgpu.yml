@@ -31,8 +31,8 @@ jobs:
           export CARGO_PROFILE_RELEASE_LTO=true
           export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
           cargo build --release
-          mkdir -p $GIT_ROOT/wgpu/lib/$GOOS/$GOARCH
-          mv target/release/libwgpu_native.a $GIT_ROOT/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a
+          mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
+          mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a
           cd ..
           rm -rf tmp
       # Send a PR
