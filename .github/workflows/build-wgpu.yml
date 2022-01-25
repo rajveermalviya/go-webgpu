@@ -85,7 +85,7 @@ jobs:
 
   windows-amd64:
     name: build - windows-amd64
-    runs-on: macos-latest
+    runs-on: windows-latest
     env:
       GOOS: windows
       GOARCH: amd64
