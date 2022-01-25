@@ -3,6 +3,7 @@ package wgpu
 /*
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "./lib/webgpu.h"
 #include "./lib/wgpu.h"
@@ -10,6 +11,10 @@ package wgpu
 extern void requestDeviceCallback_cgo(WGPURequestDeviceStatus status,
                                WGPUDevice device, char const *message,
                                void *userdata);
+
+void errorCallback(WGPUErrorType type, char const * message, void * userdata) {
+	printf("type: %d, msg: %s\n", type, message);
+}
 
 */
 import "C"
@@ -137,5 +142,8 @@ func (p *Adapter) RequestDevice(descriptor DeviceDescriptor) (*Device, error) {
 	if status != RequestDeviceStatus_Success {
 		return nil, errors.New("failed to request device")
 	}
+
+	C.wgpuDeviceSetUncapturedErrorCallback(device.ref, C.WGPUErrorCallback(C.errorCallback), nil)
+
 	return device, nil
 }

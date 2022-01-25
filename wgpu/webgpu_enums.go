@@ -564,12 +564,59 @@ const (
 	VertexFormat_Force32   VertexFormat = C.WGPUVertexFormat_Force32
 )
 
+func (v VertexFormat) Size() uint64 {
+	switch v {
+	case VertexFormat_Uint8x2,
+		VertexFormat_Sint8x2,
+		VertexFormat_Unorm8x2,
+		VertexFormat_Snorm8x2:
+		return 2
+
+	case VertexFormat_Uint8x4,
+		VertexFormat_Sint8x4,
+		VertexFormat_Unorm8x4,
+		VertexFormat_Snorm8x4,
+		VertexFormat_Uint16x2,
+		VertexFormat_Sint16x2,
+		VertexFormat_Unorm16x2,
+		VertexFormat_Snorm16x2,
+		VertexFormat_Float16x2,
+		VertexFormat_Float32,
+		VertexFormat_Uint32,
+		VertexFormat_Sint32:
+		return 4
+
+	case VertexFormat_Uint16x4,
+		VertexFormat_Sint16x4,
+		VertexFormat_Unorm16x4,
+		VertexFormat_Snorm16x4,
+		VertexFormat_Float16x4,
+		VertexFormat_Float32x2,
+		VertexFormat_Uint32x2,
+		VertexFormat_Sint32x2:
+		return 8
+
+	case VertexFormat_Float32x3,
+		VertexFormat_Uint32x3,
+		VertexFormat_Sint32x3:
+		return 12
+
+	case VertexFormat_Float32x4,
+		VertexFormat_Uint32x4,
+		VertexFormat_Sint32x4:
+		return 16
+
+	default:
+		return 0
+	}
+}
+
 type VertexStepMode C.WGPUVertexStepMode
 
 const (
-	VertexStepMode_Vertex   = C.WGPUVertexStepMode_Vertex
-	VertexStepMode_Instance = C.WGPUVertexStepMode_Instance
-	VertexStepMode_Force32  = C.WGPUVertexStepMode_Force32
+	VertexStepMode_Vertex   VertexStepMode = C.WGPUVertexStepMode_Vertex
+	VertexStepMode_Instance VertexStepMode = C.WGPUVertexStepMode_Instance
+	VertexStepMode_Force32  VertexStepMode = C.WGPUVertexStepMode_Force32
 )
 
 type BufferUsage C.WGPUBufferUsage

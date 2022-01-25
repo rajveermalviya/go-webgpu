@@ -9,11 +9,14 @@ package wgpu
 
 */
 import "C"
-import "unsafe"
+
+import (
+	"unsafe"
+)
 
 type Queue struct{ ref C.WGPUQueue }
 
-func (p *Queue) Submit(commands []*CommandBuffer) {
+func (p *Queue) Submit(commands ...*CommandBuffer) {
 	commandCount := len(commands)
 	if commandCount == 0 {
 		C.wgpuQueueSubmit(p.ref, 0, nil)

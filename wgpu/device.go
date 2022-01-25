@@ -136,7 +136,9 @@ func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
 		desc.label = label
 	}
 
-	desc.layout = descriptor.Layout.ref
+	if descriptor.Layout != nil {
+		desc.layout = descriptor.Layout.ref
+	}
 
 	entryCount := len(descriptor.Entries)
 	if entryCount > 0 {
@@ -242,7 +244,7 @@ type ProgrammableStageDescriptor struct {
 
 type ComputePipelineDescriptor struct {
 	Label   string
-	Layout  PipelineLayout
+	Layout  *PipelineLayout
 	Compute ProgrammableStageDescriptor
 }
 
@@ -256,7 +258,9 @@ func (p *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) *Co
 		desc.label = label
 	}
 
-	desc.layout = C.WGPUPipelineLayout(descriptor.Layout)
+	if descriptor.Layout != nil {
+		desc.layout = descriptor.Layout.ref
+	}
 
 	var compute C.WGPUProgrammableStageDescriptor
 	if descriptor.Compute.Module != nil {
@@ -282,7 +286,7 @@ type PipelineLayoutDescriptor struct {
 	BindGroupLayouts []*BindGroupLayout
 }
 
-func (p *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) PipelineLayout {
+func (p *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) *PipelineLayout {
 	var desc C.WGPUPipelineLayoutDescriptor
 
 	if descriptor.Label != "" {
@@ -307,7 +311,11 @@ func (p *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) Pipel
 		desc.bindGroupLayouts = (*C.WGPUBindGroupLayout)(bindGroupLayouts)
 	}
 
-	return PipelineLayout(C.wgpuDeviceCreatePipelineLayout(p.ref, &desc))
+	ref := C.wgpuDeviceCreatePipelineLayout(p.ref, &desc)
+	if ref == nil {
+		panic("Failed to acquire PipelineLayout")
+	}
+	return &PipelineLayout{ref}
 }
 
 type VertexAttribute struct {
@@ -392,7 +400,7 @@ type FragmentState struct {
 
 type RenderPipelineDescriptor struct {
 	Label        string
-	Layout       PipelineLayout
+	Layout       *PipelineLayout
 	Vertex       VertexState
 	Primitive    PrimitiveState
 	DepthStencil *DepthStencilState
@@ -410,7 +418,9 @@ func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *Rend
 		desc.label = label
 	}
 
-	desc.layout = C.WGPUPipelineLayout(descriptor.Layout)
+	if descriptor.Layout != nil {
+		desc.layout = descriptor.Layout.ref
+	}
 
 	// vertex
 	{

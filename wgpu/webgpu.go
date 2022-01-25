@@ -9,10 +9,9 @@ package wgpu
 import "C"
 
 type (
-	Instance            C.WGPUInstance
-	PipelineLayout      C.WGPUPipelineLayout
-	QuerySet            C.WGPUQuerySet
-	RenderBundleEncoder C.WGPURenderBundleEncoder
+	PipelineLayout      struct{ ref C.WGPUPipelineLayout }
+	QuerySet            struct{ ref C.WGPUQuerySet }
+	RenderBundleEncoder struct{ ref C.WGPURenderBundleEncoder }
 )
 
 type Limits struct {

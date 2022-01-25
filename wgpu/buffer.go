@@ -18,8 +18,8 @@ import (
 type Buffer struct{ ref C.WGPUBuffer }
 
 func (p *Buffer) GetMappedRange(offset uint64, size uint64) []byte {
-	bufSlice := C.wgpuBufferGetMappedRange(p.ref, C.size_t(offset), C.size_t(size))
-	return unsafe.Slice((*byte)(bufSlice), size)
+	buf := C.wgpuBufferGetMappedRange(p.ref, C.size_t(offset), C.size_t(size))
+	return unsafe.Slice((*byte)(buf), size)
 }
 
 func (p *Buffer) Unmap() {
@@ -49,27 +49,26 @@ func (p *Buffer) MapAsync(mode MapMode, offset uint64, size uint64, callback Buf
 	)
 }
 
-func ByteStoUint32S(src []byte) []uint32 {
-	const s = int(unsafe.Sizeof(uint32(0)))
-
-	l := len(src)
+func FromBytes[E any](src []byte, zeroElm E) []E {
+	l := uintptr(len(src))
 	if l == 0 {
 		return nil
 	}
-	if l%s != 0 {
+
+	elmSize := unsafe.Sizeof(zeroElm)
+	if l%elmSize != 0 {
 		panic("invalid src")
 	}
 
-	return unsafe.Slice((*uint32)(unsafe.Pointer(&src[0])), l/s)
+	return unsafe.Slice((*E)(unsafe.Pointer(&src[0])), l/elmSize)
 }
 
-func Uint32StoByteS(src []uint32) []byte {
-	const s = int(unsafe.Sizeof(uint32(0)))
-
-	l := len(src)
+func ToBytes[E any](src []E) []byte {
+	l := uintptr(len(src))
 	if l == 0 {
 		return nil
 	}
 
-	return unsafe.Slice((*byte)(unsafe.Pointer(&src[0])), l*s)
+	elmSize := unsafe.Sizeof(src[0])
+	return unsafe.Slice((*byte)(unsafe.Pointer(&src[0])), l*elmSize)
 }

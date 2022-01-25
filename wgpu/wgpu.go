@@ -43,6 +43,34 @@ var (
 	Color_Red         = Color{1, 0, 0, 1}
 	Color_Green       = Color{0, 1, 0, 1}
 	Color_Blue        = Color{0, 0, 1, 1}
+
+	BlendComponent_Replace = BlendComponent{
+		SrcFactor: BlendFactor_One,
+		DstFactor: BlendFactor_Zero,
+		Operation: BlendOperation_Add,
+	}
+	BlendComponent_Over = BlendComponent{
+		SrcFactor: BlendFactor_One,
+		DstFactor: BlendFactor_OneMinusSrcAlpha,
+		Operation: BlendOperation_Add,
+	}
+
+	BlendState_Replace = BlendState{
+		Color: BlendComponent_Replace,
+		Alpha: BlendComponent_Replace,
+	}
+	BlendState_AlphaBlending = BlendState{
+		Color: BlendComponent{
+			SrcFactor: BlendFactor_SrcAlpha,
+			DstFactor: BlendFactor_OneMinusSrcAlpha,
+			Operation: BlendOperation_Add,
+		},
+		Alpha: BlendComponent_Over,
+	}
+	BlendState_PremultipliedAlphaBlending = BlendState{
+		Color: BlendComponent_Over,
+		Alpha: BlendComponent_Over,
+	}
 )
 
 func init() {
