@@ -25,7 +25,7 @@ jobs:
       # Build
       - name: Build
         run: |
-          git clone --recursive git@github.com:gfx-rs/wgpu-native.git tmp
+          git clone --recursive https://github.com:gfx-rs/wgpu-native.git tmp
           cd tmp
           git checkout $WGPU_COMMIT
           export CARGO_PROFILE_RELEASE_LTO=true
