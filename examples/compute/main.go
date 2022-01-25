@@ -116,9 +116,9 @@ func main() {
 	queue := device.GetQueue()
 	cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
 
-	queue.WriteBuffer(storageBuffer, 0, wgpu.Uint32StoByteS(numbers))
+	queue.WriteBuffer(storageBuffer, 0, wgpu.ToBytes(numbers))
 
-	queue.Submit([]*wgpu.CommandBuffer{cmdBuffer})
+	queue.Submit(cmdBuffer)
 
 	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, uint64(numbersSize), func(status wgpu.BufferMapAsyncStatus) {
 		fmt.Println("MapAsync status: ", status)
@@ -126,7 +126,7 @@ func main() {
 	device.Poll(true)
 
 	times := stagingBuffer.GetMappedRange(0, uint64(numbersSize))
-	fmt.Println(wgpu.ByteStoUint32S(times))
+	fmt.Println(wgpu.FromBytes(times, uint32(0)))
 
 	stagingBuffer.Unmap()
 }

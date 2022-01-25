@@ -12,6 +12,54 @@ import (
 //go:embed shader.wgsl
 var shader string
 
+type State struct {
+	swapChainDescriptor wgpu.SwapChainDescriptor
+	swapChain           *wgpu.SwapChain
+	surface             *wgpu.Surface
+	device              *wgpu.Device
+	queue               *wgpu.Queue
+	renderPipeline      *wgpu.RenderPipeline
+}
+
+func (s *State) Resize(width, height uint32) {
+	if width > 0 && height > 0 {
+		s.swapChainDescriptor.Width = width
+		s.swapChainDescriptor.Height = height
+		s.swapChain = s.device.CreateSwapChain(s.surface, s.swapChainDescriptor)
+	}
+}
+
+func (s *State) Render() {
+	nextTexture := s.swapChain.GetCurrentTextureView()
+	if nextTexture == nil {
+		panic("Failed to acquire next swap chain texture")
+	}
+	defer nextTexture.Drop()
+
+	encoder := s.device.CreateCommandEncoder(wgpu.CommandEncoderDescriptor{})
+
+	renderPass := encoder.BeginRenderPass(wgpu.RenderPassDescriptor{
+		ColorAttachments: []wgpu.RenderPassColorAttachment{{
+			View:    nextTexture,
+			LoadOp:  wgpu.LoadOp_Clear,
+			StoreOp: wgpu.StoreOp_Store,
+			ClearColor: wgpu.Color{
+				R: 0,
+				G: 1,
+				B: 0,
+				A: 1,
+			},
+		}},
+	})
+
+	renderPass.SetPipeline(s.renderPipeline)
+	renderPass.Draw(3, 1, 0, 0)
+	renderPass.EndPass()
+
+	s.queue.Submit(encoder.Finish(wgpu.CommandBufferDescriptor{}))
+	s.swapChain.Present()
+}
+
 func main() {
 	if err := glfw.Init(); err != nil {
 		panic(err)
@@ -53,7 +101,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	queue := device.GetQueue()
+
+	swapChainFormat := surface.GetPreferredFormat(adapter)
+
+	width, height := window.GetSize()
+
+	s := &State{
+		swapChainDescriptor: wgpu.SwapChainDescriptor{
+			Usage:       wgpu.TextureUsage_RenderAttachment,
+			Format:      swapChainFormat,
+			Width:       uint32(width),
+			Height:      uint32(height),
+			PresentMode: wgpu.PresentMode_Mailbox,
+		},
+		surface: surface,
+		device:  device,
+		queue:   device.GetQueue(),
+	}
 
 	shader := device.CreateShaderModule(wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
@@ -64,10 +128,8 @@ func main() {
 
 	pipelineLayout := device.CreatePipelineLayout(wgpu.PipelineLayoutDescriptor{})
 
-	swapChainFormat := surface.GetPreferredFormat(adapter)
-
 	mask := ^0
-	pipeline := device.CreateRenderPipeline(wgpu.RenderPipelineDescriptor{
+	s.renderPipeline = device.CreateRenderPipeline(wgpu.RenderPipelineDescriptor{
 		Layout: pipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     shader,
@@ -106,86 +168,16 @@ func main() {
 		},
 	})
 
-	prevWidth, prevHeight := window.GetSize()
+	s.swapChain = device.CreateSwapChain(surface, s.swapChainDescriptor)
 
-	swapChain := device.CreateSwapChain(surface, wgpu.SwapChainDescriptor{
-		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      swapChainFormat,
-		Width:       uint32(prevWidth),
-		Height:      uint32(prevHeight),
-		PresentMode: wgpu.PresentMode_Mailbox,
+	window.SetFramebufferSizeCallback(func(_ *glfw.Window, width, height int) {
+		s.Resize(uint32(width), uint32(height))
+		s.Render()
 	})
+
+	s.Render()
 
 	for !window.ShouldClose() {
 		glfw.WaitEvents()
-
-		render(
-			window,
-			swapChain,
-			device,
-			queue,
-			surface,
-			swapChainFormat,
-			pipeline,
-			&prevWidth, &prevHeight,
-		)
 	}
-}
-
-func render(
-	window *glfw.Window,
-	swapChain *wgpu.SwapChain,
-	device *wgpu.Device,
-	queue *wgpu.Queue,
-	surface *wgpu.Surface,
-	swapChainFormat wgpu.TextureFormat,
-	pipeline *wgpu.RenderPipeline,
-	prevWidth, prevHeight *int,
-) {
-	width, height := window.GetSize()
-
-	if width != *prevWidth || height != *prevHeight {
-		prevWidth = &width
-		prevHeight = &height
-
-		swapChain = device.CreateSwapChain(surface, wgpu.SwapChainDescriptor{
-			Usage:       wgpu.TextureUsage_RenderAttachment,
-			Format:      swapChainFormat,
-			Width:       uint32(*prevWidth),
-			Height:      uint32(*prevHeight),
-			PresentMode: wgpu.PresentMode_Fifo,
-		})
-	}
-
-	nextTexture := swapChain.GetCurrentTextureView()
-	if nextTexture == nil {
-		panic("Failed to acquire next swap chain texture")
-	}
-	defer nextTexture.Drop()
-
-	encoder := device.CreateCommandEncoder(wgpu.CommandEncoderDescriptor{
-		Label: "Command Encoder",
-	})
-
-	renderPass := encoder.BeginRenderPass(wgpu.RenderPassDescriptor{
-		ColorAttachments: []wgpu.RenderPassColorAttachment{{
-			View:    nextTexture,
-			LoadOp:  wgpu.LoadOp_Clear,
-			StoreOp: wgpu.StoreOp_Store,
-			ClearColor: wgpu.Color{
-				R: 0,
-				G: 1,
-				B: 0,
-				A: 1,
-			},
-		}},
-	})
-
-	renderPass.SetPipeline(pipeline)
-	renderPass.Draw(3, 1, 0, 0)
-	renderPass.EndPass()
-
-	cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
-	queue.Submit([]*wgpu.CommandBuffer{cmdBuffer})
-	swapChain.Present()
 }

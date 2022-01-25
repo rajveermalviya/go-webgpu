@@ -102,8 +102,7 @@ func main() {
 		textureExtent,
 	)
 
-	commandBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
-	queue.Submit([]*wgpu.CommandBuffer{commandBuffer})
+	queue.Submit(encoder.Finish(wgpu.CommandBufferDescriptor{}))
 
 	outputBuffer.MapAsync(wgpu.MapMode_Read, 0, bufferSize, func(status wgpu.BufferMapAsyncStatus) {
 		if status != wgpu.BufferMapAsyncStatus_Success {
