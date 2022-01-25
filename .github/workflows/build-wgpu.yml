@@ -22,6 +22,7 @@ jobs:
   #       with:
   #         toolchain: stable
   #         target: x86_64-unknown-linux-gnu
+  #         default: true
   #     # Build
   #     - name: Build
   #       run: |
@@ -61,6 +62,7 @@ jobs:
   #       with:
   #         toolchain: stable
   #         target: x86_64-apple-darwin
+  #         default: true
   #     # Build
   #     - name: Build
   #       run: |
@@ -100,6 +102,7 @@ jobs:
         with:
           toolchain: stable
           target: x86_64-pc-windows-gnu
+          default: true
       # Build
       - name: Install llvm
         run: |
