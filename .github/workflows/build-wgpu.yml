@@ -7,81 +7,83 @@ env:
   WGPU_COMMIT: b96f7e4ec687478b89b260da0b5799d776f8bb70
 
 jobs:
-  #   linux-amd64:
-  #     name: build - linux-amd64
-  #     runs-on: ubuntu-latest
-  #     env:
-  #       GOOS: linux
-  #       GOARCH: amd64
-  #     steps:
-  #       # Checkout
-  #       - uses: actions/checkout@v2
-  #       # Install rust
-  #       - name: Install Rust toolchain
-  #         uses: actions-rs/toolchain@v1
-  #         with:
-  #           toolchain: stable
-  #           target: x86_64-unknown-linux-gnu
-  #       # Build
-  #       - name: Build
-  #         run: |
-  #           git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
-  #           cd tmp
-  #           git checkout $WGPU_COMMIT
-  #           export CARGO_PROFILE_RELEASE_LTO=true
-  #           export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
-  #           cargo build --release
-  #           mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
-  #           mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a
-  #           cd ..
-  #           rm -rf tmp
-  #         shell: bash
-  #       # Send a PR
-  #       - name: Create Pull Request
-  #         uses: peter-evans/create-pull-request@v3
-  #         with:
-  #           commit-message: Update wgpu-native static library for linux/amd64
-  #           branch-suffix: random
-  #           title: Update wgpu-native static library for linux/amd64
-  #           body: Auto-generated pull request to build wgpu-native for linux/amd64
+  # linux-amd64:
+  #   name: build - linux-amd64
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     GOOS: linux
+  #     GOARCH: amd64
+  #   steps:
+  #     # Checkout
+  #     - uses: actions/checkout@v2
+  #     # Install rust
+  #     - name: Install Rust toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         target: x86_64-unknown-linux-gnu
+  #     # Build
+  #     - name: Build
+  #       run: |
+  #         git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
+  #         cd tmp
+  #         git checkout $WGPU_COMMIT
+  #         export CARGO_PROFILE_RELEASE_LTO=true
+  #         export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+  #         cargo build --release
+  #         ls -al target/release/
+  #         mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
+  #         mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a
+  #         cd ..
+  #         rm -rf tmp
+  #       shell: bash
+  #     # Send a PR
+  #     - name: Create Pull Request
+  #       uses: peter-evans/create-pull-request@v3
+  #       with:
+  #         commit-message: Update wgpu-native static library for linux/amd64
+  #         branch-suffix: random
+  #         title: Update wgpu-native static library for linux/amd64
+  #         body: Auto-generated pull request to build wgpu-native for linux/amd64
 
-  #   darwin-amd64:
-  #     name: build - darwin-amd64
-  #     runs-on: macos-latest
-  #     env:
-  #       GOOS: darwin
-  #       GOARCH: amd64
-  #     steps:
-  #       # Checkout
-  #       - uses: actions/checkout@v2
-  #       # Install rust
-  #       - name: Install Rust toolchain
-  #         uses: actions-rs/toolchain@v1
-  #         with:
-  #           toolchain: stable
-  #           target: x86_64-apple-darwin
-  #       # Build
-  #       - name: Build
-  #         run: |
-  #           git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
-  #           cd tmp
-  #           git checkout $WGPU_COMMIT
-  #           export CARGO_PROFILE_RELEASE_LTO=true
-  #           export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
-  #           cargo build --release
-  #           mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
-  #           mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a
-  #           cd ..
-  #           rm -rf tmp
-  #         shell: bash
-  #       # Send a PR
-  #       - name: Create Pull Request
-  #         uses: peter-evans/create-pull-request@v3
-  #         with:
-  #           commit-message: Update wgpu-native static library for darwin/amd64
-  #           branch-suffix: random
-  #           title: Update wgpu-native static library for darwin/amd64
-  #           body: Auto-generated pull request to build wgpu-native for darwin/amd64
+  # darwin-amd64:
+  #   name: build - darwin-amd64
+  #   runs-on: macos-latest
+  #   env:
+  #     GOOS: darwin
+  #     GOARCH: amd64
+  #   steps:
+  #     # Checkout
+  #     - uses: actions/checkout@v2
+  #     # Install rust
+  #     - name: Install Rust toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         target: x86_64-apple-darwin
+  #     # Build
+  #     - name: Build
+  #       run: |
+  #         git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
+  #         cd tmp
+  #         git checkout $WGPU_COMMIT
+  #         export CARGO_PROFILE_RELEASE_LTO=true
+  #         export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+  #         cargo build --release
+  #         ls -al target/release/
+  #         mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
+  #         mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a
+  #         cd ..
+  #         rm -rf tmp
+  #       shell: bash
+  #     # Send a PR
+  #     - name: Create Pull Request
+  #       uses: peter-evans/create-pull-request@v3
+  #       with:
+  #         commit-message: Update wgpu-native static library for darwin/amd64
+  #         branch-suffix: random
+  #         title: Update wgpu-native static library for darwin/amd64
+  #         body: Auto-generated pull request to build wgpu-native for darwin/amd64
 
   windows-amd64:
     name: build - windows-amd64
@@ -112,6 +114,7 @@ jobs:
           export CARGO_PROFILE_RELEASE_LTO=true
           export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
           cargo build --release
+          ls -al target/release/
           mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
           mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a
           cd ..
