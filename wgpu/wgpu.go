@@ -2,15 +2,25 @@ package wgpu
 
 /*
 
+// Common
 #cgo CFLAGS: -fPIC -flto -Wall
-#cgo LDFLAGS: -lm -ldl -lwgpu_static
+#cgo LDFLAGS: -lwgpu_static
 
-#cgo windows LDFLAGS: -luserenv -lws2_32 -lDwmapi -ldbghelp -ld3dcompiler -lD3D12 -lD3D11 -lDXGI -lsetupapi -lBcrypt
+// Linux
+#cgo linux LDFLAGS: -lm -ldl
 
 #cgo linux,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64
 #cgo linux,386 LDFLAGS: -L${SRCDIR}/lib/linux/386
+
+// Windows
+#cgo windows LDFLAGS: -luserenv -lws2_32 -lDwmapi -ldbghelp -ld3dcompiler -lD3D12 -lD3D11 -lDXGI -lsetupapi -lBcrypt
+
 #cgo windows,amd64 LDFLAGS: -L${SRCDIR}/lib/windows/amd64
 #cgo windows,386 LDFLAGS: -L${SRCDIR}/lib/windows/386
+
+// Darwin
+#cgo darwin CFLAGS: -x objective-c
+
 #cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin/amd64
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
 
