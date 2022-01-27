@@ -37,12 +37,12 @@ func main() {
 	width := 100
 	height := 200
 
-	adapter, err := wgpu.RequestAdapter(wgpu.RequestAdapterOptions{})
+	adapter, err := wgpu.RequestAdapter(nil)
 	if err != nil {
 		panic(err)
 	}
 
-	device, err := adapter.RequestDevice(wgpu.DeviceDescriptor{
+	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
 		RequiredLimits: &wgpu.RequiredLimits{
 			Limits: wgpu.Limits{MaxBindGroups: 1},
 		},
@@ -56,7 +56,7 @@ func main() {
 
 	bufferSize := bufferDimensions.paddedBytesPerRow * bufferDimensions.height
 	// The output buffer lets us retrieve the data as an array
-	outputBuffer := device.CreateBuffer(wgpu.BufferDescriptor{
+	outputBuffer := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Size:  bufferSize,
 		Usage: wgpu.BufferUsage_MapRead | wgpu.BufferUsage_CopyDst,
 	})
@@ -68,7 +68,7 @@ func main() {
 	}
 
 	// The render pipeline renders data into this texture
-	texture := device.CreateTexture(wgpu.TextureDescriptor{
+	texture := device.CreateTexture(&wgpu.TextureDescriptor{
 		Size:          textureExtent,
 		MipLevelCount: 1,
 		SampleCount:   1,
@@ -78,10 +78,10 @@ func main() {
 	})
 
 	// Set the background to be red
-	encoder := device.CreateCommandEncoder(wgpu.CommandEncoderDescriptor{})
-	renderPass := encoder.BeginRenderPass(wgpu.RenderPassDescriptor{
+	encoder := device.CreateCommandEncoder(nil)
+	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
 		ColorAttachments: []wgpu.RenderPassColorAttachment{{
-			View:       texture.CreateView(wgpu.TextureViewDescriptor{}),
+			View:       texture.CreateView(nil),
 			LoadOp:     wgpu.LoadOp_Clear,
 			StoreOp:    wgpu.StoreOp_Store,
 			ClearColor: wgpu.Color_Red,
@@ -92,17 +92,17 @@ func main() {
 	// Copy the data from the texture to the buffer
 	encoder.CopyTextureToBuffer(
 		texture.AsImageCopy(),
-		wgpu.ImageCopyBuffer{
+		&wgpu.ImageCopyBuffer{
 			Buffer: outputBuffer,
 			Layout: wgpu.TextureDataLayout{
 				Offset:      0,
 				BytesPerRow: uint32(bufferDimensions.paddedBytesPerRow),
 			},
 		},
-		textureExtent,
+		&textureExtent,
 	)
 
-	queue.Submit(encoder.Finish(wgpu.CommandBufferDescriptor{}))
+	queue.Submit(encoder.Finish(nil))
 
 	outputBuffer.MapAsync(wgpu.MapMode_Read, 0, bufferSize, func(status wgpu.BufferMapAsyncStatus) {
 		if status != wgpu.BufferMapAsyncStatus_Success {

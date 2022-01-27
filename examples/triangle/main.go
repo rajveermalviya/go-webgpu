@@ -13,7 +13,7 @@ import (
 var shader string
 
 type State struct {
-	swapChainDescriptor wgpu.SwapChainDescriptor
+	swapChainDescriptor *wgpu.SwapChainDescriptor
 	swapChain           *wgpu.SwapChain
 	surface             *wgpu.Surface
 	device              *wgpu.Device
@@ -36,9 +36,9 @@ func (s *State) Render() {
 	}
 	defer nextTexture.Drop()
 
-	encoder := s.device.CreateCommandEncoder(wgpu.CommandEncoderDescriptor{})
+	encoder := s.device.CreateCommandEncoder(nil)
 
-	renderPass := encoder.BeginRenderPass(wgpu.RenderPassDescriptor{
+	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
 		ColorAttachments: []wgpu.RenderPassColorAttachment{{
 			View:    nextTexture,
 			LoadOp:  wgpu.LoadOp_Clear,
@@ -56,7 +56,7 @@ func (s *State) Render() {
 	renderPass.Draw(3, 1, 0, 0)
 	renderPass.EndPass()
 
-	s.queue.Submit(encoder.Finish(wgpu.CommandBufferDescriptor{}))
+	s.queue.Submit(encoder.Finish(nil))
 	s.swapChain.Present()
 }
 
@@ -73,7 +73,7 @@ func main() {
 	}
 	defer window.Destroy()
 
-	surface := wgpu.CreateSurface(wgpu.SurfaceDescriptor{
+	surface := wgpu.CreateSurface(&wgpu.SurfaceDescriptor{
 		Xlib: &wgpu.SurfaceDescriptorFromXlib{
 			Display: unsafe.Pointer(glfw.GetX11Display()),
 			Window:  uint32(window.GetX11Window()),
@@ -83,14 +83,14 @@ func main() {
 		panic("got nil surface")
 	}
 
-	adapter, err := wgpu.RequestAdapter(wgpu.RequestAdapterOptions{
+	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
 		CompatibleSurface: surface,
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	device, err := adapter.RequestDevice(wgpu.DeviceDescriptor{
+	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
 		DeviceExtras: &wgpu.DeviceExtras{
 			Label: "Device",
 		},
@@ -107,7 +107,7 @@ func main() {
 	width, height := window.GetSize()
 
 	s := &State{
-		swapChainDescriptor: wgpu.SwapChainDescriptor{
+		swapChainDescriptor: &wgpu.SwapChainDescriptor{
 			Usage:       wgpu.TextureUsage_RenderAttachment,
 			Format:      swapChainFormat,
 			Width:       uint32(width),
@@ -119,17 +119,17 @@ func main() {
 		queue:   device.GetQueue(),
 	}
 
-	shader := device.CreateShaderModule(wgpu.ShaderModuleDescriptor{
+	shader := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: shader,
 		},
 	})
 
-	pipelineLayout := device.CreatePipelineLayout(wgpu.PipelineLayoutDescriptor{})
+	pipelineLayout := device.CreatePipelineLayout(nil)
 
 	mask := ^0
-	s.renderPipeline = device.CreateRenderPipeline(wgpu.RenderPipelineDescriptor{
+	s.renderPipeline = device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Layout: pipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     shader,

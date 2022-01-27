@@ -35,25 +35,25 @@ type RequestAdapterOptions struct {
 	// ForceFallbackAdapter bool
 }
 
-type requestAdapterCB func(status RequestAdapterStatus, adapter *Adapter, message string)
-
-func RequestAdapter(options RequestAdapterOptions) (*Adapter, error) {
+func RequestAdapter(options *RequestAdapterOptions) (*Adapter, error) {
 	var opts C.WGPURequestAdapterOptions
 
-	if options.CompatibleSurface != nil {
-		opts.compatibleSurface = options.CompatibleSurface.ref
-	}
-	opts.powerPreference = C.WGPUPowerPreference(options.PowerPreference)
+	if options != nil {
+		if options.CompatibleSurface != nil {
+			opts.compatibleSurface = options.CompatibleSurface.ref
+		}
+		opts.powerPreference = C.WGPUPowerPreference(options.PowerPreference)
 
-	if options.AdapterExtras != nil {
-		adapterExtras := (*C.WGPUAdapterExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUAdapterExtras{}))))
-		defer C.free(unsafe.Pointer(adapterExtras))
+		if options.AdapterExtras != nil {
+			adapterExtras := (*C.WGPUAdapterExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUAdapterExtras{}))))
+			defer C.free(unsafe.Pointer(adapterExtras))
 
-		adapterExtras.chain.next = nil
-		adapterExtras.chain.sType = C.WGPUSType_AdapterExtras
-		adapterExtras.backend = C.WGPUBackendType(options.AdapterExtras.BackendType)
+			adapterExtras.chain.next = nil
+			adapterExtras.chain.sType = C.WGPUSType_AdapterExtras
+			adapterExtras.backend = C.WGPUBackendType(options.AdapterExtras.BackendType)
 
-		opts.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(adapterExtras))
+			opts.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(adapterExtras))
+		}
 	}
 
 	var status RequestAdapterStatus
@@ -99,49 +99,51 @@ type SurfaceDescriptor struct {
 	MetalLayer *SurfaceDescriptorFromMetalLayer
 }
 
-func CreateSurface(descriptor SurfaceDescriptor) *Surface {
+func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 	var desc C.WGPUSurfaceDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
+			desc.label = label
+		}
 
-	if descriptor.WindowsHWND != nil {
-		windowsHWND := (*C.WGPUSurfaceDescriptorFromWindowsHWND)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromWindowsHWND{}))))
-		defer C.free(unsafe.Pointer(windowsHWND))
+		if descriptor.WindowsHWND != nil {
+			windowsHWND := (*C.WGPUSurfaceDescriptorFromWindowsHWND)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromWindowsHWND{}))))
+			defer C.free(unsafe.Pointer(windowsHWND))
 
-		windowsHWND.chain.next = nil
-		windowsHWND.chain.sType = C.WGPUSType_SurfaceDescriptorFromWindowsHWND
-		windowsHWND.hinstance = descriptor.WindowsHWND.Hinstance
-		windowsHWND.hwnd = descriptor.WindowsHWND.Hwnd
+			windowsHWND.chain.next = nil
+			windowsHWND.chain.sType = C.WGPUSType_SurfaceDescriptorFromWindowsHWND
+			windowsHWND.hinstance = descriptor.WindowsHWND.Hinstance
+			windowsHWND.hwnd = descriptor.WindowsHWND.Hwnd
 
-		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(windowsHWND))
-	}
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(windowsHWND))
+		}
 
-	if descriptor.Xlib != nil {
-		xlib := (*C.WGPUSurfaceDescriptorFromXlib)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromXlib{}))))
-		defer C.free(unsafe.Pointer(xlib))
+		if descriptor.Xlib != nil {
+			xlib := (*C.WGPUSurfaceDescriptorFromXlib)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromXlib{}))))
+			defer C.free(unsafe.Pointer(xlib))
 
-		xlib.chain.next = nil
-		xlib.chain.sType = C.WGPUSType_SurfaceDescriptorFromXlib
-		xlib.display = descriptor.Xlib.Display
-		xlib.window = C.uint32_t(descriptor.Xlib.Window)
+			xlib.chain.next = nil
+			xlib.chain.sType = C.WGPUSType_SurfaceDescriptorFromXlib
+			xlib.display = descriptor.Xlib.Display
+			xlib.window = C.uint32_t(descriptor.Xlib.Window)
 
-		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(xlib))
-	}
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(xlib))
+		}
 
-	if descriptor.MetalLayer != nil {
-		metalLayer := (*C.WGPUSurfaceDescriptorFromMetalLayer)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromMetalLayer{}))))
-		defer C.free(unsafe.Pointer(metalLayer))
+		if descriptor.MetalLayer != nil {
+			metalLayer := (*C.WGPUSurfaceDescriptorFromMetalLayer)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromMetalLayer{}))))
+			defer C.free(unsafe.Pointer(metalLayer))
 
-		metalLayer.chain.next = nil
-		metalLayer.chain.sType = C.WGPUSType_SurfaceDescriptorFromMetalLayer
-		metalLayer.layer = descriptor.MetalLayer.Layer
+			metalLayer.chain.next = nil
+			metalLayer.chain.sType = C.WGPUSType_SurfaceDescriptorFromMetalLayer
+			metalLayer.layer = descriptor.MetalLayer.Layer
 
-		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(metalLayer))
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(metalLayer))
+		}
 	}
 
 	ref := C.wgpuInstanceCreateSurface(nil, &desc)

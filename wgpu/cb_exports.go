@@ -29,6 +29,8 @@ func bufferMapCallback(status C.WGPUBufferMapAsyncStatus, userdata unsafe.Pointe
 	}
 }
 
+type requestAdapterCB func(status RequestAdapterStatus, adapter *Adapter, message string)
+
 //export requestAdapterCallback
 func requestAdapterCallback(status C.WGPURequestAdapterStatus, adapter C.WGPUAdapter, message *C.char, userdata unsafe.Pointer) {
 	handle := *(*cgo.Handle)(userdata)
@@ -39,6 +41,8 @@ func requestAdapterCallback(status C.WGPURequestAdapterStatus, adapter C.WGPUAda
 		cb(RequestAdapterStatus(status), &Adapter{adapter}, C.GoString(message))
 	}
 }
+
+type requestDeviceCB func(status RequestDeviceStatus, device *Device, message string)
 
 //export requestDeviceCallback
 func requestDeviceCallback(status C.WGPURequestDeviceStatus, device C.WGPUDevice, message *C.char, userdata unsafe.Pointer) {

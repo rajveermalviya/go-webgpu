@@ -26,10 +26,10 @@ type ComputePassDescriptor struct {
 	// TimestampWrites []ComputePassTimestampWrite
 }
 
-func (p *CommandEncoder) BeginComputePass(descriptor ComputePassDescriptor) *ComputePassEncoder {
+func (p *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *ComputePassEncoder {
 	var desc C.WGPUComputePassDescriptor
 
-	if descriptor.Label != "" {
+	if descriptor != nil && descriptor.Label != "" {
 		label := C.CString(descriptor.Label)
 		defer C.free(unsafe.Pointer(label))
 
@@ -84,65 +84,67 @@ type RenderPassDescriptor struct {
 	// 	TimestampWrites        []RenderPassTimestampWrite
 }
 
-func (p *CommandEncoder) BeginRenderPass(descriptor RenderPassDescriptor) *RenderPassEncoder {
+func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *RenderPassEncoder {
 	var desc C.WGPURenderPassDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
-
-	colorAttachmentCount := len(descriptor.ColorAttachments)
-	if colorAttachmentCount > 0 {
-		colorAttachments := C.malloc(C.size_t(unsafe.Sizeof(C.WGPURenderPassColorAttachment{})) * C.size_t(colorAttachmentCount))
-		defer C.free(colorAttachments)
-
-		colorAttachmentsSlice := unsafe.Slice((*C.WGPURenderPassColorAttachment)(colorAttachments), colorAttachmentCount)
-
-		for i, v := range descriptor.ColorAttachments {
-			colorAttachment := C.WGPURenderPassColorAttachment{
-				loadOp:  C.WGPULoadOp(v.LoadOp),
-				storeOp: C.WGPUStoreOp(v.StoreOp),
-				clearColor: C.WGPUColor{
-					r: C.double(v.ClearColor.R),
-					g: C.double(v.ClearColor.G),
-					b: C.double(v.ClearColor.B),
-					a: C.double(v.ClearColor.A),
-				},
-			}
-			if v.View != nil {
-				colorAttachment.view = v.View.ref
-			}
-			if v.ResolveTarget != nil {
-				colorAttachment.resolveTarget = v.ResolveTarget.ref
-			}
-
-			colorAttachmentsSlice[i] = colorAttachment
+			desc.label = label
 		}
 
-		desc.colorAttachmentCount = C.uint32_t(colorAttachmentCount)
-		desc.colorAttachments = (*C.WGPURenderPassColorAttachment)(colorAttachments)
-	}
+		colorAttachmentCount := len(descriptor.ColorAttachments)
+		if colorAttachmentCount > 0 {
+			colorAttachments := C.malloc(C.size_t(unsafe.Sizeof(C.WGPURenderPassColorAttachment{})) * C.size_t(colorAttachmentCount))
+			defer C.free(colorAttachments)
 
-	if descriptor.DepthStencilAttachment != nil {
-		depthStencilAttachment := (*C.WGPURenderPassDepthStencilAttachment)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURenderPassDepthStencilAttachment{}))))
-		defer C.free(unsafe.Pointer(depthStencilAttachment))
+			colorAttachmentsSlice := unsafe.Slice((*C.WGPURenderPassColorAttachment)(colorAttachments), colorAttachmentCount)
 
-		if descriptor.DepthStencilAttachment.View != nil {
-			depthStencilAttachment.view = descriptor.DepthStencilAttachment.View.ref
+			for i, v := range descriptor.ColorAttachments {
+				colorAttachment := C.WGPURenderPassColorAttachment{
+					loadOp:  C.WGPULoadOp(v.LoadOp),
+					storeOp: C.WGPUStoreOp(v.StoreOp),
+					clearColor: C.WGPUColor{
+						r: C.double(v.ClearColor.R),
+						g: C.double(v.ClearColor.G),
+						b: C.double(v.ClearColor.B),
+						a: C.double(v.ClearColor.A),
+					},
+				}
+				if v.View != nil {
+					colorAttachment.view = v.View.ref
+				}
+				if v.ResolveTarget != nil {
+					colorAttachment.resolveTarget = v.ResolveTarget.ref
+				}
+
+				colorAttachmentsSlice[i] = colorAttachment
+			}
+
+			desc.colorAttachmentCount = C.uint32_t(colorAttachmentCount)
+			desc.colorAttachments = (*C.WGPURenderPassColorAttachment)(colorAttachments)
 		}
-		depthStencilAttachment.depthLoadOp = C.WGPULoadOp(descriptor.DepthStencilAttachment.DepthLoadOp)
-		depthStencilAttachment.depthStoreOp = C.WGPUStoreOp(descriptor.DepthStencilAttachment.DepthStoreOp)
-		depthStencilAttachment.clearDepth = C.float(descriptor.DepthStencilAttachment.ClearDepth)
-		depthStencilAttachment.depthReadOnly = C.bool(descriptor.DepthStencilAttachment.DepthReadOnly)
-		depthStencilAttachment.stencilLoadOp = C.WGPULoadOp(descriptor.DepthStencilAttachment.StencilLoadOp)
-		depthStencilAttachment.stencilStoreOp = C.WGPUStoreOp(descriptor.DepthStencilAttachment.StencilStoreOp)
-		depthStencilAttachment.clearStencil = C.uint32_t(descriptor.DepthStencilAttachment.ClearStencil)
-		depthStencilAttachment.stencilReadOnly = C.bool(descriptor.DepthStencilAttachment.DepthReadOnly)
 
-		desc.depthStencilAttachment = depthStencilAttachment
+		if descriptor.DepthStencilAttachment != nil {
+			depthStencilAttachment := (*C.WGPURenderPassDepthStencilAttachment)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURenderPassDepthStencilAttachment{}))))
+			defer C.free(unsafe.Pointer(depthStencilAttachment))
+
+			if descriptor.DepthStencilAttachment.View != nil {
+				depthStencilAttachment.view = descriptor.DepthStencilAttachment.View.ref
+			}
+			depthStencilAttachment.depthLoadOp = C.WGPULoadOp(descriptor.DepthStencilAttachment.DepthLoadOp)
+			depthStencilAttachment.depthStoreOp = C.WGPUStoreOp(descriptor.DepthStencilAttachment.DepthStoreOp)
+			depthStencilAttachment.clearDepth = C.float(descriptor.DepthStencilAttachment.ClearDepth)
+			depthStencilAttachment.depthReadOnly = C.bool(descriptor.DepthStencilAttachment.DepthReadOnly)
+			depthStencilAttachment.stencilLoadOp = C.WGPULoadOp(descriptor.DepthStencilAttachment.StencilLoadOp)
+			depthStencilAttachment.stencilStoreOp = C.WGPUStoreOp(descriptor.DepthStencilAttachment.StencilStoreOp)
+			depthStencilAttachment.clearStencil = C.uint32_t(descriptor.DepthStencilAttachment.ClearStencil)
+			depthStencilAttachment.stencilReadOnly = C.bool(descriptor.DepthStencilAttachment.DepthReadOnly)
+
+			desc.depthStencilAttachment = depthStencilAttachment
+		}
 	}
 
 	ref := C.wgpuCommandEncoderBeginRenderPass(p.ref, &desc)
@@ -185,19 +187,22 @@ type ImageCopyTexture struct {
 	Aspect   TextureAspect
 }
 
-func (p *CommandEncoder) CopyBufferToTexture(source ImageCopyBuffer, destination ImageCopyTexture, copySize Extent3D) {
-	C.wgpuCommandEncoderCopyBufferToTexture(
-		p.ref,
-		&C.WGPUImageCopyBuffer{
-			layout: C.WGPUTextureDataLayout{
-				offset:       C.uint64_t(source.Layout.Offset),
-				bytesPerRow:  C.uint32_t(source.Layout.BytesPerRow),
-				rowsPerImage: C.uint32_t(source.Layout.RowsPerImage),
-			},
-			buffer: source.Buffer.ref,
-		},
-		&C.WGPUImageCopyTexture{
-			texture:  destination.Texture.ref,
+func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destination *ImageCopyTexture, copySize *Extent3D) {
+	var src C.WGPUImageCopyBuffer
+	if source != nil {
+		if source.Buffer != nil {
+			src.buffer = source.Buffer.ref
+		}
+		src.layout = C.WGPUTextureDataLayout{
+			offset:       C.uint64_t(source.Layout.Offset),
+			bytesPerRow:  C.uint32_t(source.Layout.BytesPerRow),
+			rowsPerImage: C.uint32_t(source.Layout.RowsPerImage),
+		}
+	}
+
+	var dst C.WGPUImageCopyTexture
+	if destination != nil {
+		dst = C.WGPUImageCopyTexture{
 			mipLevel: C.uint32_t(destination.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(destination.Origin.X),
@@ -205,20 +210,28 @@ func (p *CommandEncoder) CopyBufferToTexture(source ImageCopyBuffer, destination
 				z: C.uint32_t(destination.Origin.Z),
 			},
 			aspect: C.WGPUTextureAspect(destination.Aspect),
-		},
-		&C.WGPUExtent3D{
+		}
+		if destination.Texture != nil {
+			dst.texture = destination.Texture.ref
+		}
+	}
+
+	var cpySize C.WGPUExtent3D
+	if copySize != nil {
+		cpySize = C.WGPUExtent3D{
 			width:              C.uint32_t(copySize.Width),
 			height:             C.uint32_t(copySize.Height),
 			depthOrArrayLayers: C.uint32_t(copySize.DepthOrArrayLayers),
-		},
-	)
+		}
+	}
+
+	C.wgpuCommandEncoderCopyBufferToTexture(p.ref, &src, &dst, &cpySize)
 }
 
-func (p *CommandEncoder) CopyTextureToBuffer(source ImageCopyTexture, destination ImageCopyBuffer, copySize Extent3D) {
-	C.wgpuCommandEncoderCopyTextureToBuffer(
-		p.ref,
-		&C.WGPUImageCopyTexture{
-			texture:  source.Texture.ref,
+func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destination *ImageCopyBuffer, copySize *Extent3D) {
+	var src C.WGPUImageCopyTexture
+	if source != nil {
+		src = C.WGPUImageCopyTexture{
 			mipLevel: C.uint32_t(source.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(source.Origin.X),
@@ -226,28 +239,40 @@ func (p *CommandEncoder) CopyTextureToBuffer(source ImageCopyTexture, destinatio
 				z: C.uint32_t(source.Origin.Z),
 			},
 			aspect: C.WGPUTextureAspect(source.Aspect),
-		},
-		&C.WGPUImageCopyBuffer{
-			layout: C.WGPUTextureDataLayout{
-				offset:       C.uint64_t(destination.Layout.Offset),
-				bytesPerRow:  C.uint32_t(destination.Layout.BytesPerRow),
-				rowsPerImage: C.uint32_t(destination.Layout.RowsPerImage),
-			},
-			buffer: destination.Buffer.ref,
-		},
-		&C.WGPUExtent3D{
+		}
+		if source.Texture != nil {
+			src.texture = source.Texture.ref
+		}
+	}
+
+	var dst C.WGPUImageCopyBuffer
+	if destination != nil {
+		if destination.Buffer != nil {
+			dst.buffer = destination.Buffer.ref
+		}
+		dst.layout = C.WGPUTextureDataLayout{
+			offset:       C.uint64_t(destination.Layout.Offset),
+			bytesPerRow:  C.uint32_t(destination.Layout.BytesPerRow),
+			rowsPerImage: C.uint32_t(destination.Layout.RowsPerImage),
+		}
+	}
+
+	var cpySize C.WGPUExtent3D
+	if copySize != nil {
+		cpySize = C.WGPUExtent3D{
 			width:              C.uint32_t(copySize.Width),
 			height:             C.uint32_t(copySize.Height),
 			depthOrArrayLayers: C.uint32_t(copySize.DepthOrArrayLayers),
-		},
-	)
+		}
+	}
+
+	C.wgpuCommandEncoderCopyTextureToBuffer(p.ref, &src, &dst, &cpySize)
 }
 
-func (p *CommandEncoder) CopyTextureToTexture(source ImageCopyTexture, destination ImageCopyTexture, copySize Extent3D) {
-	C.wgpuCommandEncoderCopyTextureToTexture(
-		p.ref,
-		&C.WGPUImageCopyTexture{
-			texture:  source.Texture.ref,
+func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destination *ImageCopyTexture, copySize *Extent3D) {
+	var src C.WGPUImageCopyTexture
+	if source != nil {
+		src = C.WGPUImageCopyTexture{
 			mipLevel: C.uint32_t(source.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(source.Origin.X),
@@ -255,9 +280,15 @@ func (p *CommandEncoder) CopyTextureToTexture(source ImageCopyTexture, destinati
 				z: C.uint32_t(source.Origin.Z),
 			},
 			aspect: C.WGPUTextureAspect(source.Aspect),
-		},
-		&C.WGPUImageCopyTexture{
-			texture:  destination.Texture.ref,
+		}
+		if source.Texture != nil {
+			src.texture = source.Texture.ref
+		}
+	}
+
+	var dst C.WGPUImageCopyTexture
+	if destination != nil {
+		dst = C.WGPUImageCopyTexture{
 			mipLevel: C.uint32_t(destination.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(destination.Origin.X),
@@ -265,23 +296,32 @@ func (p *CommandEncoder) CopyTextureToTexture(source ImageCopyTexture, destinati
 				z: C.uint32_t(destination.Origin.Z),
 			},
 			aspect: C.WGPUTextureAspect(destination.Aspect),
-		},
-		&C.WGPUExtent3D{
+		}
+		if destination.Texture != nil {
+			dst.texture = destination.Texture.ref
+		}
+	}
+
+	var cpySize C.WGPUExtent3D
+	if copySize != nil {
+		cpySize = C.WGPUExtent3D{
 			width:              C.uint32_t(copySize.Width),
 			height:             C.uint32_t(copySize.Height),
 			depthOrArrayLayers: C.uint32_t(copySize.DepthOrArrayLayers),
-		},
-	)
+		}
+	}
+
+	C.wgpuCommandEncoderCopyTextureToTexture(p.ref, &src, &dst, &cpySize)
 }
 
 type CommandBufferDescriptor struct {
 	Label string
 }
 
-func (p *CommandEncoder) Finish(descriptor CommandBufferDescriptor) *CommandBuffer {
+func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuffer {
 	var desc C.WGPUCommandBufferDescriptor
 
-	if descriptor.Label != "" {
+	if descriptor != nil && descriptor.Label != "" {
 		label := C.CString(descriptor.Label)
 		defer C.free(unsafe.Pointer(label))
 

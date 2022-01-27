@@ -24,22 +24,26 @@ type TextureViewDescriptor struct {
 	Aspect          TextureAspect
 }
 
-func (p *Texture) CreateView(descriptor TextureViewDescriptor) *TextureView {
-	desc := C.WGPUTextureViewDescriptor{
-		format:          C.WGPUTextureFormat(descriptor.Format),
-		dimension:       C.WGPUTextureViewDimension(descriptor.Dimension),
-		baseMipLevel:    C.uint32_t(descriptor.BaseMipLevel),
-		mipLevelCount:   C.uint32_t(descriptor.MipLevelCount),
-		baseArrayLayer:  C.uint32_t(descriptor.BaseArrayLayer),
-		arrayLayerCount: C.uint32_t(descriptor.ArrayLayerCount),
-		aspect:          C.WGPUTextureAspect(descriptor.Aspect),
-	}
+func (p *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
+	var desc C.WGPUTextureViewDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		desc = C.WGPUTextureViewDescriptor{
+			format:          C.WGPUTextureFormat(descriptor.Format),
+			dimension:       C.WGPUTextureViewDimension(descriptor.Dimension),
+			baseMipLevel:    C.uint32_t(descriptor.BaseMipLevel),
+			mipLevelCount:   C.uint32_t(descriptor.MipLevelCount),
+			baseArrayLayer:  C.uint32_t(descriptor.BaseArrayLayer),
+			arrayLayerCount: C.uint32_t(descriptor.ArrayLayerCount),
+			aspect:          C.WGPUTextureAspect(descriptor.Aspect),
+		}
 
-		desc.label = label
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
+
+			desc.label = label
+		}
 	}
 
 	ref := C.wgpuTextureCreateView(p.ref, &desc)
@@ -57,8 +61,8 @@ func (p *Texture) Drop() {
 	C.wgpuTextureDrop(p.ref)
 }
 
-func (p *Texture) AsImageCopy() ImageCopyTexture {
-	return ImageCopyTexture{
+func (p *Texture) AsImageCopy() *ImageCopyTexture {
+	return &ImageCopyTexture{
 		Texture:  p,
 		MipLevel: 0,
 		Origin:   Origin3D{},

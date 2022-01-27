@@ -85,48 +85,48 @@ type DeviceDescriptor struct {
 	DeviceExtras *DeviceExtras
 }
 
-type requestDeviceCB func(status RequestDeviceStatus, device *Device, message string)
-
-func (p *Adapter) RequestDevice(descriptor DeviceDescriptor) (*Device, error) {
+func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	var desc C.WGPUDeviceDescriptor
 
-	requiredLimits := (*C.WGPURequiredLimits)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimits{}))))
-	defer C.free(unsafe.Pointer(requiredLimits))
-	requiredLimits.nextInChain = nil
-	if descriptor.RequiredLimits != nil {
-		requiredLimits.limits = descriptor.RequiredLimits.Limits.toC()
-	} else {
-		requiredLimits.limits = C.WGPULimits{}
-	}
-	desc.requiredLimits = requiredLimits
+	desc.requiredLimits = (*C.WGPURequiredLimits)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimits{}))))
+	defer C.free(unsafe.Pointer(desc.requiredLimits))
 
-	if descriptor.DeviceExtras != nil {
-		deviceExtras := (*C.WGPUDeviceExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUDeviceExtras{}))))
-		defer C.free(unsafe.Pointer(deviceExtras))
-
-		deviceExtras.chain.next = nil
-		deviceExtras.chain.sType = C.WGPUSType_DeviceExtras
-		deviceExtras.nativeFeatures = C.WGPUNativeFeature(descriptor.DeviceExtras.NativeFeatures)
-
-		if descriptor.DeviceExtras.Label != "" {
-			label := C.CString(descriptor.DeviceExtras.Label)
-			defer C.free(unsafe.Pointer(label))
-
-			deviceExtras.label = label
+	if descriptor != nil {
+		desc.requiredLimits.nextInChain = nil
+		if descriptor.RequiredLimits != nil {
+			desc.requiredLimits.limits = descriptor.RequiredLimits.Limits.toC()
 		} else {
-			deviceExtras.label = nil
+			desc.requiredLimits.limits = C.WGPULimits{}
 		}
 
-		if descriptor.DeviceExtras.TracePath != "" {
-			tracePath := C.CString(descriptor.DeviceExtras.TracePath)
-			defer C.free(unsafe.Pointer(tracePath))
+		if descriptor.DeviceExtras != nil {
+			deviceExtras := (*C.WGPUDeviceExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUDeviceExtras{}))))
+			defer C.free(unsafe.Pointer(deviceExtras))
 
-			deviceExtras.tracePath = tracePath
-		} else {
-			deviceExtras.tracePath = nil
+			deviceExtras.chain.next = nil
+			deviceExtras.chain.sType = C.WGPUSType_DeviceExtras
+			deviceExtras.nativeFeatures = C.WGPUNativeFeature(descriptor.DeviceExtras.NativeFeatures)
+
+			if descriptor.DeviceExtras.Label != "" {
+				label := C.CString(descriptor.DeviceExtras.Label)
+				defer C.free(unsafe.Pointer(label))
+
+				deviceExtras.label = label
+			} else {
+				deviceExtras.label = nil
+			}
+
+			if descriptor.DeviceExtras.TracePath != "" {
+				tracePath := C.CString(descriptor.DeviceExtras.TracePath)
+				defer C.free(unsafe.Pointer(tracePath))
+
+				deviceExtras.tracePath = tracePath
+			} else {
+				deviceExtras.tracePath = nil
+			}
+
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(deviceExtras))
 		}
-
-		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(deviceExtras))
 	}
 
 	var status RequestDeviceStatus

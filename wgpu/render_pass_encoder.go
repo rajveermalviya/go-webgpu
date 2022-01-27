@@ -87,7 +87,7 @@ func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dy
 	}
 }
 
-func (p *RenderPassEncoder) SetBlendConstant(color Color) {
+func (p *RenderPassEncoder) SetBlendConstant(color *Color) {
 	C.wgpuRenderPassEncoderSetBlendConstant(p.ref, &C.WGPUColor{
 		r: C.double(color.R),
 		g: C.double(color.G),

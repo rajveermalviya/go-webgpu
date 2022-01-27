@@ -53,55 +53,57 @@ type BindGroupLayoutDescriptor struct {
 	Entries []BindGroupLayoutEntry
 }
 
-func (p *Device) CreateBindGroupLayout(descriptor BindGroupLayoutDescriptor) *BindGroupLayout {
+func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) *BindGroupLayout {
 	var desc C.WGPUBindGroupLayoutDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
-
-	entryCount := len(descriptor.Entries)
-	if entryCount > 0 {
-		entries := C.malloc(C.size_t(entryCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupLayoutEntry{})))
-		defer C.free(entries)
-
-		entriesSlice := unsafe.Slice((*C.WGPUBindGroupLayoutEntry)(entries), entryCount)
-
-		for i, v := range descriptor.Entries {
-			entriesSlice[i] = C.WGPUBindGroupLayoutEntry{
-				nextInChain: nil,
-				binding:     C.uint32_t(v.Binding),
-				visibility:  C.WGPUShaderStageFlags(v.Visibility),
-				buffer: C.WGPUBufferBindingLayout{
-					nextInChain:      nil,
-					_type:            C.WGPUBufferBindingType(v.Buffer.Type),
-					hasDynamicOffset: C.bool(v.Buffer.HasDynamicOffset),
-					minBindingSize:   C.uint64_t(v.Buffer.MinBindingSize),
-				},
-				sampler: C.WGPUSamplerBindingLayout{
-					nextInChain: nil,
-					_type:       C.WGPUSamplerBindingType(v.Sampler.Type),
-				},
-				texture: C.WGPUTextureBindingLayout{
-					nextInChain:   nil,
-					sampleType:    C.WGPUTextureSampleType(v.Texture.SampleType),
-					viewDimension: C.WGPUTextureViewDimension(v.Texture.ViewDimension),
-					multisampled:  C.bool(v.Texture.Multisampled),
-				},
-				storageTexture: C.WGPUStorageTextureBindingLayout{
-					nextInChain:   nil,
-					access:        C.WGPUStorageTextureAccess(v.StorageTexture.Access),
-					format:        C.WGPUTextureFormat(v.StorageTexture.Format),
-					viewDimension: C.WGPUTextureViewDimension(v.StorageTexture.ViewDimension),
-				},
-			}
+			desc.label = label
 		}
 
-		desc.entryCount = C.uint32_t(entryCount)
-		desc.entries = (*C.WGPUBindGroupLayoutEntry)(entries)
+		entryCount := len(descriptor.Entries)
+		if entryCount > 0 {
+			entries := C.malloc(C.size_t(entryCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupLayoutEntry{})))
+			defer C.free(entries)
+
+			entriesSlice := unsafe.Slice((*C.WGPUBindGroupLayoutEntry)(entries), entryCount)
+
+			for i, v := range descriptor.Entries {
+				entriesSlice[i] = C.WGPUBindGroupLayoutEntry{
+					nextInChain: nil,
+					binding:     C.uint32_t(v.Binding),
+					visibility:  C.WGPUShaderStageFlags(v.Visibility),
+					buffer: C.WGPUBufferBindingLayout{
+						nextInChain:      nil,
+						_type:            C.WGPUBufferBindingType(v.Buffer.Type),
+						hasDynamicOffset: C.bool(v.Buffer.HasDynamicOffset),
+						minBindingSize:   C.uint64_t(v.Buffer.MinBindingSize),
+					},
+					sampler: C.WGPUSamplerBindingLayout{
+						nextInChain: nil,
+						_type:       C.WGPUSamplerBindingType(v.Sampler.Type),
+					},
+					texture: C.WGPUTextureBindingLayout{
+						nextInChain:   nil,
+						sampleType:    C.WGPUTextureSampleType(v.Texture.SampleType),
+						viewDimension: C.WGPUTextureViewDimension(v.Texture.ViewDimension),
+						multisampled:  C.bool(v.Texture.Multisampled),
+					},
+					storageTexture: C.WGPUStorageTextureBindingLayout{
+						nextInChain:   nil,
+						access:        C.WGPUStorageTextureAccess(v.StorageTexture.Access),
+						format:        C.WGPUTextureFormat(v.StorageTexture.Format),
+						viewDimension: C.WGPUTextureViewDimension(v.StorageTexture.ViewDimension),
+					},
+				}
+			}
+
+			desc.entryCount = C.uint32_t(entryCount)
+			desc.entries = (*C.WGPUBindGroupLayoutEntry)(entries)
+		}
 	}
 
 	ref := C.wgpuDeviceCreateBindGroupLayout(p.ref, &desc)
@@ -126,49 +128,51 @@ type BindGroupDescriptor struct {
 	Entries []BindGroupEntry
 }
 
-func (p *Device) CreateBindGroup(descriptor BindGroupDescriptor) *BindGroup {
+func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) *BindGroup {
 	var desc C.WGPUBindGroupDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
-
-	if descriptor.Layout != nil {
-		desc.layout = descriptor.Layout.ref
-	}
-
-	entryCount := len(descriptor.Entries)
-	if entryCount > 0 {
-		entries := C.malloc(C.size_t(entryCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupEntry{})))
-		defer C.free(entries)
-
-		entriesSlice := unsafe.Slice((*C.WGPUBindGroupEntry)(entries), entryCount)
-
-		for i, v := range descriptor.Entries {
-			entry := C.WGPUBindGroupEntry{
-				binding: C.uint32_t(v.Binding),
-				offset:  C.uint64_t(v.Offset),
-				size:    C.uint64_t(v.Size),
-			}
-
-			if v.Buffer != nil {
-				entry.buffer = v.Buffer.ref
-			}
-			if v.Sampler != nil {
-				entry.sampler = v.Sampler.ref
-			}
-			if v.TextureView != nil {
-				entry.textureView = v.TextureView.ref
-			}
-
-			entriesSlice[i] = entry
+			desc.label = label
 		}
 
-		desc.entryCount = C.uint32_t(entryCount)
-		desc.entries = (*C.WGPUBindGroupEntry)(entries)
+		if descriptor.Layout != nil {
+			desc.layout = descriptor.Layout.ref
+		}
+
+		entryCount := len(descriptor.Entries)
+		if entryCount > 0 {
+			entries := C.malloc(C.size_t(entryCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupEntry{})))
+			defer C.free(entries)
+
+			entriesSlice := unsafe.Slice((*C.WGPUBindGroupEntry)(entries), entryCount)
+
+			for i, v := range descriptor.Entries {
+				entry := C.WGPUBindGroupEntry{
+					binding: C.uint32_t(v.Binding),
+					offset:  C.uint64_t(v.Offset),
+					size:    C.uint64_t(v.Size),
+				}
+
+				if v.Buffer != nil {
+					entry.buffer = v.Buffer.ref
+				}
+				if v.Sampler != nil {
+					entry.sampler = v.Sampler.ref
+				}
+				if v.TextureView != nil {
+					entry.textureView = v.TextureView.ref
+				}
+
+				entriesSlice[i] = entry
+			}
+
+			desc.entryCount = C.uint32_t(entryCount)
+			desc.entries = (*C.WGPUBindGroupEntry)(entries)
+		}
 	}
 
 	ref := C.wgpuDeviceCreateBindGroup(p.ref, &desc)
@@ -185,19 +189,21 @@ type BufferDescriptor struct {
 	MappedAtCreation bool
 }
 
-func (p *Device) CreateBuffer(descriptor BufferDescriptor) *Buffer {
+func (p *Device) CreateBuffer(descriptor *BufferDescriptor) *Buffer {
 	var desc C.WGPUBufferDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
+			desc.label = label
+		}
+
+		desc.usage = C.WGPUBufferUsageFlags(descriptor.Usage)
+		desc.size = C.uint64_t(descriptor.Size)
+		desc.mappedAtCreation = C.bool(descriptor.MappedAtCreation)
 	}
-
-	desc.usage = C.WGPUBufferUsageFlags(descriptor.Usage)
-	desc.size = C.uint64_t(descriptor.Size)
-	desc.mappedAtCreation = C.bool(descriptor.MappedAtCreation)
 
 	ref := C.wgpuDeviceCreateBuffer(p.ref, &desc)
 	if ref == nil {
@@ -211,10 +217,10 @@ type CommandEncoderDescriptor struct {
 	Label string
 }
 
-func (p *Device) CreateCommandEncoder(descriptor CommandEncoderDescriptor) *CommandEncoder {
+func (p *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) *CommandEncoder {
 	var desc C.WGPUCommandEncoderDescriptor
 
-	if descriptor.Label != "" {
+	if descriptor != nil && descriptor.Label != "" {
 		label := C.CString(descriptor.Label)
 		defer C.free(unsafe.Pointer(label))
 
@@ -248,31 +254,33 @@ type ComputePipelineDescriptor struct {
 	Compute ProgrammableStageDescriptor
 }
 
-func (p *Device) CreateComputePipeline(descriptor ComputePipelineDescriptor) *ComputePipeline {
+func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) *ComputePipeline {
 	var desc C.WGPUComputePipelineDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
+			desc.label = label
+		}
 
-	if descriptor.Layout != nil {
-		desc.layout = descriptor.Layout.ref
-	}
+		if descriptor.Layout != nil {
+			desc.layout = descriptor.Layout.ref
+		}
 
-	var compute C.WGPUProgrammableStageDescriptor
-	if descriptor.Compute.Module != nil {
-		compute.module = descriptor.Compute.Module.ref
-	}
-	if descriptor.Compute.EntryPoint != "" {
-		entryPoint := C.CString(descriptor.Compute.EntryPoint)
-		defer C.free(unsafe.Pointer(entryPoint))
+		var compute C.WGPUProgrammableStageDescriptor
+		if descriptor.Compute.Module != nil {
+			compute.module = descriptor.Compute.Module.ref
+		}
+		if descriptor.Compute.EntryPoint != "" {
+			entryPoint := C.CString(descriptor.Compute.EntryPoint)
+			defer C.free(unsafe.Pointer(entryPoint))
 
-		compute.entryPoint = entryPoint
+			compute.entryPoint = entryPoint
+		}
+		desc.compute = compute
 	}
-	desc.compute = compute
 
 	ref := C.wgpuDeviceCreateComputePipeline(p.ref, &desc)
 	if ref == nil {
@@ -286,29 +294,31 @@ type PipelineLayoutDescriptor struct {
 	BindGroupLayouts []*BindGroupLayout
 }
 
-func (p *Device) CreatePipelineLayout(descriptor PipelineLayoutDescriptor) *PipelineLayout {
+func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) *PipelineLayout {
 	var desc C.WGPUPipelineLayoutDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
-
-	bindGroupLayoutCount := len(descriptor.BindGroupLayouts)
-	if bindGroupLayoutCount > 0 {
-		bindGroupLayouts := C.malloc(C.size_t(bindGroupLayoutCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupLayout(nil))))
-		defer C.free(bindGroupLayouts)
-
-		bindGroupLayoutsSlice := unsafe.Slice((*C.WGPUBindGroupLayout)(bindGroupLayouts), bindGroupLayoutCount)
-
-		for i, v := range descriptor.BindGroupLayouts {
-			bindGroupLayoutsSlice[i] = v.ref
+			desc.label = label
 		}
 
-		desc.bindGroupLayoutCount = C.uint32_t(bindGroupLayoutCount)
-		desc.bindGroupLayouts = (*C.WGPUBindGroupLayout)(bindGroupLayouts)
+		bindGroupLayoutCount := len(descriptor.BindGroupLayouts)
+		if bindGroupLayoutCount > 0 {
+			bindGroupLayouts := C.malloc(C.size_t(bindGroupLayoutCount) * C.size_t(unsafe.Sizeof(C.WGPUBindGroupLayout(nil))))
+			defer C.free(bindGroupLayouts)
+
+			bindGroupLayoutsSlice := unsafe.Slice((*C.WGPUBindGroupLayout)(bindGroupLayouts), bindGroupLayoutCount)
+
+			for i, v := range descriptor.BindGroupLayouts {
+				bindGroupLayoutsSlice[i] = v.ref
+			}
+
+			desc.bindGroupLayoutCount = C.uint32_t(bindGroupLayoutCount)
+			desc.bindGroupLayouts = (*C.WGPUBindGroupLayout)(bindGroupLayouts)
+		}
 	}
 
 	ref := C.wgpuDeviceCreatePipelineLayout(p.ref, &desc)
@@ -408,183 +418,185 @@ type RenderPipelineDescriptor struct {
 	Fragment     *FragmentState
 }
 
-func (p *Device) CreateRenderPipeline(descriptor RenderPipelineDescriptor) *RenderPipeline {
+func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) *RenderPipeline {
 	var desc C.WGPURenderPipelineDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
-
-	if descriptor.Layout != nil {
-		desc.layout = descriptor.Layout.ref
-	}
-
-	// vertex
-	{
-		vertex := descriptor.Vertex
-
-		var vert C.WGPUVertexState
-
-		if vertex.Module != nil {
-			vert.module = vertex.Module.ref
+			desc.label = label
 		}
 
-		if vertex.EntryPoint != "" {
-			entryPoint := C.CString(vertex.EntryPoint)
-			defer C.free(unsafe.Pointer(entryPoint))
-
-			vert.entryPoint = entryPoint
+		if descriptor.Layout != nil {
+			desc.layout = descriptor.Layout.ref
 		}
 
-		bufferCount := len(vertex.Buffers)
-		if bufferCount > 0 {
-			buffers := C.malloc(C.size_t(bufferCount) * C.size_t(unsafe.Sizeof(C.WGPUVertexBufferLayout{})))
-			defer C.free(buffers)
+		// vertex
+		{
+			vertex := descriptor.Vertex
 
-			buffersSlice := unsafe.Slice((*C.WGPUVertexBufferLayout)(buffers), bufferCount)
+			var vert C.WGPUVertexState
 
-			for i, v := range vertex.Buffers {
-				buffer := C.WGPUVertexBufferLayout{
-					arrayStride: C.uint64_t(v.ArrayStride),
-					stepMode:    C.WGPUVertexStepMode(v.StepMode),
-				}
+			if vertex.Module != nil {
+				vert.module = vertex.Module.ref
+			}
 
-				attributeCount := len(v.Attributes)
-				if attributeCount > 0 {
-					attributes := C.malloc(C.size_t(attributeCount) * C.size_t(unsafe.Sizeof(C.WGPUVertexAttribute{})))
-					defer C.free(attributes)
+			if vertex.EntryPoint != "" {
+				entryPoint := C.CString(vertex.EntryPoint)
+				defer C.free(unsafe.Pointer(entryPoint))
 
-					attributesSlice := unsafe.Slice((*C.WGPUVertexAttribute)(attributes), attributeCount)
+				vert.entryPoint = entryPoint
+			}
 
-					for j, attribute := range v.Attributes {
-						attributesSlice[j] = C.WGPUVertexAttribute{
-							format:         C.WGPUVertexFormat(attribute.Format),
-							offset:         C.uint64_t(attribute.Offset),
-							shaderLocation: C.uint32_t(attribute.ShaderLocation),
+			bufferCount := len(vertex.Buffers)
+			if bufferCount > 0 {
+				buffers := C.malloc(C.size_t(bufferCount) * C.size_t(unsafe.Sizeof(C.WGPUVertexBufferLayout{})))
+				defer C.free(buffers)
+
+				buffersSlice := unsafe.Slice((*C.WGPUVertexBufferLayout)(buffers), bufferCount)
+
+				for i, v := range vertex.Buffers {
+					buffer := C.WGPUVertexBufferLayout{
+						arrayStride: C.uint64_t(v.ArrayStride),
+						stepMode:    C.WGPUVertexStepMode(v.StepMode),
+					}
+
+					attributeCount := len(v.Attributes)
+					if attributeCount > 0 {
+						attributes := C.malloc(C.size_t(attributeCount) * C.size_t(unsafe.Sizeof(C.WGPUVertexAttribute{})))
+						defer C.free(attributes)
+
+						attributesSlice := unsafe.Slice((*C.WGPUVertexAttribute)(attributes), attributeCount)
+
+						for j, attribute := range v.Attributes {
+							attributesSlice[j] = C.WGPUVertexAttribute{
+								format:         C.WGPUVertexFormat(attribute.Format),
+								offset:         C.uint64_t(attribute.Offset),
+								shaderLocation: C.uint32_t(attribute.ShaderLocation),
+							}
 						}
+
+						buffer.attributeCount = C.uint32_t(attributeCount)
+						buffer.attributes = (*C.WGPUVertexAttribute)(attributes)
 					}
 
-					buffer.attributeCount = C.uint32_t(attributeCount)
-					buffer.attributes = (*C.WGPUVertexAttribute)(attributes)
+					buffersSlice[i] = buffer
 				}
 
-				buffersSlice[i] = buffer
+				vert.bufferCount = C.uint32_t(bufferCount)
+				vert.buffers = (*C.WGPUVertexBufferLayout)(buffers)
 			}
 
-			vert.bufferCount = C.uint32_t(bufferCount)
-			vert.buffers = (*C.WGPUVertexBufferLayout)(buffers)
+			desc.vertex = vert
 		}
 
-		desc.vertex = vert
-	}
-
-	desc.primitive = C.WGPUPrimitiveState{
-		topology:         C.WGPUPrimitiveTopology(descriptor.Primitive.Topology),
-		stripIndexFormat: C.WGPUIndexFormat(descriptor.Primitive.StripIndexFormat),
-		frontFace:        C.WGPUFrontFace(descriptor.Primitive.FrontFace),
-		cullMode:         C.WGPUCullMode(descriptor.Primitive.CullMode),
-	}
-
-	if descriptor.DepthStencil != nil {
-		depthStencil := descriptor.DepthStencil
-
-		ds := (*C.WGPUDepthStencilState)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUDepthStencilState{}))))
-		defer C.free(unsafe.Pointer(ds))
-
-		ds.nextInChain = nil
-		ds.format = C.WGPUTextureFormat(depthStencil.Format)
-		ds.depthWriteEnabled = C.bool(depthStencil.DepthWriteEnabled)
-		ds.depthCompare = C.WGPUCompareFunction(depthStencil.DepthCompare)
-		ds.stencilFront = C.WGPUStencilFaceState{
-			compare:     C.WGPUCompareFunction(depthStencil.StencilFront.Compare),
-			failOp:      C.WGPUStencilOperation(depthStencil.StencilFront.FailOp),
-			depthFailOp: C.WGPUStencilOperation(depthStencil.StencilFront.DepthFailOp),
-			passOp:      C.WGPUStencilOperation(depthStencil.StencilFront.PassOp),
-		}
-		ds.stencilBack = C.WGPUStencilFaceState{
-			compare:     C.WGPUCompareFunction(depthStencil.StencilBack.Compare),
-			failOp:      C.WGPUStencilOperation(depthStencil.StencilBack.FailOp),
-			depthFailOp: C.WGPUStencilOperation(depthStencil.StencilBack.DepthFailOp),
-			passOp:      C.WGPUStencilOperation(depthStencil.StencilBack.PassOp),
-		}
-		ds.stencilReadMask = C.uint32_t(depthStencil.StencilReadMask)
-		ds.stencilWriteMask = C.uint32_t(depthStencil.StencilWriteMask)
-		ds.depthBias = C.int32_t(depthStencil.DepthBias)
-		ds.depthBiasSlopeScale = C.float(depthStencil.DepthBiasSlopeScale)
-		ds.depthBiasClamp = C.float(depthStencil.DepthBiasClamp)
-
-		desc.depthStencil = ds
-	}
-
-	desc.multisample = C.WGPUMultisampleState{
-		count:                  C.uint32_t(descriptor.Multisample.Count),
-		mask:                   C.uint32_t(descriptor.Multisample.Mask),
-		alphaToCoverageEnabled: C.bool(descriptor.Multisample.AlphaToCoverageEnabled),
-	}
-
-	if descriptor.Fragment != nil {
-		fragment := descriptor.Fragment
-
-		frag := (*C.WGPUFragmentState)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUFragmentState{}))))
-		defer C.free(unsafe.Pointer(frag))
-
-		frag.nextInChain = nil
-		if fragment.EntryPoint != "" {
-			entryPoint := C.CString(fragment.EntryPoint)
-			defer C.free(unsafe.Pointer(entryPoint))
-
-			frag.entryPoint = entryPoint
+		desc.primitive = C.WGPUPrimitiveState{
+			topology:         C.WGPUPrimitiveTopology(descriptor.Primitive.Topology),
+			stripIndexFormat: C.WGPUIndexFormat(descriptor.Primitive.StripIndexFormat),
+			frontFace:        C.WGPUFrontFace(descriptor.Primitive.FrontFace),
+			cullMode:         C.WGPUCullMode(descriptor.Primitive.CullMode),
 		}
 
-		if fragment.Module != nil {
-			frag.module = fragment.Module.ref
+		if descriptor.DepthStencil != nil {
+			depthStencil := descriptor.DepthStencil
+
+			ds := (*C.WGPUDepthStencilState)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUDepthStencilState{}))))
+			defer C.free(unsafe.Pointer(ds))
+
+			ds.nextInChain = nil
+			ds.format = C.WGPUTextureFormat(depthStencil.Format)
+			ds.depthWriteEnabled = C.bool(depthStencil.DepthWriteEnabled)
+			ds.depthCompare = C.WGPUCompareFunction(depthStencil.DepthCompare)
+			ds.stencilFront = C.WGPUStencilFaceState{
+				compare:     C.WGPUCompareFunction(depthStencil.StencilFront.Compare),
+				failOp:      C.WGPUStencilOperation(depthStencil.StencilFront.FailOp),
+				depthFailOp: C.WGPUStencilOperation(depthStencil.StencilFront.DepthFailOp),
+				passOp:      C.WGPUStencilOperation(depthStencil.StencilFront.PassOp),
+			}
+			ds.stencilBack = C.WGPUStencilFaceState{
+				compare:     C.WGPUCompareFunction(depthStencil.StencilBack.Compare),
+				failOp:      C.WGPUStencilOperation(depthStencil.StencilBack.FailOp),
+				depthFailOp: C.WGPUStencilOperation(depthStencil.StencilBack.DepthFailOp),
+				passOp:      C.WGPUStencilOperation(depthStencil.StencilBack.PassOp),
+			}
+			ds.stencilReadMask = C.uint32_t(depthStencil.StencilReadMask)
+			ds.stencilWriteMask = C.uint32_t(depthStencil.StencilWriteMask)
+			ds.depthBias = C.int32_t(depthStencil.DepthBias)
+			ds.depthBiasSlopeScale = C.float(depthStencil.DepthBiasSlopeScale)
+			ds.depthBiasClamp = C.float(depthStencil.DepthBiasClamp)
+
+			desc.depthStencil = ds
 		}
 
-		targetCount := len(fragment.Targets)
-		if targetCount > 0 {
-			targets := C.malloc(C.size_t(targetCount) * C.size_t(unsafe.Sizeof(C.WGPUColorTargetState{})))
-			defer C.free(targets)
+		desc.multisample = C.WGPUMultisampleState{
+			count:                  C.uint32_t(descriptor.Multisample.Count),
+			mask:                   C.uint32_t(descriptor.Multisample.Mask),
+			alphaToCoverageEnabled: C.bool(descriptor.Multisample.AlphaToCoverageEnabled),
+		}
 
-			targetsSlice := unsafe.Slice((*C.WGPUColorTargetState)(targets), targetCount)
+		if descriptor.Fragment != nil {
+			fragment := descriptor.Fragment
 
-			for i, v := range fragment.Targets {
-				target := C.WGPUColorTargetState{
-					format:    C.WGPUTextureFormat(v.Format),
-					writeMask: C.WGPUColorWriteMaskFlags(v.WriteMask),
-				}
+			frag := (*C.WGPUFragmentState)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUFragmentState{}))))
+			defer C.free(unsafe.Pointer(frag))
 
-				if v.Blend != nil {
-					blend := (*C.WGPUBlendState)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUBlendState{}))))
-					defer C.free(unsafe.Pointer(blend))
+			frag.nextInChain = nil
+			if fragment.EntryPoint != "" {
+				entryPoint := C.CString(fragment.EntryPoint)
+				defer C.free(unsafe.Pointer(entryPoint))
 
-					blend.color = C.WGPUBlendComponent{
-						operation: C.WGPUBlendOperation(v.Blend.Color.Operation),
-						srcFactor: C.WGPUBlendFactor(v.Blend.Color.SrcFactor),
-						dstFactor: C.WGPUBlendFactor(v.Blend.Color.DstFactor),
-					}
-					blend.alpha = C.WGPUBlendComponent{
-						operation: C.WGPUBlendOperation(v.Blend.Alpha.Operation),
-						srcFactor: C.WGPUBlendFactor(v.Blend.Alpha.SrcFactor),
-						dstFactor: C.WGPUBlendFactor(v.Blend.Alpha.DstFactor),
-					}
-
-					target.blend = blend
-				}
-
-				targetsSlice[i] = target
+				frag.entryPoint = entryPoint
 			}
 
-			frag.targetCount = C.uint32_t(targetCount)
-			frag.targets = (*C.WGPUColorTargetState)(targets)
-		} else {
-			frag.targetCount = 0
-			frag.targets = nil
-		}
+			if fragment.Module != nil {
+				frag.module = fragment.Module.ref
+			}
 
-		desc.fragment = frag
+			targetCount := len(fragment.Targets)
+			if targetCount > 0 {
+				targets := C.malloc(C.size_t(targetCount) * C.size_t(unsafe.Sizeof(C.WGPUColorTargetState{})))
+				defer C.free(targets)
+
+				targetsSlice := unsafe.Slice((*C.WGPUColorTargetState)(targets), targetCount)
+
+				for i, v := range fragment.Targets {
+					target := C.WGPUColorTargetState{
+						format:    C.WGPUTextureFormat(v.Format),
+						writeMask: C.WGPUColorWriteMaskFlags(v.WriteMask),
+					}
+
+					if v.Blend != nil {
+						blend := (*C.WGPUBlendState)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUBlendState{}))))
+						defer C.free(unsafe.Pointer(blend))
+
+						blend.color = C.WGPUBlendComponent{
+							operation: C.WGPUBlendOperation(v.Blend.Color.Operation),
+							srcFactor: C.WGPUBlendFactor(v.Blend.Color.SrcFactor),
+							dstFactor: C.WGPUBlendFactor(v.Blend.Color.DstFactor),
+						}
+						blend.alpha = C.WGPUBlendComponent{
+							operation: C.WGPUBlendOperation(v.Blend.Alpha.Operation),
+							srcFactor: C.WGPUBlendFactor(v.Blend.Alpha.SrcFactor),
+							dstFactor: C.WGPUBlendFactor(v.Blend.Alpha.DstFactor),
+						}
+
+						target.blend = blend
+					}
+
+					targetsSlice[i] = target
+				}
+
+				frag.targetCount = C.uint32_t(targetCount)
+				frag.targets = (*C.WGPUColorTargetState)(targets)
+			} else {
+				frag.targetCount = 0
+				frag.targets = nil
+			}
+
+			desc.fragment = frag
+		}
 	}
 
 	ref := C.wgpuDeviceCreateRenderPipeline(p.ref, &desc)
@@ -608,25 +620,29 @@ type SamplerDescriptor struct {
 	MaxAnisotrophy uint16
 }
 
-func (p *Device) CreateSampler(descriptor SamplerDescriptor) *Sampler {
-	desc := C.WGPUSamplerDescriptor{
-		addressModeU:  C.WGPUAddressMode(descriptor.AddressModeU),
-		addressModeV:  C.WGPUAddressMode(descriptor.AddressModeV),
-		addressModeW:  C.WGPUAddressMode(descriptor.AddressModeW),
-		magFilter:     C.WGPUFilterMode(descriptor.MagFilter),
-		minFilter:     C.WGPUFilterMode(descriptor.MinFilter),
-		mipmapFilter:  C.WGPUFilterMode(descriptor.MipmapFilter),
-		lodMinClamp:   C.float(descriptor.LodMinClamp),
-		lodMaxClamp:   C.float(descriptor.LodMaxClamp),
-		compare:       C.WGPUCompareFunction(descriptor.Compare),
-		maxAnisotropy: C.uint16_t(descriptor.MaxAnisotrophy),
-	}
+func (p *Device) CreateSampler(descriptor *SamplerDescriptor) *Sampler {
+	var desc C.WGPUSamplerDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		desc = C.WGPUSamplerDescriptor{
+			addressModeU:  C.WGPUAddressMode(descriptor.AddressModeU),
+			addressModeV:  C.WGPUAddressMode(descriptor.AddressModeV),
+			addressModeW:  C.WGPUAddressMode(descriptor.AddressModeW),
+			magFilter:     C.WGPUFilterMode(descriptor.MagFilter),
+			minFilter:     C.WGPUFilterMode(descriptor.MinFilter),
+			mipmapFilter:  C.WGPUFilterMode(descriptor.MipmapFilter),
+			lodMinClamp:   C.float(descriptor.LodMinClamp),
+			lodMaxClamp:   C.float(descriptor.LodMaxClamp),
+			compare:       C.WGPUCompareFunction(descriptor.Compare),
+			maxAnisotropy: C.uint16_t(descriptor.MaxAnisotrophy),
+		}
 
-		desc.label = label
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
+
+			desc.label = label
+		}
 	}
 
 	ref := C.wgpuDeviceCreateSampler(p.ref, &desc)
@@ -654,48 +670,50 @@ type ShaderModuleDescriptor struct {
 	WGSLDescriptor *ShaderModuleWGSLDescriptor
 }
 
-func (p *Device) CreateShaderModule(descriptor ShaderModuleDescriptor) *ShaderModule {
+func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) *ShaderModule {
 	var desc C.WGPUShaderModuleDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
 
-		desc.label = label
-	}
-
-	if descriptor.SPIRVDescriptor != nil {
-		spirv := (*C.WGPUShaderModuleSPIRVDescriptor)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderModuleSPIRVDescriptor{}))))
-		defer C.free(unsafe.Pointer(spirv))
-
-		codeSize := len(descriptor.SPIRVDescriptor.Code)
-		if codeSize > 0 {
-			code := C.CBytes(descriptor.SPIRVDescriptor.Code)
-			defer C.free(code)
-
-			spirv.codeSize = C.uint32_t(codeSize)
-			spirv.code = (*C.uint32_t)(code)
+			desc.label = label
 		}
-		spirv.chain.next = nil
-		spirv.chain.sType = C.WGPUSType_ShaderModuleSPIRVDescriptor
 
-		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(spirv))
-	}
+		if descriptor.SPIRVDescriptor != nil {
+			spirv := (*C.WGPUShaderModuleSPIRVDescriptor)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderModuleSPIRVDescriptor{}))))
+			defer C.free(unsafe.Pointer(spirv))
 
-	if descriptor.WGSLDescriptor != nil {
-		wgsl := (*C.WGPUShaderModuleWGSLDescriptor)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderModuleWGSLDescriptor{}))))
-		defer C.free(unsafe.Pointer(wgsl))
+			codeSize := len(descriptor.SPIRVDescriptor.Code)
+			if codeSize > 0 {
+				code := C.CBytes(descriptor.SPIRVDescriptor.Code)
+				defer C.free(code)
 
-		if descriptor.WGSLDescriptor.Code != "" {
-			code := C.CString(descriptor.WGSLDescriptor.Code)
-			defer C.free(unsafe.Pointer(code))
+				spirv.codeSize = C.uint32_t(codeSize)
+				spirv.code = (*C.uint32_t)(code)
+			}
+			spirv.chain.next = nil
+			spirv.chain.sType = C.WGPUSType_ShaderModuleSPIRVDescriptor
 
-			wgsl.code = code
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(spirv))
 		}
-		wgsl.chain.next = nil
-		wgsl.chain.sType = C.WGPUSType_ShaderModuleWGSLDescriptor
 
-		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(wgsl))
+		if descriptor.WGSLDescriptor != nil {
+			wgsl := (*C.WGPUShaderModuleWGSLDescriptor)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderModuleWGSLDescriptor{}))))
+			defer C.free(unsafe.Pointer(wgsl))
+
+			if descriptor.WGSLDescriptor.Code != "" {
+				code := C.CString(descriptor.WGSLDescriptor.Code)
+				defer C.free(unsafe.Pointer(code))
+
+				wgsl.code = code
+			}
+			wgsl.chain.next = nil
+			wgsl.chain.sType = C.WGPUSType_ShaderModuleWGSLDescriptor
+
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(wgsl))
+		}
 	}
 
 	ref := C.wgpuDeviceCreateShaderModule(p.ref, &desc)
@@ -716,13 +734,17 @@ type SwapChainDescriptor struct {
 	// 	Label       string
 }
 
-func (p *Device) CreateSwapChain(surface *Surface, descriptor SwapChainDescriptor) *SwapChain {
-	desc := C.WGPUSwapChainDescriptor{
-		usage:       C.WGPUTextureUsageFlags(descriptor.Usage),
-		format:      C.WGPUTextureFormat(descriptor.Format),
-		width:       C.uint32_t(descriptor.Width),
-		height:      C.uint32_t(descriptor.Height),
-		presentMode: C.WGPUPresentMode(descriptor.PresentMode),
+func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescriptor) *SwapChain {
+	var desc C.WGPUSwapChainDescriptor
+
+	if descriptor != nil {
+		desc = C.WGPUSwapChainDescriptor{
+			usage:       C.WGPUTextureUsageFlags(descriptor.Usage),
+			format:      C.WGPUTextureFormat(descriptor.Format),
+			width:       C.uint32_t(descriptor.Width),
+			height:      C.uint32_t(descriptor.Height),
+			presentMode: C.WGPUPresentMode(descriptor.PresentMode),
+		}
 	}
 
 	ref := C.wgpuDeviceCreateSwapChain(p.ref, surface.ref, &desc)
@@ -748,25 +770,29 @@ type TextureDescriptor struct {
 	SampleCount   uint32
 }
 
-func (p *Device) CreateTexture(descriptor TextureDescriptor) *Texture {
-	desc := C.WGPUTextureDescriptor{
-		usage:     C.WGPUTextureUsageFlags(descriptor.Usage),
-		dimension: C.WGPUTextureDimension(descriptor.Dimension),
-		size: C.WGPUExtent3D{
-			width:              C.uint32_t(descriptor.Size.Width),
-			height:             C.uint32_t(descriptor.Size.Height),
-			depthOrArrayLayers: C.uint32_t(descriptor.Size.DepthOrArrayLayers),
-		},
-		format:        C.WGPUTextureFormat(descriptor.Format),
-		mipLevelCount: C.uint32_t(descriptor.MipLevelCount),
-		sampleCount:   C.uint32_t(descriptor.SampleCount),
-	}
+func (p *Device) CreateTexture(descriptor *TextureDescriptor) *Texture {
+	var desc C.WGPUTextureDescriptor
 
-	if descriptor.Label != "" {
-		label := C.CString(descriptor.Label)
-		defer C.free(unsafe.Pointer(label))
+	if descriptor != nil {
+		desc = C.WGPUTextureDescriptor{
+			usage:     C.WGPUTextureUsageFlags(descriptor.Usage),
+			dimension: C.WGPUTextureDimension(descriptor.Dimension),
+			size: C.WGPUExtent3D{
+				width:              C.uint32_t(descriptor.Size.Width),
+				height:             C.uint32_t(descriptor.Size.Height),
+				depthOrArrayLayers: C.uint32_t(descriptor.Size.DepthOrArrayLayers),
+			},
+			format:        C.WGPUTextureFormat(descriptor.Format),
+			mipLevelCount: C.uint32_t(descriptor.MipLevelCount),
+			sampleCount:   C.uint32_t(descriptor.SampleCount),
+		}
 
-		desc.label = label
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
+
+			desc.label = label
+		}
 	}
 
 	ref := C.wgpuDeviceCreateTexture(p.ref, &desc)

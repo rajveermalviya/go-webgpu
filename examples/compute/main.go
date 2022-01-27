@@ -17,12 +17,12 @@ func main() {
 	numbersSize := len(numbers) * int(unsafe.Sizeof(uint32(0)))
 	numbersLength := len(numbers)
 
-	adapter, err := wgpu.RequestAdapter(wgpu.RequestAdapterOptions{})
+	adapter, err := wgpu.RequestAdapter(nil)
 	if err != nil {
 		panic(err)
 	}
 
-	device, err := adapter.RequestDevice(wgpu.DeviceDescriptor{
+	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
 		DeviceExtras: &wgpu.DeviceExtras{
 			Label: "Device",
 		},
@@ -36,26 +36,26 @@ func main() {
 		panic(err)
 	}
 
-	shader := device.CreateShaderModule(wgpu.ShaderModuleDescriptor{
+	shader := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: shader,
 		},
 	})
 
-	stagingBuffer := device.CreateBuffer(wgpu.BufferDescriptor{
+	stagingBuffer := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Label: "StagingBuffer",
 		Usage: wgpu.BufferUsage_MapRead | wgpu.BufferUsage_CopyDst,
 		Size:  uint64(numbersSize),
 	})
 
-	storageBuffer := device.CreateBuffer(wgpu.BufferDescriptor{
+	storageBuffer := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Label: "StorageBuffer",
 		Usage: wgpu.BufferUsage_Storage | wgpu.BufferUsage_CopyDst | wgpu.BufferUsage_CopySrc,
 		Size:  uint64(numbersSize),
 	})
 
-	bindGroupLayout := device.CreateBindGroupLayout(wgpu.BindGroupLayoutDescriptor{
+	bindGroupLayout := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Label: "Bind Group Layout",
 		Entries: []wgpu.BindGroupLayoutEntry{{
 			Binding:    0,
@@ -75,7 +75,7 @@ func main() {
 		}},
 	})
 
-	bindGroup := device.CreateBindGroup(wgpu.BindGroupDescriptor{
+	bindGroup := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Label:  "Bind Group",
 		Layout: bindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{{
@@ -86,11 +86,11 @@ func main() {
 		}},
 	})
 
-	pipelineLayout := device.CreatePipelineLayout(wgpu.PipelineLayoutDescriptor{
+	pipelineLayout := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		BindGroupLayouts: []*wgpu.BindGroupLayout{bindGroupLayout},
 	})
 
-	computePipeline := device.CreateComputePipeline(wgpu.ComputePipelineDescriptor{
+	computePipeline := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
 		Layout: pipelineLayout,
 		Compute: wgpu.ProgrammableStageDescriptor{
 			Module:     shader,
@@ -98,11 +98,11 @@ func main() {
 		},
 	})
 
-	encoder := device.CreateCommandEncoder(wgpu.CommandEncoderDescriptor{
+	encoder := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
 		Label: "Command Encoder",
 	})
 
-	computePass := encoder.BeginComputePass(wgpu.ComputePassDescriptor{
+	computePass := encoder.BeginComputePass(&wgpu.ComputePassDescriptor{
 		Label: "Compute Pass",
 	})
 
@@ -114,7 +114,7 @@ func main() {
 	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, uint64(numbersSize))
 
 	queue := device.GetQueue()
-	cmdBuffer := encoder.Finish(wgpu.CommandBufferDescriptor{})
+	cmdBuffer := encoder.Finish(nil)
 
 	queue.WriteBuffer(storageBuffer, 0, wgpu.ToBytes(numbers))
 
