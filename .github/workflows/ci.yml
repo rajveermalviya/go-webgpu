@@ -22,8 +22,9 @@ jobs:
               sudo apt-get install -f -y mesa-vulkan-drivers
           - os: macos-latest
             name: Darwin
-          - os: windows-latest
-            name: Windows
+          # disabled (D3D12 lib not present in windows server)
+          # - os: windows-latest
+          #   name: Windows
     steps:
       - name: Checkout
         uses: actions/checkout@v2
