@@ -3,7 +3,9 @@ package wgpu
 /*
 
 #cgo CFLAGS: -fPIC -flto -Wall
-#cgo LDFLAGS: -lwgpu_static -lm
+#cgo LDFLAGS: -lm -ldl -lwgpu_static
+
+#cgo windows LDFLAGS: -luserenv -lws2_32 -lDwmapi -ldbghelp -ld3dcompiler -lD3D12 -lD3D11 -lDXGI -lsetupapi -lBcrypt
 
 #cgo linux,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64
 #cgo linux,386 LDFLAGS: -L${SRCDIR}/lib/linux/386
