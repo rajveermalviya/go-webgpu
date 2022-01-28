@@ -13,7 +13,7 @@ package wgpu
 #cgo linux,386 LDFLAGS: -L${SRCDIR}/lib/linux/386
 
 // Windows
-#cgo windows LDFLAGS: -luserenv -lws2_32 -lDwmapi -ldbghelp -ld3dcompiler -lD3D12 -lD3D11 -lDXGI -lsetupapi -lBcrypt
+#cgo windows LDFLAGS: -luserenv -lws2_32 -ld3dcompiler -lBcrypt
 
 #cgo windows,amd64 LDFLAGS: -L${SRCDIR}/lib/windows/amd64
 #cgo windows,386 LDFLAGS: -L${SRCDIR}/lib/windows/386

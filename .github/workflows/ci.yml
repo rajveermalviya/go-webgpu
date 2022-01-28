@@ -16,15 +16,17 @@ jobs:
         include:
           - os: ubuntu-latest
             name: Linux
+            run_examples: true
             install_deps_command: |
               sudo apt-get update
               sudo apt-get install -f -y libegl1-mesa-dev
               sudo apt-get install -f -y mesa-vulkan-drivers
           - os: macos-latest
             name: Darwin
-          # disabled (D3D12 lib not present in windows server)
-          # - os: windows-latest
-          #   name: Windows
+            run_examples: false # macos doesn't have software metal api
+          - os: windows-latest
+            name: Windows
+            run_examples: true
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -42,6 +44,7 @@ jobs:
           go test;
         shell: bash
       - name: Run examples
+        if: ${{ matrix.run_examples }}
         run: |
           cd examples;
           go mod edit -replace github.com/rajveermalviya/go-webgpu/wgpu=../wgpu/;
