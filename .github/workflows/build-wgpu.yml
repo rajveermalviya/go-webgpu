@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  WGPU_COMMIT: b96f7e4ec687478b89b260da0b5799d776f8bb70
+  WGPU_COMMIT: 30abc35969035bed81babb58dc610b8db8b061f5
 
 jobs:
   # linux-amd64:
