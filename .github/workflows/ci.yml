@@ -1,10 +1,6 @@
 name: CI
 
-on:
-  push:
-    branches:
-      - "main"
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   test-build:
@@ -40,12 +36,14 @@ jobs:
         shell: bash
       - name: Run tests
         run: |
+          set -x;
           cd wgpu;
           go test;
         shell: bash
       - name: Run examples
         if: ${{ matrix.run_examples }}
         run: |
+          set -x;
           cd examples;
           go mod edit -replace github.com/rajveermalviya/go-webgpu/wgpu=../wgpu/;
           go run ./compute/;
