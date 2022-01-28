@@ -4,7 +4,7 @@ package wgpu
 
 // Common
 #cgo CFLAGS: -fPIC -flto -Wall
-#cgo LDFLAGS: -lwgpu_static
+#cgo LDFLAGS: -lwgpu_native
 
 // Linux
 #cgo linux LDFLAGS: -lm -ldl
@@ -23,6 +23,12 @@ package wgpu
 
 #cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin/amd64
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
+
+// Android
+#cgo android LDFLAGS: -lnativewindow
+
+#cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64
+#cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64
 
 #include "./lib/webgpu.h"
 #include "./lib/wgpu.h"
