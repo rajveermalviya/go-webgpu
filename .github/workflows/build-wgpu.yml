@@ -4,6 +4,8 @@ on: [workflow_dispatch]
 
 env:
   WGPU_COMMIT: 30abc35969035bed81babb58dc610b8db8b061f5
+  ANDROID_NDK_VERSION: "22.1.7171670"
+  ANDROID_API_LEVEL: "30"
 
 jobs:
   build-wgpu:
@@ -30,6 +32,8 @@ jobs:
             target: i686-unknown-linux-gnu
             goos: linux
             goarch: "386"
+            setup_env: |
+              sudo apt install -y gcc-multilib;
 
           - name: build - windows/amd64
             os: windows-latest
@@ -37,6 +41,9 @@ jobs:
             target: x86_64-pc-windows-gnu
             goos: windows
             goarch: amd64
+            setup_env: |
+              choco install -y --force llvm | exit 0
+              echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
 
           - name: build - windows/386
             os: windows-latest
@@ -44,6 +51,9 @@ jobs:
             target: i686-pc-windows-gnu
             goos: windows
             goarch: "386"
+            setup_env: |
+              choco install -y --force --x86 llvm | exit 0
+              echo "LIBCLANG_PATH=C:\Program Files (x86)\LLVM\lib" >> $GITHUB_ENV
 
           - name: build - darwin/amd64
             os: macos-latest
@@ -65,6 +75,15 @@ jobs:
             target: x86_64-linux-android
             goos: android
             goarch: amd64
+            setup_env: |
+              clang_path=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang
+
+              echo "CLANG_PATH=$clang_path" >> $GITHUB_ENV
+              echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$clang_path" >> $GITHUB_ENV
+
+              echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo -e "BINDGEN_EXTRA_CLANG_ARGS=\"--sysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/\"" >> $GITHUB_ENV
 
           - name: build - android/arm64
             os: ubuntu-latest
@@ -72,6 +91,16 @@ jobs:
             target: aarch64-linux-android
             goos: android
             goarch: arm64
+            setup_env: |
+              clang_path=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang
+
+              echo "CLANG_PATH=$clang_path" >> $GITHUB_ENV
+              echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$clang_path" >> $GITHUB_ENV
+
+              echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo -e "BINDGEN_EXTRA_CLANG_ARGS=\"--sysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/\"" >> $GITHUB_ENV
+
     steps:
       # Checkout
       - uses: actions/checkout@v2
@@ -82,25 +111,23 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
           default: true
-      # Build
-      - name: Install llvm
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install -y --force llvm | exit 0
-          echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
+      # Setup Environment
+      - name: Setup Environment
+        run: ${{ matrix.setup_env }}
         shell: bash
+      # Build
       - name: Build
         run: |
-          set -x;
+          set -ex;
           git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp;
           cd tmp;
           git checkout $WGPU_COMMIT;
           export CARGO_PROFILE_RELEASE_LTO=true;
           export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1;
           cargo build --release;
-          ls -al target/release/;
+          ls -al target/$CARGO_BUILD_TARGET/release/;
           mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH;
-          mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a;
+          mv target/$CARGO_BUILD_TARGET/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a;
           cd ..;
           rm -rf tmp;
         shell: bash
