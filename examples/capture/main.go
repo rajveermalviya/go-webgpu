@@ -34,7 +34,7 @@ func newBufferDimensions(width uint64, height uint64) BufferDimensions {
 }
 
 func main() {
-	width := 100
+	width := 200
 	height := 200
 
 	adapter, err := wgpu.RequestAdapter(nil)
