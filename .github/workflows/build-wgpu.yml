@@ -6,91 +6,63 @@ env:
   WGPU_COMMIT: 30abc35969035bed81babb58dc610b8db8b061f5
 
 jobs:
-  linux-amd64:
-    name: build - linux-amd64
-    runs-on: ubuntu-latest
+  build-wgpu:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     env:
-      GOOS: linux
-      GOARCH: amd64
-    steps:
-      # Checkout
-      - uses: actions/checkout@v2
-      # Install rust
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable-x86_64-unknown-linux-gnu
-          default: true
-      # Build
-      - name: Build
-        run: |
-          set -x;
-          git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp;
-          cd tmp;
-          git checkout $WGPU_COMMIT;
-          export CARGO_PROFILE_RELEASE_LTO=true;
-          export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1;
-          cargo build --release;
-          ls -al target/release/;
-          mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH;
-          mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a;
-          cd ..;
-          rm -rf tmp;
-        shell: bash
-      # Send a PR
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          commit-message: Update wgpu-native static library for linux/amd64
-          branch-suffix: random
-          title: Update wgpu-native static library for linux/amd64
-          body: Auto-generated pull request to build wgpu-native for linux/amd64
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: build - linux/amd64
+            os: ubuntu-latest
+            toolchain: stable-x86_64-unknown-linux-gnu
+            goos: linux
+            goarch: amd64
 
-  darwin-amd64:
-    name: build - darwin-amd64
-    runs-on: macos-latest
-    env:
-      GOOS: darwin
-      GOARCH: amd64
-    steps:
-      # Checkout
-      - uses: actions/checkout@v2
-      # Install rust
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable-x86_64-apple-darwin
-          default: true
-      # Build
-      - name: Build
-        run: |
-          git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp;
-          cd tmp;
-          git checkout $WGPU_COMMIT;
-          export CARGO_PROFILE_RELEASE_LTO=true;
-          export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1;
-          cargo build --release;
-          ls -al target/release/;
-          mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH;
-          mv target/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_static.a;
-          cd ..;
-          rm -rf tmp;
-        shell: bash
-      # Send a PR
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          commit-message: Update wgpu-native static library for darwin/amd64
-          branch-suffix: random
-          title: Update wgpu-native static library for darwin/amd64
-          body: Auto-generated pull request to build wgpu-native for darwin/amd64
+          - name: build - linux/386
+            os: ubuntu-latest
+            toolchain: stable-i686-unknown-linux-gnu
+            goos: linux
+            goarch: "386"
 
-  windows-amd64:
-    name: build - windows-amd64
-    runs-on: windows-latest
-    env:
-      GOOS: windows
-      GOARCH: amd64
+          - name: build - windows/amd64
+            os: windows-latest
+            toolchain: stable-x86_64-pc-windows-gnu
+            goos: windows
+            goarch: amd64
+
+          - name: build - windows/386
+            os: windows-latest
+            toolchain: stable-i686-pc-windows-gnu
+            goos: windows
+            goarch: "386"
+
+          - name: build - darwin/amd64
+            os: macos-latest
+            toolchain: stable-x86_64-apple-darwin
+            goos: darwin
+            goarch: amd64
+
+          - name: build - darwin/arm64
+            os: macos-latest
+            toolchain: stable-aarch64-apple-darwin
+            goos: darwin
+            goarch: arm64
+
+          - name: build - android/amd64
+            os: ubuntu-latest
+            toolchain: stable-x86_64-linux-android
+            goos: android
+            goarch: amd64
+
+          - name: build - android/arm64
+            os: ubuntu-latest
+            toolchain: stable-aarch64-linux-android
+            goos: android
+            goarch: arm64
     steps:
       # Checkout
       - uses: actions/checkout@v2
@@ -98,10 +70,11 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable-x86_64-pc-windows-gnu
+          toolchain: ${{ matrix.toolchain }}
           default: true
       # Build
       - name: Install llvm
+        if: matrix.os == 'windows-latest'
         run: |
           choco install -y --force llvm | exit 0
           echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
@@ -125,7 +98,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
-          commit-message: Update wgpu-native static library for windows/amd64
+          commit-message: Update wgpu-native static library for ${{ matrix.goos }}/${{ matrix.goarch }}
           branch-suffix: random
-          title: Update wgpu-native static library for windows/amd64
-          body: Auto-generated pull request to build wgpu-native for windows/amd64
+          title: Update wgpu-native static library for ${{ matrix.goos }}/${{ matrix.goarch }}
+          body: Auto-generated pull request to build wgpu-native for ${{ matrix.goos }}/${{ matrix.goarch }}

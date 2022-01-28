@@ -166,7 +166,6 @@ const (
 type ErrorFilter C.WGPUErrorFilter
 
 const (
-	ErrorFilter_None        = C.WGPUErrorFilter_None
 	ErrorFilter_Validation  = C.WGPUErrorFilter_Validation
 	ErrorFilter_OutOfMemory = C.WGPUErrorFilter_OutOfMemory
 	ErrorFilter_Force32     = C.WGPUErrorFilter_Force32
