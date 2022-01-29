@@ -11,7 +11,7 @@ For more info check:
 
 To use this module or run any examples you will need C toolchain (`gcc` or `clang`) installed first.
 
-Included static lib binaries are built via [Github Actions](https://github.com/rajveermalviya/wgpu-native/actions), but manually commited (have to look into automating it).
+Included static libs are built via [Github Actions](./.github/workflows/build-wgpu.yml).
 
 ## Check out examples
 
