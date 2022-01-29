@@ -47,7 +47,7 @@ jobs:
 
           - name: build - windows/386
             os: windows-latest
-            toolchain: stable-gnu
+            toolchain: stable-i686-pc-windows-gnu
             target: i686-pc-windows-gnu
             goos: windows
             goarch: "386"
