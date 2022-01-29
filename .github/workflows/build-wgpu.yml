@@ -76,8 +76,8 @@ jobs:
             goos: android
             goarch: amd64
             setup_env: |
-              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang"
-              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang"
+              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
               echo -e "BINDGEN_EXTRA_CLANG_ARGS=\"--sysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/\"" >> $GITHUB_ENV
               echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
 
@@ -88,8 +88,8 @@ jobs:
             goos: android
             goarch: arm64
             setup_env: |
-              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang"
-              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang"
+              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
               echo -e "BINDGEN_EXTRA_CLANG_ARGS=\"--sysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/\"" >> $GITHUB_ENV
               echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
 
