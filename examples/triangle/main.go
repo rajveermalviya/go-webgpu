@@ -169,13 +169,12 @@ func main() {
 	})
 
 	s.swapChain = device.CreateSwapChain(surface, s.swapChainDescriptor)
+	s.Render()
 
 	window.SetFramebufferSizeCallback(func(_ *glfw.Window, width, height int) {
 		s.Resize(uint32(width), uint32(height))
 		s.Render()
 	})
-
-	s.Render()
 
 	for !window.ShouldClose() {
 		glfw.WaitEvents()

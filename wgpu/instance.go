@@ -86,6 +86,11 @@ type SurfaceDescriptorFromMetalLayer struct {
 	Layer unsafe.Pointer
 }
 
+type SurfaceDescriptorFromWaylandSurface struct {
+	Display unsafe.Pointer
+	Surface unsafe.Pointer
+}
+
 type SurfaceDescriptor struct {
 	Label string
 
@@ -97,6 +102,9 @@ type SurfaceDescriptor struct {
 
 	// ChainedStruct -> WGPUSurfaceDescriptorFromMetalLayer
 	MetalLayer *SurfaceDescriptorFromMetalLayer
+
+	// ChainedStruct -> WGPUSurfaceDescriptorFromWaylandSurface
+	WaylandSurface *SurfaceDescriptorFromWaylandSurface
 }
 
 func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
@@ -143,6 +151,18 @@ func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 			metalLayer.layer = descriptor.MetalLayer.Layer
 
 			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(metalLayer))
+		}
+
+		if descriptor.WaylandSurface != nil {
+			waylandSurface := (*C.WGPUSurfaceDescriptorFromWaylandSurface)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromWaylandSurface{}))))
+			defer C.free(unsafe.Pointer(&waylandSurface))
+
+			waylandSurface.chain.next = nil
+			waylandSurface.chain.sType = C.WGPUSType_SurfaceDescriptorFromWaylandSurface
+			waylandSurface.display = descriptor.WaylandSurface.Display
+			waylandSurface.surface = descriptor.WaylandSurface.Surface
+
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(waylandSurface))
 		}
 	}
 
