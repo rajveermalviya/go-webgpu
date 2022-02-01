@@ -91,6 +91,10 @@ type SurfaceDescriptorFromWaylandSurface struct {
 	Surface unsafe.Pointer
 }
 
+type SurfaceDescriptorFromAndroidNativeWindow struct {
+	Window unsafe.Pointer
+}
+
 type SurfaceDescriptor struct {
 	Label string
 
@@ -105,6 +109,9 @@ type SurfaceDescriptor struct {
 
 	// ChainedStruct -> WGPUSurfaceDescriptorFromWaylandSurface
 	WaylandSurface *SurfaceDescriptorFromWaylandSurface
+
+	// ChainedStruct -> WGPUSurfaceDescriptorFromAndroidNativeWindow
+	AndroidNativeWindow *SurfaceDescriptorFromAndroidNativeWindow
 }
 
 func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
@@ -155,7 +162,7 @@ func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 
 		if descriptor.WaylandSurface != nil {
 			waylandSurface := (*C.WGPUSurfaceDescriptorFromWaylandSurface)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromWaylandSurface{}))))
-			defer C.free(unsafe.Pointer(&waylandSurface))
+			defer C.free(unsafe.Pointer(waylandSurface))
 
 			waylandSurface.chain.next = nil
 			waylandSurface.chain.sType = C.WGPUSType_SurfaceDescriptorFromWaylandSurface
@@ -163,6 +170,17 @@ func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 			waylandSurface.surface = descriptor.WaylandSurface.Surface
 
 			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(waylandSurface))
+		}
+
+		if descriptor.AndroidNativeWindow != nil {
+			androidNativeWindow := (*C.WGPUSurfaceDescriptorFromAndroidNativeWindow)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromAndroidNativeWindow{}))))
+			defer C.free(unsafe.Pointer(androidNativeWindow))
+
+			androidNativeWindow.chain.next = nil
+			androidNativeWindow.chain.sType = C.WGPUSType_SurfaceDescriptorFromAndroidNativeWindow
+			androidNativeWindow.window = descriptor.AndroidNativeWindow.Window
+
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(androidNativeWindow))
 		}
 	}
 
