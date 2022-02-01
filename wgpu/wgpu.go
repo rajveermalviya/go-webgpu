@@ -25,7 +25,7 @@ package wgpu
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
 
 // Android
-#cgo android LDFLAGS: -lnativewindow
+#cgo android LDFLAGS: -landroid
 
 #cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64
 #cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64
