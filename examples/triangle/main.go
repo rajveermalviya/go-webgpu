@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"unsafe"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -11,54 +12,6 @@ import (
 
 //go:embed shader.wgsl
 var shader string
-
-type State struct {
-	swapChainDescriptor *wgpu.SwapChainDescriptor
-	swapChain           *wgpu.SwapChain
-	surface             *wgpu.Surface
-	device              *wgpu.Device
-	queue               *wgpu.Queue
-	renderPipeline      *wgpu.RenderPipeline
-}
-
-func (s *State) Resize(width, height uint32) {
-	if width > 0 && height > 0 {
-		s.swapChainDescriptor.Width = width
-		s.swapChainDescriptor.Height = height
-		s.swapChain = s.device.CreateSwapChain(s.surface, s.swapChainDescriptor)
-	}
-}
-
-func (s *State) Render() {
-	nextTexture := s.swapChain.GetCurrentTextureView()
-	if nextTexture == nil {
-		panic("Failed to acquire next swap chain texture")
-	}
-	defer nextTexture.Drop()
-
-	encoder := s.device.CreateCommandEncoder(nil)
-
-	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
-		ColorAttachments: []wgpu.RenderPassColorAttachment{{
-			View:    nextTexture,
-			LoadOp:  wgpu.LoadOp_Clear,
-			StoreOp: wgpu.StoreOp_Store,
-			ClearColor: wgpu.Color{
-				R: 0,
-				G: 1,
-				B: 0,
-				A: 1,
-			},
-		}},
-	})
-
-	renderPass.SetPipeline(s.renderPipeline)
-	renderPass.Draw(3, 1, 0, 0)
-	renderPass.EndPass()
-
-	s.queue.Submit(encoder.Finish(nil))
-	s.swapChain.Present()
-}
 
 func main() {
 	if err := glfw.Init(); err != nil {
@@ -101,35 +54,25 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer device.Drop()
+
+	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+		Label:          "shader.wgsl",
+		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{Code: shader},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	pipelineLayout, err := device.CreatePipelineLayout(nil)
+	if err != nil {
+		panic(err)
+	}
 
 	swapChainFormat := surface.GetPreferredFormat(adapter)
 
-	width, height := window.GetSize()
-
-	s := &State{
-		swapChainDescriptor: &wgpu.SwapChainDescriptor{
-			Usage:       wgpu.TextureUsage_RenderAttachment,
-			Format:      swapChainFormat,
-			Width:       uint32(width),
-			Height:      uint32(height),
-			PresentMode: wgpu.PresentMode_Mailbox,
-		},
-		surface: surface,
-		device:  device,
-		queue:   device.GetQueue(),
-	}
-
-	shader := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
-		Label: "shader.wgsl",
-		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
-			Code: shader,
-		},
-	})
-
-	pipelineLayout := device.CreatePipelineLayout(nil)
-
-	mask := ^0
-	s.renderPipeline = device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+	pipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+		Label:  "Render Pipeline",
 		Layout: pipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     shader,
@@ -143,40 +86,113 @@ func main() {
 		},
 		Multisample: wgpu.MultisampleState{
 			Count:                  1,
-			Mask:                   uint32(mask),
+			Mask:                   ^uint32(0),
 			AlphaToCoverageEnabled: false,
 		},
 		Fragment: &wgpu.FragmentState{
 			Module:     shader,
 			EntryPoint: "fs_main",
-			Targets: []wgpu.ColorTargetState{{
-				Format: swapChainFormat,
-				Blend: &wgpu.BlendState{
-					Color: wgpu.BlendComponent{
-						SrcFactor: wgpu.BlendFactor_One,
-						DstFactor: wgpu.BlendFactor_Zero,
-						Operation: wgpu.BlendOperation_Add,
-					},
-					Alpha: wgpu.BlendComponent{
-						SrcFactor: wgpu.BlendFactor_One,
-						DstFactor: wgpu.BlendFactor_Zero,
-						Operation: wgpu.BlendOperation_Add,
-					},
+			Targets: []wgpu.ColorTargetState{
+				{
+					Format:    swapChainFormat,
+					Blend:     &wgpu.BlendState_Replace,
+					WriteMask: wgpu.ColorWriteMask_All,
 				},
-				WriteMask: wgpu.ColorWriteMask_All,
-			}},
+			},
 		},
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	s.swapChain = device.CreateSwapChain(surface, s.swapChainDescriptor)
-	s.Render()
+	prevWidth := 0
+	prevHeight := 0
+	{
+		width, height := window.GetSize()
+		prevWidth = width
+		prevHeight = height
+	}
 
-	window.SetFramebufferSizeCallback(func(_ *glfw.Window, width, height int) {
-		s.Resize(uint32(width), uint32(height))
-		s.Render()
+	swapChain, err := device.CreateSwapChain(surface, &wgpu.SwapChainDescriptor{
+		Usage:       wgpu.TextureUsage_RenderAttachment,
+		Format:      swapChainFormat,
+		Width:       uint32(prevWidth),
+		Height:      uint32(prevHeight),
+		PresentMode: wgpu.PresentMode_Fifo,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	for !window.ShouldClose() {
-		glfw.WaitEvents()
+		var nextTexture *wgpu.TextureView
+
+		for attempt := 0; attempt < 2; attempt++ {
+			width, height := window.GetSize()
+
+			if width != prevWidth || height != prevHeight {
+				prevWidth = width
+				prevHeight = height
+
+				swapChain, err = device.CreateSwapChain(
+					surface,
+					&wgpu.SwapChainDescriptor{
+						Usage:       wgpu.TextureUsage_RenderAttachment,
+						Format:      swapChainFormat,
+						Width:       uint32(prevWidth),
+						Height:      uint32(prevHeight),
+						PresentMode: wgpu.PresentMode_Fifo,
+					})
+				if err != nil {
+					panic(err)
+				}
+			}
+
+			nextTexture, err = swapChain.GetCurrentTextureView()
+			if err != nil {
+				fmt.Printf("err: %v\n", err)
+			}
+			if attempt == 0 && nextTexture == nil {
+				fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
+				prevWidth = 0
+				prevHeight = 0
+				continue
+			}
+
+			break
+		}
+
+		if nextTexture == nil {
+			panic("Cannot acquire next swap chain texture")
+		}
+
+		encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
+			Label: "Command Encoder",
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
+			ColorAttachments: []wgpu.RenderPassColorAttachment{
+				{
+					View:       nextTexture,
+					LoadOp:     wgpu.LoadOp_Clear,
+					StoreOp:    wgpu.StoreOp_Store,
+					ClearColor: wgpu.Color_Green,
+				},
+			},
+		})
+
+		renderPass.SetPipeline(pipeline)
+		renderPass.Draw(3, 1, 0, 0)
+		renderPass.EndPass()
+		nextTexture.Drop()
+
+		queue := device.GetQueue()
+		queue.Submit(encoder.Finish(nil))
+		swapChain.Present()
+
+		glfw.PollEvents()
 	}
 }

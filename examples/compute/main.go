@@ -35,27 +35,37 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer device.Drop()
 
-	shader := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: shader,
 		},
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	stagingBuffer := device.CreateBuffer(&wgpu.BufferDescriptor{
+	stagingBuffer, err := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Label: "StagingBuffer",
 		Usage: wgpu.BufferUsage_MapRead | wgpu.BufferUsage_CopyDst,
 		Size:  uint64(numbersSize),
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	storageBuffer := device.CreateBuffer(&wgpu.BufferDescriptor{
+	storageBuffer, err := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Label: "StorageBuffer",
 		Usage: wgpu.BufferUsage_Storage | wgpu.BufferUsage_CopyDst | wgpu.BufferUsage_CopySrc,
 		Size:  uint64(numbersSize),
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	bindGroupLayout := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
+	bindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Label: "Bind Group Layout",
 		Entries: []wgpu.BindGroupLayoutEntry{{
 			Binding:    0,
@@ -74,8 +84,11 @@ func main() {
 			},
 		}},
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	bindGroup := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Label:  "Bind Group",
 		Layout: bindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{{
@@ -85,22 +98,34 @@ func main() {
 			Size:    uint64(numbersSize),
 		}},
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	pipelineLayout := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
+	pipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		BindGroupLayouts: []*wgpu.BindGroupLayout{bindGroupLayout},
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	computePipeline := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
+	computePipeline, err := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
 		Layout: pipelineLayout,
 		Compute: wgpu.ProgrammableStageDescriptor{
 			Module:     shader,
 			EntryPoint: "main",
 		},
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	encoder := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
+	encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
 		Label: "Command Encoder",
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	computePass := encoder.BeginComputePass(&wgpu.ComputePassDescriptor{
 		Label: "Compute Pass",
@@ -115,13 +140,11 @@ func main() {
 
 	queue := device.GetQueue()
 	cmdBuffer := encoder.Finish(nil)
-
 	queue.WriteBuffer(storageBuffer, 0, wgpu.ToBytes(numbers))
-
 	queue.Submit(cmdBuffer)
 
 	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, uint64(numbersSize), func(status wgpu.BufferMapAsyncStatus) {
-		fmt.Println("MapAsync status: ", status)
+		fmt.Println("MapAsync status:", status)
 	})
 	device.Poll(true)
 

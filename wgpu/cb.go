@@ -34,5 +34,13 @@ void requestDeviceCallback_cgo(WGPURequestDeviceStatus status,
   requestDeviceCallback(status, device, message, userdata);
 }
 
+void deviceUncapturedErrorCallback_cgo(WGPUErrorType type, char const * message,
+                               void * userdata) {
+  extern void deviceUncapturedErrorCallback(WGPUErrorType type,
+                               char const * message, void * userdata);
+
+  deviceUncapturedErrorCallback(type, message, userdata);
+}
+
 */
 import "C"

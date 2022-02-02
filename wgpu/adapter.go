@@ -12,10 +12,8 @@ extern void requestDeviceCallback_cgo(WGPURequestDeviceStatus status,
                                WGPUDevice device, char const *message,
                                void *userdata);
 
-void errorCallback(WGPUErrorType type, char const * message, void * userdata) {
-	printf("type: %d, msg: %s\n", type, message);
-}
-
+extern void deviceUncapturedErrorCallback_cgo(WGPUErrorType type,
+	                           char const * message, void * userdata);
 */
 import "C"
 
@@ -132,18 +130,23 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	var status RequestDeviceStatus
 	var device *Device
 
-	var cb requestDeviceCB = func(s RequestDeviceStatus, d *Device, _ string) {
-		status = s
-		device = d
+	{
+		var cb requestDeviceCB = func(s RequestDeviceStatus, d *Device, _ string) {
+			status = s
+			device = d
+		}
+		handle := cgo.NewHandle(cb)
+		C.wgpuAdapterRequestDevice(p.ref, &desc, C.WGPURequestDeviceCallback(C.requestDeviceCallback_cgo), unsafe.Pointer(&handle))
 	}
-	handle := cgo.NewHandle(cb)
-	C.wgpuAdapterRequestDevice(p.ref, &desc, C.WGPURequestDeviceCallback(C.requestDeviceCallback_cgo), unsafe.Pointer(&handle))
 
 	if status != RequestDeviceStatus_Success {
 		return nil, errors.New("failed to request device")
 	}
 
-	C.wgpuDeviceSetUncapturedErrorCallback(device.ref, C.WGPUErrorCallback(C.errorCallback), nil)
-
+	{
+		device.errChan = make(chan *Error, 1)
+		device.errorCbCgoHandle = cgo.NewHandle(device)
+		C.wgpuDeviceSetUncapturedErrorCallback(device.ref, C.WGPUErrorCallback(C.deviceUncapturedErrorCallback_cgo), unsafe.Pointer(&device.errorCbCgoHandle))
+	}
 	return device, nil
 }
