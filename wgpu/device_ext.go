@@ -6,7 +6,7 @@ type BufferInitDescriptor struct {
 	Usage    BufferUsage
 }
 
-func (p *Device) CreateBufferInit(descriptor *BufferInitDescriptor) *Buffer {
+func (p *Device) CreateBufferInit(descriptor *BufferInitDescriptor) (*Buffer, error) {
 	if descriptor == nil {
 		panic("got nil descriptor")
 	}
@@ -24,17 +24,20 @@ func (p *Device) CreateBufferInit(descriptor *BufferInitDescriptor) *Buffer {
 	const alignMask = CopyBufferAlignment - 1
 	paddedSize := max(((unpaddedSize + alignMask) & ^alignMask), CopyBufferAlignment)
 
-	buffer := p.CreateBuffer(&BufferDescriptor{
+	buffer, err := p.CreateBuffer(&BufferDescriptor{
 		Label:            descriptor.Label,
 		Size:             uint64(paddedSize),
 		Usage:            descriptor.Usage,
 		MappedAtCreation: true,
 	})
+	if err != nil {
+		return nil, err
+	}
 	buf := buffer.GetMappedRange(0, uint64(paddedSize))
 	copy(buf, descriptor.Contents)
 	buffer.Unmap()
 
-	return buffer
+	return buffer, nil
 }
 
 func max(x, y int) int {

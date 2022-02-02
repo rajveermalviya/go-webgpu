@@ -50,16 +50,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	queue := device.GetQueue()
+	defer device.Drop()
 
 	bufferDimensions := newBufferDimensions(uint64(width), uint64(height))
 
 	bufferSize := bufferDimensions.paddedBytesPerRow * bufferDimensions.height
 	// The output buffer lets us retrieve the data as an array
-	outputBuffer := device.CreateBuffer(&wgpu.BufferDescriptor{
+	outputBuffer, err := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Size:  bufferSize,
 		Usage: wgpu.BufferUsage_MapRead | wgpu.BufferUsage_CopyDst,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	textureExtent := wgpu.Extent3D{
 		Width:              uint32(bufferDimensions.width),
@@ -68,7 +71,7 @@ func main() {
 	}
 
 	// The render pipeline renders data into this texture
-	texture := device.CreateTexture(&wgpu.TextureDescriptor{
+	texture, err := device.CreateTexture(&wgpu.TextureDescriptor{
 		Size:          textureExtent,
 		MipLevelCount: 1,
 		SampleCount:   1,
@@ -76,9 +79,16 @@ func main() {
 		Format:        wgpu.TextureFormat_RGBA8UnormSrgb,
 		Usage:         wgpu.TextureUsage_RenderAttachment | wgpu.TextureUsage_CopySrc,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	// Set the background to be red
-	encoder := device.CreateCommandEncoder(nil)
+	encoder, err := device.CreateCommandEncoder(nil)
+	if err != nil {
+		panic(err)
+	}
+
 	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
 		ColorAttachments: []wgpu.RenderPassColorAttachment{{
 			View:       texture.CreateView(nil),
@@ -102,6 +112,7 @@ func main() {
 		&textureExtent,
 	)
 
+	queue := device.GetQueue()
 	queue.Submit(encoder.Finish(nil))
 
 	outputBuffer.MapAsync(wgpu.MapMode_Read, 0, bufferSize, func(status wgpu.BufferMapAsyncStatus) {

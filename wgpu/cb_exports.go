@@ -51,6 +51,18 @@ func requestDeviceCallback(status C.WGPURequestDeviceStatus, device C.WGPUDevice
 
 	cb, ok := handle.Value().(requestDeviceCB)
 	if ok {
-		cb(RequestDeviceStatus(status), &Device{device}, C.GoString(message))
+		cb(RequestDeviceStatus(status), &Device{ref: device}, C.GoString(message))
+	}
+}
+
+type deviceUncapturedErrorCB func(typ ErrorType, message string)
+
+//export deviceUncapturedErrorCallback
+func deviceUncapturedErrorCallback(typ C.WGPUErrorType, message *C.char, userdata unsafe.Pointer) {
+	handle := *(*cgo.Handle)(userdata)
+
+	device, ok := handle.Value().(*Device)
+	if ok {
+		device.storeErr(ErrorType(typ), C.GoString(message))
 	}
 }
