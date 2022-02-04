@@ -4,7 +4,6 @@ package wgpu
 
 #include <stdlib.h>
 
-#include "./lib/webgpu.h"
 #include "./lib/wgpu.h"
 
 extern void requestAdapterCallback_cgo(WGPURequestAdapterStatus status,

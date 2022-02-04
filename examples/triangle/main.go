@@ -105,12 +105,10 @@ func main() {
 		panic(err)
 	}
 
-	prevWidth := 0
-	prevHeight := 0
+	prevWidth, prevHeight := 0, 0
 	{
 		width, height := window.GetSize()
-		prevWidth = width
-		prevHeight = height
+		prevWidth, prevHeight = width, height
 	}
 
 	swapChain, err := device.CreateSwapChain(surface, &wgpu.SwapChainDescriptor{

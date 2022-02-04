@@ -2,7 +2,6 @@ package wgpu
 
 /*
 
-#include "./lib/webgpu.h"
 #include "./lib/wgpu.h"
 
 */
