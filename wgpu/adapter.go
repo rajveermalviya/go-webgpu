@@ -5,7 +5,6 @@ package wgpu
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "./lib/webgpu.h"
 #include "./lib/wgpu.h"
 
 extern void requestDeviceCallback_cgo(WGPURequestDeviceStatus status,

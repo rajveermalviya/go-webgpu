@@ -30,7 +30,6 @@ package wgpu
 #cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64
 #cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64
 
-#include "./lib/webgpu.h"
 #include "./lib/wgpu.h"
 
 extern void logCallback_cgo(WGPULogLevel level, char const *msg);
