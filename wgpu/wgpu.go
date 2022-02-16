@@ -19,7 +19,7 @@ package wgpu
 #cgo windows,386 LDFLAGS: -L${SRCDIR}/lib/windows/386
 
 // Darwin
-#cgo darwin LDFLAGS: -framework Cocoa -framework CoreVideo -framework IOKit -framework QuartzCore -framework Metal
+#cgo darwin LDFLAGS: -framework QuartzCore -framework Metal
 
 #cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin/amd64
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
