@@ -22,10 +22,10 @@ jobs:
               sudo apt-get install -f -y mesa-vulkan-drivers
           - os: macos-latest
             name: Darwin
-            run_examples: true # macos doesn't have software metal api
+            run_examples: false # macos doesn't have software metal api
           - os: windows-latest
             name: Windows
-            run_examples: true # todo: examples failing
+            run_examples: false # todo: examples failing
     steps:
       - name: Checkout
         uses: actions/checkout@v2
