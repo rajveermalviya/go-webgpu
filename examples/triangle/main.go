@@ -40,7 +40,14 @@ func main() {
 		CompatibleSurface: surface,
 	})
 	if err != nil {
-		panic(err)
+		// fallback to cpu
+		adapter, err = wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
+			CompatibleSurface:    surface,
+			ForceFallbackAdapter: true,
+		})
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
