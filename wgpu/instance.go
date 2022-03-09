@@ -24,14 +24,12 @@ type AdapterExtras struct {
 }
 
 type RequestAdapterOptions struct {
-	CompatibleSurface *Surface
-	PowerPreference   PowerPreference
+	CompatibleSurface    *Surface
+	PowerPreference      PowerPreference
+	ForceFallbackAdapter bool
 
 	// ChainedStruct -> WGPUAdapterExtras
 	AdapterExtras *AdapterExtras
-
-	// unused in wgpu
-	// ForceFallbackAdapter bool
 }
 
 func RequestAdapter(options *RequestAdapterOptions) (*Adapter, error) {
@@ -42,6 +40,7 @@ func RequestAdapter(options *RequestAdapterOptions) (*Adapter, error) {
 			opts.compatibleSurface = options.CompatibleSurface.ref
 		}
 		opts.powerPreference = C.WGPUPowerPreference(options.PowerPreference)
+		opts.forceFallbackAdapter = C.bool(options.ForceFallbackAdapter)
 
 		if options.AdapterExtras != nil {
 			adapterExtras := (*C.WGPUAdapterExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUAdapterExtras{}))))

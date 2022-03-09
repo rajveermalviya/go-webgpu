@@ -19,7 +19,11 @@ func main() {
 
 	adapter, err := wgpu.RequestAdapter(nil)
 	if err != nil {
-		panic(err)
+		// fallback to cpu
+		adapter, err = wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{ForceFallbackAdapter: true})
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
