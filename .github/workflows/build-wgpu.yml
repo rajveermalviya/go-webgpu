@@ -33,6 +33,7 @@ jobs:
             goos: linux
             goarch: "386"
             setup_env: |
+              sudo apt update -y;
               sudo apt install -y gcc-multilib;
 
           - name: build - windows/amd64
