@@ -138,7 +138,7 @@ func main() {
 	computePass.SetPipeline(computePipeline)
 	computePass.SetBindGroup(0, bindGroup, nil)
 	computePass.Dispatch(uint32(numbersLength), 1, 1)
-	computePass.EndPass()
+	computePass.End()
 
 	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, uint64(numbersSize))
 

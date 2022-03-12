@@ -10,16 +10,16 @@ import "unsafe"
 
 type ComputePassEncoder struct{ ref C.WGPUComputePassEncoder }
 
-func (p *ComputePassEncoder) Dispatch(x, y, z uint32) {
-	C.wgpuComputePassEncoderDispatch(p.ref, C.uint32_t(x), C.uint32_t(y), C.uint32_t(z))
+func (p *ComputePassEncoder) Dispatch(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
+	C.wgpuComputePassEncoderDispatch(p.ref, C.uint32_t(workgroupCountX), C.uint32_t(workgroupCountY), C.uint32_t(workgroupCountZ))
 }
 
 func (p *ComputePassEncoder) DispatchIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	C.wgpuComputePassEncoderDispatchIndirect(p.ref, indirectBuffer.ref, C.uint64_t(indirectOffset))
 }
 
-func (p *ComputePassEncoder) EndPass() {
-	C.wgpuComputePassEncoderEndPass(p.ref)
+func (p *ComputePassEncoder) End() {
+	C.wgpuComputePassEncoderEnd(p.ref)
 }
 
 func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {

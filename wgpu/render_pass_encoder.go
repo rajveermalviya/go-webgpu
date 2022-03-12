@@ -19,7 +19,7 @@ func (p *RenderPassEncoder) SetPushConstants(stages ShaderStage, offset uint32, 
 
 	C.wgpuRenderPassEncoderSetPushConstants(
 		p.ref,
-		C.WGPUShaderStage(stages),
+		C.WGPUShaderStageFlags(stages),
 		C.uint32_t(offset),
 		C.uint32_t(size),
 		buf,
@@ -61,8 +61,8 @@ func (p *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset 
 	)
 }
 
-func (p *RenderPassEncoder) EndPass() {
-	C.wgpuRenderPassEncoderEndPass(p.ref)
+func (p *RenderPassEncoder) End() {
+	C.wgpuRenderPassEncoderEnd(p.ref)
 }
 
 func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {

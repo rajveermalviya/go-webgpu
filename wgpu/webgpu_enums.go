@@ -225,9 +225,10 @@ const (
 type LoadOp C.WGPULoadOp
 
 const (
-	LoadOp_Clear   LoadOp = C.WGPULoadOp_Clear
-	LoadOp_Load    LoadOp = C.WGPULoadOp_Load
-	LoadOp_Force32 LoadOp = C.WGPULoadOp_Force32
+	LoadOp_Undefined LoadOp = C.WGPULoadOp_Undefined
+	LoadOp_Clear     LoadOp = C.WGPULoadOp_Clear
+	LoadOp_Load      LoadOp = C.WGPULoadOp_Load
+	LoadOp_Force32   LoadOp = C.WGPULoadOp_Force32
 )
 
 type PipelineStatisticName C.WGPUPipelineStatisticName
@@ -365,9 +366,10 @@ const (
 type StoreOp C.WGPUStoreOp
 
 const (
-	StoreOp_Store   StoreOp = C.WGPUStoreOp_Store
-	StoreOp_Discard StoreOp = C.WGPUStoreOp_Discard
-	StoreOp_Force32 StoreOp = C.WGPUStoreOp_Force32
+	StoreOp_Undefined StoreOp = C.WGPUStoreOp_Undefined
+	StoreOp_Store     StoreOp = C.WGPUStoreOp_Store
+	StoreOp_Discard   StoreOp = C.WGPUStoreOp_Discard
+	StoreOp_Force32   StoreOp = C.WGPUStoreOp_Force32
 )
 
 type TextureAspect C.WGPUTextureAspect

@@ -52,19 +52,19 @@ type RenderPassColorAttachment struct {
 	ResolveTarget *TextureView
 	LoadOp        LoadOp
 	StoreOp       StoreOp
-	ClearColor    Color
+	ClearValue    Color
 }
 
 type RenderPassDepthStencilAttachment struct {
-	View            *TextureView
-	DepthLoadOp     LoadOp
-	DepthStoreOp    StoreOp
-	ClearDepth      float32
-	DepthReadOnly   bool
-	StencilLoadOp   LoadOp
-	StencilStoreOp  StoreOp
-	ClearStencil    uint32
-	StencilReadOnly bool
+	View              *TextureView
+	DepthLoadOp       LoadOp
+	DepthStoreOp      StoreOp
+	DepthClearValue   float32
+	DepthReadOnly     bool
+	StencilLoadOp     LoadOp
+	StencilStoreOp    StoreOp
+	StencilClearValue uint32
+	StencilReadOnly   bool
 }
 
 type RenderPassTimestampWrite struct {
@@ -105,11 +105,11 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 				colorAttachment := C.WGPURenderPassColorAttachment{
 					loadOp:  C.WGPULoadOp(v.LoadOp),
 					storeOp: C.WGPUStoreOp(v.StoreOp),
-					clearColor: C.WGPUColor{
-						r: C.double(v.ClearColor.R),
-						g: C.double(v.ClearColor.G),
-						b: C.double(v.ClearColor.B),
-						a: C.double(v.ClearColor.A),
+					clearValue: C.WGPUColor{
+						r: C.double(v.ClearValue.R),
+						g: C.double(v.ClearValue.G),
+						b: C.double(v.ClearValue.B),
+						a: C.double(v.ClearValue.A),
 					},
 				}
 				if v.View != nil {
@@ -135,11 +135,11 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 			}
 			depthStencilAttachment.depthLoadOp = C.WGPULoadOp(descriptor.DepthStencilAttachment.DepthLoadOp)
 			depthStencilAttachment.depthStoreOp = C.WGPUStoreOp(descriptor.DepthStencilAttachment.DepthStoreOp)
-			depthStencilAttachment.clearDepth = C.float(descriptor.DepthStencilAttachment.ClearDepth)
+			depthStencilAttachment.depthClearValue = C.float(descriptor.DepthStencilAttachment.DepthClearValue)
 			depthStencilAttachment.depthReadOnly = C.bool(descriptor.DepthStencilAttachment.DepthReadOnly)
 			depthStencilAttachment.stencilLoadOp = C.WGPULoadOp(descriptor.DepthStencilAttachment.StencilLoadOp)
 			depthStencilAttachment.stencilStoreOp = C.WGPUStoreOp(descriptor.DepthStencilAttachment.StencilStoreOp)
-			depthStencilAttachment.clearStencil = C.uint32_t(descriptor.DepthStencilAttachment.ClearStencil)
+			depthStencilAttachment.stencilClearValue = C.uint32_t(descriptor.DepthStencilAttachment.StencilClearValue)
 			depthStencilAttachment.stencilReadOnly = C.bool(descriptor.DepthStencilAttachment.DepthReadOnly)
 
 			desc.depthStencilAttachment = depthStencilAttachment
