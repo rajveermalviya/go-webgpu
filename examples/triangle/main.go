@@ -27,7 +27,7 @@ func main() {
 	defer window.Destroy()
 
 	surface := wgpu.CreateSurface(&wgpu.SurfaceDescriptor{
-		Xlib: &wgpu.SurfaceDescriptorFromXlib{
+		XlibWindow: &wgpu.SurfaceDescriptorFromXlibWindow{
 			Display: unsafe.Pointer(glfw.GetX11Display()),
 			Window:  uint32(window.GetX11Window()),
 		},
@@ -184,14 +184,14 @@ func main() {
 					View:       nextTexture,
 					LoadOp:     wgpu.LoadOp_Clear,
 					StoreOp:    wgpu.StoreOp_Store,
-					ClearColor: wgpu.Color_Green,
+					ClearValue: wgpu.Color_Green,
 				},
 			},
 		})
 
 		renderPass.SetPipeline(pipeline)
 		renderPass.Draw(3, 1, 0, 0)
-		renderPass.EndPass()
+		renderPass.End()
 		nextTexture.Drop()
 
 		queue := device.GetQueue()

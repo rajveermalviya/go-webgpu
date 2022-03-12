@@ -98,10 +98,10 @@ func main() {
 			View:       texture.CreateView(nil),
 			LoadOp:     wgpu.LoadOp_Clear,
 			StoreOp:    wgpu.StoreOp_Store,
-			ClearColor: wgpu.Color_Red,
+			ClearValue: wgpu.Color_Red,
 		}},
 	})
-	renderPass.EndPass()
+	renderPass.End()
 
 	// Copy the data from the texture to the buffer
 	encoder.CopyTextureToBuffer(

@@ -75,7 +75,7 @@ type SurfaceDescriptorFromWindowsHWND struct {
 	Hwnd      unsafe.Pointer
 }
 
-type SurfaceDescriptorFromXlib struct {
+type SurfaceDescriptorFromXlibWindow struct {
 	Display unsafe.Pointer
 	Window  uint32
 }
@@ -99,8 +99,8 @@ type SurfaceDescriptor struct {
 	// ChainedStruct -> WGPUSurfaceDescriptorFromWindowsHWND
 	WindowsHWND *SurfaceDescriptorFromWindowsHWND
 
-	// ChainedStruct -> WGPUSurfaceDescriptorFromXlib
-	Xlib *SurfaceDescriptorFromXlib
+	// ChainedStruct -> WGPUSurfaceDescriptorFromXlibWindow
+	XlibWindow *SurfaceDescriptorFromXlibWindow
 
 	// ChainedStruct -> WGPUSurfaceDescriptorFromMetalLayer
 	MetalLayer *SurfaceDescriptorFromMetalLayer
@@ -135,16 +135,16 @@ func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(windowsHWND))
 		}
 
-		if descriptor.Xlib != nil {
-			xlib := (*C.WGPUSurfaceDescriptorFromXlib)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromXlib{}))))
-			defer C.free(unsafe.Pointer(xlib))
+		if descriptor.XlibWindow != nil {
+			xlibWindow := (*C.WGPUSurfaceDescriptorFromXlibWindow)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSurfaceDescriptorFromXlibWindow{}))))
+			defer C.free(unsafe.Pointer(xlibWindow))
 
-			xlib.chain.next = nil
-			xlib.chain.sType = C.WGPUSType_SurfaceDescriptorFromXlib
-			xlib.display = descriptor.Xlib.Display
-			xlib.window = C.uint32_t(descriptor.Xlib.Window)
+			xlibWindow.chain.next = nil
+			xlibWindow.chain.sType = C.WGPUSType_SurfaceDescriptorFromXlibWindow
+			xlibWindow.display = descriptor.XlibWindow.Display
+			xlibWindow.window = C.uint32_t(descriptor.XlibWindow.Window)
 
-			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(xlib))
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(xlibWindow))
 		}
 
 		if descriptor.MetalLayer != nil {
