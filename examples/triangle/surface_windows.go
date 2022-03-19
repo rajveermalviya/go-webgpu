@@ -7,13 +7,18 @@ import (
 	"github.com/rajveermalviya/go-webgpu/wgpu"
 )
 
+/*
+
+#include <windows.h>
+
+*/
 import "C"
 
 func getSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
 	return &wgpu.SurfaceDescriptor{
 		WindowsHWND: &wgpu.SurfaceDescriptorFromWindowsHWND{
 			Hwnd:      unsafe.Pointer(w.GetWin32Window()),
-			Hinstance: uint32(C.GetModuleHandle(nil)),
+			Hinstance: unsafe.Pointer(C.GetModuleHandle(nil)),
 		},
 	}
 }
