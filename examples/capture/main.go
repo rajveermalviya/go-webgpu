@@ -9,6 +9,10 @@ import (
 	"github.com/rajveermalviya/go-webgpu/wgpu"
 )
 
+var forceFallbackAdapter = func() bool {
+	return os.Getenv("WGPU_FORCE_FALLBACK_ADAPTER") == "1"
+}()
+
 type BufferDimensions struct {
 	width               uint64
 	height              uint64
@@ -37,13 +41,11 @@ func main() {
 	width := 100
 	height := 200
 
-	adapter, err := wgpu.RequestAdapter(nil)
+	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
+		ForceFallbackAdapter: forceFallbackAdapter,
+	})
 	if err != nil {
-		// fallback to cpu
-		adapter, err = wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{ForceFallbackAdapter: true})
-		if err != nil {
-			panic(err)
-		}
+		panic(err)
 	}
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{

@@ -25,15 +25,14 @@ jobs:
             run_examples: false # macos doesn't have software metal api
           - os: windows-latest
             name: Windows
-            run_examples: false # todo: examples failing
+            run_examples: true
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          stable: "false"
-          go-version: "1.18.0-beta2"
+          go-version: "1.18"
       - name: Install os dependencies
         run: ${{ matrix.install_deps_command }}
         shell: bash
@@ -47,8 +46,7 @@ jobs:
         if: ${{ matrix.run_examples }}
         run: |
           set -x;
-          cd examples;
-          go mod edit -replace github.com/rajveermalviya/go-webgpu/wgpu=../wgpu/;
-          go run ./compute/;
-          go run ./capture/;
+          export WGPU_FORCE_FALLBACK_ADAPTER=1;
+          go run github.com/rajveermalviya/go-webgpu/examples/compute;
+          go run github.com/rajveermalviya/go-webgpu/examples/capture;
         shell: bash

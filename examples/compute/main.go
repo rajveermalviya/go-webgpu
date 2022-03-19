@@ -2,12 +2,17 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"unsafe"
 
 	"github.com/rajveermalviya/go-webgpu/wgpu"
 
 	_ "embed"
 )
+
+var forceFallbackAdapter = func() bool {
+	return os.Getenv("WGPU_FORCE_FALLBACK_ADAPTER") == "1"
+}()
 
 //go:embed shader.wgsl
 var shader string
@@ -17,13 +22,11 @@ func main() {
 	numbersSize := len(numbers) * int(unsafe.Sizeof(uint32(0)))
 	numbersLength := len(numbers)
 
-	adapter, err := wgpu.RequestAdapter(nil)
+	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
+		ForceFallbackAdapter: forceFallbackAdapter,
+	})
 	if err != nil {
-		// fallback to cpu
-		adapter, err = wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{ForceFallbackAdapter: true})
-		if err != nil {
-			panic(err)
-		}
+		panic(err)
 	}
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
