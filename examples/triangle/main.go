@@ -1,14 +1,19 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
-	"unsafe"
+	"os"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
 
 	_ "embed"
 )
+
+var forceFallbackAdapter = func() bool {
+	return os.Getenv("WGPU_FORCE_FALLBACK_ADAPTER") == "1"
+}()
 
 //go:embed shader.wgsl
 var shader string
@@ -26,28 +31,17 @@ func main() {
 	}
 	defer window.Destroy()
 
-	surface := wgpu.CreateSurface(&wgpu.SurfaceDescriptor{
-		XlibWindow: &wgpu.SurfaceDescriptorFromXlibWindow{
-			Display: unsafe.Pointer(glfw.GetX11Display()),
-			Window:  uint32(window.GetX11Window()),
-		},
-	})
+	surface := wgpu.CreateSurface(getSurfaceDescriptor(window))
 	if surface == nil {
 		panic("got nil surface")
 	}
 
 	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
-		CompatibleSurface: surface,
+		ForceFallbackAdapter: forceFallbackAdapter,
+		CompatibleSurface:    surface,
 	})
 	if err != nil {
-		// fallback to cpu
-		adapter, err = wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
-			CompatibleSurface:    surface,
-			ForceFallbackAdapter: true,
-		})
-		if err != nil {
-			panic(err)
-		}
+		panic(err)
 	}
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
