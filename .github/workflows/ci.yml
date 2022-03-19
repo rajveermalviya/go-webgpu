@@ -25,7 +25,7 @@ jobs:
             run_examples: false # macos doesn't have software metal api
           - os: windows-latest
             name: Windows
-            run_examples: true
+            run_examples: false
     steps:
       - name: Checkout
         uses: actions/checkout@v2
