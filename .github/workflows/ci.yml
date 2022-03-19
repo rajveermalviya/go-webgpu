@@ -22,10 +22,10 @@ jobs:
               sudo apt-get install -f -y mesa-vulkan-drivers
           - os: macos-latest
             name: Darwin
-            run_examples: false # macos doesn't have software metal api
+            run_examples: false # macos vm doesn't have software metal api
           - os: windows-latest
             name: Windows
-            run_examples: false
+            run_examples: false # TODO: how to enable WARP ?
     steps:
       - name: Checkout
         uses: actions/checkout@v2
