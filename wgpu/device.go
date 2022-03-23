@@ -695,7 +695,7 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 			addressModeW:  C.WGPUAddressMode(descriptor.AddressModeW),
 			magFilter:     C.WGPUFilterMode(descriptor.MagFilter),
 			minFilter:     C.WGPUFilterMode(descriptor.MinFilter),
-			mipmapFilter:  C.WGPUFilterMode(descriptor.MipmapFilter),
+			mipmapFilter:  C.WGPUMipmapFilterMode(descriptor.MipmapFilter),
 			lodMinClamp:   C.float(descriptor.LodMinClamp),
 			lodMaxClamp:   C.float(descriptor.LodMaxClamp),
 			compare:       C.WGPUCompareFunction(descriptor.Compare),

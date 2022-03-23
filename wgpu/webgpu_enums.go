@@ -231,6 +231,14 @@ const (
 	LoadOp_Force32   LoadOp = C.WGPULoadOp_Force32
 )
 
+type MipmapFilterMode C.WGPUMipmapFilterMode
+
+const (
+	MipmapFilterMode_Nearest MipmapFilterMode = C.WGPUMipmapFilterMode_Nearest
+	MipmapFilterMode_Linear  MipmapFilterMode = C.WGPUMipmapFilterMode_Linear
+	MipmapFilterMode_Force32 MipmapFilterMode = C.WGPUMipmapFilterMode_Force32
+)
+
 type PipelineStatisticName C.WGPUPipelineStatisticName
 
 const (

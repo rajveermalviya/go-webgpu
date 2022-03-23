@@ -268,6 +268,12 @@ typedef enum WGPULoadOp {
     WGPULoadOp_Force32 = 0x7FFFFFFF
 } WGPULoadOp;
 
+typedef enum WGPUMipmapFilterMode {
+    WGPUMipmapFilterMode_Nearest = 0x00000000,
+    WGPUMipmapFilterMode_Linear = 0x00000001,
+    WGPUMipmapFilterMode_Force32 = 0x7FFFFFFF
+} WGPUMipmapFilterMode;
+
 typedef enum WGPUPipelineStatisticName {
     WGPUPipelineStatisticName_VertexShaderInvocations = 0x00000000,
     WGPUPipelineStatisticName_ClipperInvocations = 0x00000001,
@@ -353,6 +359,7 @@ typedef enum WGPUSType {
     WGPUSType_PrimitiveDepthClipControl = 0x00000007,
     WGPUSType_SurfaceDescriptorFromWaylandSurface = 0x00000008,
     WGPUSType_SurfaceDescriptorFromAndroidNativeWindow = 0x00000009,
+    WGPUSType_SurfaceDescriptorFromXcbWindow = 0x0000000A,
     WGPUSType_Force32 = 0x7FFFFFFF
 } WGPUSType;
 
@@ -799,6 +806,11 @@ typedef struct WGPUQuerySetDescriptor {
     uint32_t pipelineStatisticsCount;
 } WGPUQuerySetDescriptor;
 
+typedef struct WGPUQueueDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+} WGPUQueueDescriptor;
+
 typedef struct WGPURenderBundleDescriptor {
     WGPUChainedStruct const * nextInChain;
     char const * label;
@@ -853,17 +865,18 @@ typedef struct WGPUSamplerDescriptor {
     WGPUAddressMode addressModeW;
     WGPUFilterMode magFilter;
     WGPUFilterMode minFilter;
-    WGPUFilterMode mipmapFilter;
+    WGPUMipmapFilterMode mipmapFilter;
     float lodMinClamp;
     float lodMaxClamp;
     WGPUCompareFunction compare;
     uint16_t maxAnisotropy;
 } WGPUSamplerDescriptor;
 
-typedef struct WGPUShaderModuleDescriptor {
+typedef struct WGPUShaderModuleCompilationHint {
     WGPUChainedStruct const * nextInChain;
-    char const * label;
-} WGPUShaderModuleDescriptor;
+    char const * entryPoint;
+    WGPUPipelineLayout layout;
+} WGPUShaderModuleCompilationHint;
 
 typedef struct WGPUShaderModuleSPIRVDescriptor {
     WGPUChainedStruct chain;
@@ -921,6 +934,12 @@ typedef struct WGPUSurfaceDescriptorFromWindowsHWND {
     void * hinstance;
     void * hwnd;
 } WGPUSurfaceDescriptorFromWindowsHWND;
+
+typedef struct WGPUSurfaceDescriptorFromXcbWindow {
+    WGPUChainedStruct chain;
+    void * connection;
+    uint32_t window;
+} WGPUSurfaceDescriptorFromXcbWindow;
 
 typedef struct WGPUSurfaceDescriptorFromXlibWindow {
     WGPUChainedStruct chain;
@@ -1055,6 +1074,13 @@ typedef struct WGPURequiredLimits {
     WGPULimits limits;
 } WGPURequiredLimits;
 
+typedef struct WGPUShaderModuleDescriptor {
+    WGPUChainedStruct const * nextInChain;
+    char const * label;
+    uint32_t hintCount;
+    WGPUShaderModuleCompilationHint const * hints;
+} WGPUShaderModuleDescriptor;
+
 typedef struct WGPUSupportedLimits {
     WGPUChainedStructOut * nextInChain;
     WGPULimits limits;
@@ -1069,6 +1095,8 @@ typedef struct WGPUTextureDescriptor {
     WGPUTextureFormat format;
     uint32_t mipLevelCount;
     uint32_t sampleCount;
+    uint32_t viewFormatCount;
+    WGPUTextureFormat const * viewFormats;
 } WGPUTextureDescriptor;
 
 typedef struct WGPUVertexBufferLayout {
@@ -1105,6 +1133,7 @@ typedef struct WGPUDeviceDescriptor {
     uint32_t requiredFeaturesCount;
     WGPUFeatureName const * requiredFeatures;
     WGPURequiredLimits const * requiredLimits;
+    WGPUQueueDescriptor defaultQueue;
 } WGPUDeviceDescriptor;
 
 typedef struct WGPURenderPassDescriptor {
@@ -1159,7 +1188,7 @@ typedef void (*WGPUCreateComputePipelineAsyncCallback)(WGPUCreatePipelineAsyncSt
 typedef void (*WGPUCreateRenderPipelineAsyncCallback)(WGPUCreatePipelineAsyncStatus status, WGPURenderPipeline pipeline, char const * message, void * userdata);
 typedef void (*WGPUDeviceLostCallback)(WGPUDeviceLostReason reason, char const * message, void * userdata);
 typedef void (*WGPUErrorCallback)(WGPUErrorType type, char const * message, void * userdata);
-typedef void (*WGPUProc)();
+typedef void (*WGPUProc)(void);
 typedef void (*WGPUQueueWorkDoneCallback)(WGPUQueueWorkDoneStatus status, void * userdata);
 typedef void (*WGPURequestAdapterCallback)(WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * userdata);
 typedef void (*WGPURequestDeviceCallback)(WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void * userdata);
@@ -1249,7 +1278,7 @@ typedef void (*WGPUProcInstanceRequestAdapter)(WGPUInstance instance, WGPUReques
 typedef void (*WGPUProcQuerySetDestroy)(WGPUQuerySet querySet);
 
 // Procs of Queue
-typedef void (*WGPUProcQueueOnSubmittedWorkDone)(WGPUQueue queue, uint64_t signalValue, WGPUQueueWorkDoneCallback callback, void * userdata);
+typedef void (*WGPUProcQueueOnSubmittedWorkDone)(WGPUQueue queue, WGPUQueueWorkDoneCallback callback, void * userdata);
 typedef void (*WGPUProcQueueSubmit)(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
 typedef void (*WGPUProcQueueWriteBuffer)(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size);
 typedef void (*WGPUProcQueueWriteTexture)(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
@@ -1397,7 +1426,7 @@ WGPU_EXPORT void wgpuInstanceRequestAdapter(WGPUInstance instance, WGPURequestAd
 WGPU_EXPORT void wgpuQuerySetDestroy(WGPUQuerySet querySet);
 
 // Methods of Queue
-WGPU_EXPORT void wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, uint64_t signalValue, WGPUQueueWorkDoneCallback callback, void * userdata);
+WGPU_EXPORT void wgpuQueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallback callback, void * userdata);
 WGPU_EXPORT void wgpuQueueSubmit(WGPUQueue queue, uint32_t commandCount, WGPUCommandBuffer const * commands);
 WGPU_EXPORT void wgpuQueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size);
 WGPU_EXPORT void wgpuQueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize);
