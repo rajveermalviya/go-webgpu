@@ -1,6 +1,5 @@
 {
   "gopls": {
-    "build.experimentalWorkspaceModule": true,
     "build.env": {
       "CGO_ENABLED": "1",
     }

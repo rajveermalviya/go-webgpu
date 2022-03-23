@@ -1,3 +1,5 @@
+//go:build !wayland
+
 package main
 
 import (
