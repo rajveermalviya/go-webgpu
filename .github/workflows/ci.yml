@@ -23,7 +23,7 @@ jobs:
           - os: macos-latest
             name: Darwin
             run_examples: false # macos vm doesn't have software metal api
-          - os: windows-latest
+          - os: windows-2019
             name: Windows
             run_examples: true # TODO: how to enable WARP ?
     steps:
