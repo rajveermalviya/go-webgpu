@@ -25,7 +25,7 @@ jobs:
             run_examples: false # macos vm doesn't have software metal api
           - os: windows-latest
             name: Windows
-            run_examples: false # TODO: how to enable WARP ?
+            run_examples: true # TODO: how to enable WARP ?
     steps:
       - name: Checkout
         uses: actions/checkout@v2
