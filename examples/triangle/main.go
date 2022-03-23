@@ -11,9 +11,24 @@ import (
 	_ "embed"
 )
 
-var forceFallbackAdapter = func() bool {
-	return os.Getenv("WGPU_FORCE_FALLBACK_ADAPTER") == "1"
-}()
+var forceFallbackAdapter = os.Getenv("WGPU_FORCE_FALLBACK_ADAPTER") == "1"
+
+func init() {
+	switch os.Getenv("WGPU_LOG_LEVEL") {
+	case "OFF":
+		wgpu.SetLogLevel(wgpu.LogLevel_Off)
+	case "ERROR":
+		wgpu.SetLogLevel(wgpu.LogLevel_Error)
+	case "WARN":
+		wgpu.SetLogLevel(wgpu.LogLevel_Warn)
+	case "INFO":
+		wgpu.SetLogLevel(wgpu.LogLevel_Info)
+	case "DEBUG":
+		wgpu.SetLogLevel(wgpu.LogLevel_Debug)
+	case "TRACE":
+		wgpu.SetLogLevel(wgpu.LogLevel_Trace)
+	}
+}
 
 //go:embed shader.wgsl
 var shader string
@@ -106,11 +121,7 @@ func main() {
 		panic(err)
 	}
 
-	prevWidth, prevHeight := 0, 0
-	{
-		width, height := window.GetSize()
-		prevWidth, prevHeight = width, height
-	}
+	prevWidth, prevHeight := window.GetSize()
 
 	swapChain, err := device.CreateSwapChain(surface, &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
