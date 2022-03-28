@@ -2,8 +2,8 @@ github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958 h1:TL70PMkdPC
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/mathgl v1.0.0 h1:t9DznWJlXxxjeeKLIdovCOVJQk/GzDEL7h/h+Ro2B68=
 github.com/go-gl/mathgl v1.0.0/go.mod h1:yhpkQzEiH9yPyxDUGzkmgScbaBVlhC06qodikEM0ZwQ=
-github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220323062639-e8dc11cfb10c h1:y4DDqvYj3kbF1yMA60OQ/ijPc1rBesu8MTGkZSUqocc=
-github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220323062639-e8dc11cfb10c/go.mod h1:r/IWMXLW2oVFW46SuTM4Z7SHC6YX5tBzxsu4S0iL1Vk=
+github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220328185106-601f822a2d9a h1:5xvzT4piUR6WpGsnPEnwiErpSmwPd1pQrfGfySXru80=
+github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220328185106-601f822a2d9a/go.mod h1:r/IWMXLW2oVFW46SuTM4Z7SHC6YX5tBzxsu4S0iL1Vk=
 golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f h1:FO4MZ3N56GnxbqxGKqh+YTzUWQ2sDwtFQEZgLOxh9Jc=
 golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

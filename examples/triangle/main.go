@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -203,6 +202,5 @@ func main() {
 		swapChain.Present()
 
 		glfw.PollEvents()
-		runtime.GC()
 	}
 }
