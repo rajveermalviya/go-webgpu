@@ -11,14 +11,15 @@ import "C"
 
 import (
 	"fmt"
+	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
 
 type Device struct {
-	ref              C.WGPUDevice
-	errChan          chan *Error
-	errorCbCgoHandle cgo.Handle
+	ref     C.WGPUDevice
+	errChan chan *Error
+	handle  cgo.Handle
 }
 
 func (p *Device) getErr() (err error) {
@@ -30,7 +31,7 @@ func (p *Device) getErr() (err error) {
 }
 
 func (p *Device) storeErr(typ ErrorType, message string) {
-	err := &Error{Type: typ, Message: message}
+	err := &Error{Type: typ, Message: fmt.Sprint(message)}
 	select {
 	case p.errChan <- err:
 	default:
@@ -52,6 +53,7 @@ func (p *Device) storeErr(typ ErrorType, message string) {
 
 func (p *Device) Poll(forceWait bool) {
 	C.wgpuDevicePoll(p.ref, C.bool(forceWait))
+	runtime.KeepAlive(p)
 }
 
 type BufferBindingLayout struct {
@@ -144,6 +146,8 @@ func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*
 	}
 
 	ref := C.wgpuDeviceCreateBindGroupLayout(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -151,7 +155,10 @@ func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*
 	if ref == nil {
 		panic("Failed to acquire BindGroupLayout")
 	}
-	return &BindGroupLayout{ref}, nil
+
+	layout := &BindGroupLayout{ref}
+	runtime.SetFinalizer(layout, bindGroupLayoutFinalizer)
+	return layout, nil
 }
 
 type BindGroupEntry struct {
@@ -217,6 +224,17 @@ func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, e
 	}
 
 	ref := C.wgpuDeviceCreateBindGroup(p.ref, &desc)
+	runtime.KeepAlive(p)
+	if descriptor != nil {
+		runtime.KeepAlive(descriptor.Layout)
+
+		for _, v := range descriptor.Entries {
+			runtime.KeepAlive(v.Buffer)
+			runtime.KeepAlive(v.Sampler)
+			runtime.KeepAlive(v.TextureView)
+		}
+	}
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -224,7 +242,10 @@ func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, e
 	if ref == nil {
 		panic("Failed to acquire BindGroup")
 	}
-	return &BindGroup{ref}, nil
+
+	bindGroup := &BindGroup{ref}
+	runtime.SetFinalizer(bindGroup, bindGroupFinalizer)
+	return bindGroup, nil
 }
 
 type BufferDescriptor struct {
@@ -251,6 +272,8 @@ func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
 	}
 
 	ref := C.wgpuDeviceCreateBuffer(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -259,7 +282,9 @@ func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
 		panic("Failed to acquire Buffer")
 	}
 
-	return &Buffer{ref}, nil
+	buffer := &Buffer{ref}
+	runtime.SetFinalizer(buffer, bufferFinalizer)
+	return buffer, nil
 }
 
 type CommandEncoderDescriptor struct {
@@ -277,6 +302,8 @@ func (p *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) (*Co
 	}
 
 	ref := C.wgpuDeviceCreateCommandEncoder(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -336,6 +363,12 @@ func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) (*
 	}
 
 	ref := C.wgpuDeviceCreateComputePipeline(p.ref, &desc)
+	runtime.KeepAlive(p)
+	if descriptor != nil {
+		runtime.KeepAlive(descriptor.Layout)
+		runtime.KeepAlive(descriptor.Compute.Module)
+	}
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -343,7 +376,10 @@ func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) (*
 	if ref == nil {
 		panic("Failed to acquire ComputePipeline")
 	}
-	return &ComputePipeline{ref}, nil
+
+	pipeline := &ComputePipeline{ref}
+	runtime.SetFinalizer(pipeline, computePipelineFinalizer)
+	return pipeline, nil
 }
 
 type PipelineLayoutDescriptor struct {
@@ -379,6 +415,13 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 	}
 
 	ref := C.wgpuDeviceCreatePipelineLayout(p.ref, &desc)
+	runtime.KeepAlive(p)
+	if descriptor != nil {
+		for _, v := range descriptor.BindGroupLayouts {
+			runtime.KeepAlive(v)
+		}
+	}
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -661,6 +704,15 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 	}
 
 	ref := C.wgpuDeviceCreateRenderPipeline(p.ref, &desc)
+	runtime.KeepAlive(p)
+	if descriptor != nil {
+		runtime.KeepAlive(descriptor.Layout)
+		runtime.KeepAlive(descriptor.Vertex.Module)
+		if descriptor.Fragment != nil {
+			runtime.KeepAlive(descriptor.Fragment.Module)
+		}
+	}
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -668,7 +720,10 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 	if ref == nil {
 		panic("Failed to acquire RenderPipeline")
 	}
-	return &RenderPipeline{ref}, nil
+
+	renderPipeline := &RenderPipeline{ref}
+	runtime.SetFinalizer(renderPipeline, renderPipelineFinalizer)
+	return renderPipeline, nil
 }
 
 type SamplerDescriptor struct {
@@ -711,6 +766,8 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 	}
 
 	ref := C.wgpuDeviceCreateSampler(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -718,7 +775,10 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 	if ref == nil {
 		panic("Failed to acquire Sampler")
 	}
-	return &Sampler{ref}, nil
+
+	sampler := &Sampler{ref}
+	runtime.SetFinalizer(sampler, samplerFinalizer)
+	return sampler, nil
 }
 
 type ShaderModuleSPIRVDescriptor struct {
@@ -786,6 +846,8 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 	}
 
 	ref := C.wgpuDeviceCreateShaderModule(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -793,7 +855,10 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 	if ref == nil {
 		panic("Failed to acquire ShaderModule")
 	}
-	return &ShaderModule{ref}, nil
+
+	shaderModule := &ShaderModule{ref}
+	runtime.SetFinalizer(shaderModule, shaderModuleFinalizer)
+	return shaderModule, nil
 }
 
 type SwapChainDescriptor struct {
@@ -821,6 +886,9 @@ func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescript
 	}
 
 	ref := C.wgpuDeviceCreateSwapChain(p.ref, surface.ref, &desc)
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(surface)
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -828,6 +896,7 @@ func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescript
 	if ref == nil {
 		panic("Failed to acquire SwapChain")
 	}
+
 	return &SwapChain{ref: ref, device: p}, nil
 }
 
@@ -873,6 +942,8 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 	}
 
 	ref := C.wgpuDeviceCreateTexture(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -880,28 +951,33 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 	if ref == nil {
 		panic("Failed to acquire Texture")
 	}
-	return &Texture{ref}, nil
+
+	texture := &Texture{ref}
+	runtime.SetFinalizer(texture, textureFinalizer)
+	return texture, nil
 }
 
 func (p *Device) GetLimits() SupportedLimits {
 	var limits C.WGPUSupportedLimits
 
 	C.wgpuDeviceGetLimits(p.ref, &limits)
+	runtime.KeepAlive(p)
 
 	return SupportedLimits{limitsFromC(limits.limits)}
 }
 
 func (p *Device) GetQueue() *Queue {
 	ref := C.wgpuDeviceGetQueue(p.ref)
+	runtime.KeepAlive(p)
+
 	if ref == nil {
 		panic("Failed to acquire Queue")
 	}
 	return &Queue{ref}
 }
 
-func (p *Device) Drop() {
+func deviceFinalizer(p *Device) {
 	C.wgpuDeviceDrop(p.ref)
-	p.errorCbCgoHandle.Delete()
 
 loop:
 	for {
@@ -912,4 +988,7 @@ loop:
 			break loop
 		}
 	}
+
+	p.handle.Delete()
+	close(p.errChan)
 }

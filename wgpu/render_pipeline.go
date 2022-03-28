@@ -9,6 +9,6 @@ import "C"
 
 type RenderPipeline struct{ ref C.WGPURenderPipeline }
 
-func (p *RenderPipeline) Drop() {
+func renderPipelineFinalizer(p *RenderPipeline) {
 	C.wgpuRenderPipelineDrop(p.ref)
 }

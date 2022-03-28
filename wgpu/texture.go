@@ -8,7 +8,10 @@ package wgpu
 
 */
 import "C"
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 type Texture struct{ ref C.WGPUTexture }
 
@@ -46,18 +49,20 @@ func (p *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
 	}
 
 	ref := C.wgpuTextureCreateView(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	if ref == nil {
 		panic("Failed to acquire TextureView")
 	}
-	return &TextureView{ref}
+
+	textureView := &TextureView{ref}
+	runtime.SetFinalizer(textureView, textureViewFinalizer)
+	return textureView
 }
 
 func (p *Texture) Destroy() {
 	C.wgpuTextureDestroy(p.ref)
-}
-
-func (p *Texture) Drop() {
-	C.wgpuTextureDrop(p.ref)
+	runtime.KeepAlive(p)
 }
 
 func (p *Texture) AsImageCopy() *ImageCopyTexture {
@@ -67,4 +72,8 @@ func (p *Texture) AsImageCopy() *ImageCopyTexture {
 		Origin:   Origin3D{},
 		Aspect:   TextureAspect_All,
 	}
+}
+
+func textureFinalizer(p *Texture) {
+	C.wgpuTextureDrop(p.ref)
 }

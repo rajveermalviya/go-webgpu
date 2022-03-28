@@ -6,6 +6,7 @@ package wgpu
 
 */
 import "C"
+import "runtime"
 
 type SwapChain struct {
 	ref    C.WGPUSwapChain
@@ -14,6 +15,8 @@ type SwapChain struct {
 
 func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
 	ref := C.wgpuSwapChainGetCurrentTextureView(p.ref)
+	runtime.KeepAlive(p)
+
 	err := p.device.getErr()
 	if err != nil {
 		return nil, err
@@ -21,9 +24,13 @@ func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
 	if ref == nil {
 		panic("Failed to acquire TextureView")
 	}
-	return &TextureView{ref}, nil
+
+	textureView := &TextureView{ref}
+	runtime.SetFinalizer(textureView, textureViewFinalizer)
+	return textureView, nil
 }
 
 func (p *SwapChain) Present() {
 	C.wgpuSwapChainPresent(p.ref)
+	runtime.KeepAlive(p)
 }

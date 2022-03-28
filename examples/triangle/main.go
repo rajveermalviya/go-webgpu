@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -70,7 +71,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer device.Drop()
 
 	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label:          "shader.wgsl",
@@ -197,12 +197,12 @@ func main() {
 		renderPass.SetPipeline(pipeline)
 		renderPass.Draw(3, 1, 0, 0)
 		renderPass.End()
-		nextTexture.Drop()
 
 		queue := device.GetQueue()
 		queue.Submit(encoder.Finish(nil))
 		swapChain.Present()
 
 		glfw.PollEvents()
+		runtime.GC()
 	}
 }

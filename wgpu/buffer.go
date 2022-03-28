@@ -10,6 +10,7 @@ extern void bufferMapCallback_cgo(WGPUBufferMapAsyncStatus status, void *userdat
 import "C"
 
 import (
+	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -18,19 +19,18 @@ type Buffer struct{ ref C.WGPUBuffer }
 
 func (p *Buffer) GetMappedRange(offset uint64, size uint64) []byte {
 	buf := C.wgpuBufferGetMappedRange(p.ref, C.size_t(offset), C.size_t(size))
+	runtime.KeepAlive(p)
 	return unsafe.Slice((*byte)(buf), size)
 }
 
 func (p *Buffer) Unmap() {
 	C.wgpuBufferUnmap(p.ref)
+	runtime.KeepAlive(p)
 }
 
 func (p *Buffer) Destroy() {
 	C.wgpuBufferDestroy(p.ref)
-}
-
-func (p *Buffer) Drop() {
-	C.wgpuBufferDrop(p.ref)
+	runtime.KeepAlive(p)
 }
 
 type BufferMapCallback func(BufferMapAsyncStatus)
@@ -46,6 +46,11 @@ func (p *Buffer) MapAsync(mode MapMode, offset uint64, size uint64, callback Buf
 		(C.WGPUBufferMapCallback)(C.bufferMapCallback_cgo),
 		unsafe.Pointer(&handle),
 	)
+	runtime.KeepAlive(p)
+}
+
+func bufferFinalizer(p *Buffer) {
+	C.wgpuBufferDrop(p.ref)
 }
 
 func FromBytes[E any](src []byte, zeroElm E) []E {

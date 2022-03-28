@@ -10,6 +10,7 @@ package wgpu
 import "C"
 
 import (
+	"runtime"
 	"unsafe"
 )
 
@@ -35,6 +36,12 @@ func (p *Queue) Submit(commands ...*CommandBuffer) {
 			(*C.WGPUCommandBuffer)(commandRefs),
 		)
 	}
+
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(commands)
+	for _, v := range commands {
+		runtime.KeepAlive(v)
+	}
 }
 
 func (p *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data []byte) {
@@ -43,17 +50,18 @@ func (p *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data []byte) {
 	defer C.free(buf)
 
 	C.wgpuQueueWriteBuffer(p.ref, buffer.ref, C.uint64_t(bufferOffset), buf, C.size_t(size))
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(buffer)
 }
 
-func (p *Queue) WriteTexture(destination ImageCopyTexture, data []byte, dataLayout TextureDataLayout, writeSize Extent3D) {
+func (p *Queue) WriteTexture(destination *ImageCopyTexture, data []byte, dataLayout *TextureDataLayout, writeSize *Extent3D) {
 	size := len(data)
 	buf := C.CBytes(data)
 	defer C.free(buf)
 
-	C.wgpuQueueWriteTexture(
-		p.ref,
-		&C.WGPUImageCopyTexture{
-			texture:  destination.Texture.ref,
+	var dst C.WGPUImageCopyTexture
+	if destination != nil {
+		dst = C.WGPUImageCopyTexture{
 			mipLevel: C.uint32_t(destination.MipLevel),
 			origin: C.WGPUOrigin3D{
 				x: C.uint32_t(destination.Origin.X),
@@ -61,18 +69,33 @@ func (p *Queue) WriteTexture(destination ImageCopyTexture, data []byte, dataLayo
 				z: C.uint32_t(destination.Origin.Z),
 			},
 			aspect: C.WGPUTextureAspect(destination.Aspect),
-		},
-		buf,
-		C.size_t(size),
-		&C.WGPUTextureDataLayout{
+		}
+		if destination.Texture != nil {
+			dst.texture = destination.Texture.ref
+		}
+	}
+
+	var layout C.WGPUTextureDataLayout
+	if dataLayout != nil {
+		layout = C.WGPUTextureDataLayout{
 			offset:       C.uint64_t(dataLayout.Offset),
 			bytesPerRow:  C.uint32_t(dataLayout.BytesPerRow),
 			rowsPerImage: C.uint32_t(dataLayout.RowsPerImage),
-		},
-		&C.WGPUExtent3D{
+		}
+	}
+
+	var writeExtent C.WGPUExtent3D
+	if writeSize != nil {
+		writeExtent = C.WGPUExtent3D{
 			width:              C.uint32_t(writeSize.Width),
 			height:             C.uint32_t(writeSize.Height),
 			depthOrArrayLayers: C.uint32_t(writeSize.DepthOrArrayLayers),
-		},
-	)
+		}
+	}
+
+	C.wgpuQueueWriteTexture(p.ref, &dst, buf, C.size_t(size), &layout, &writeExtent)
+	runtime.KeepAlive(p)
+	if destination != nil {
+		runtime.KeepAlive(destination.Texture)
+	}
 }

@@ -9,6 +9,6 @@ import "C"
 
 type ComputePipeline struct{ ref C.WGPUComputePipeline }
 
-func (p *ComputePipeline) Drop() {
+func computePipelineFinalizer(p *ComputePipeline) {
 	C.wgpuComputePipelineDrop(p.ref)
 }
