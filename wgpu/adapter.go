@@ -10,14 +10,12 @@ package wgpu
 extern void requestDeviceCallback_cgo(WGPURequestDeviceStatus status,
                                WGPUDevice device, char const *message,
                                void *userdata);
-
-extern void deviceUncapturedErrorCallback_cgo(WGPUErrorType type,
-	                           char const * message, void * userdata);
 */
 import "C"
 
 import (
 	"errors"
+	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -32,6 +30,7 @@ func (p *Adapter) GetLimits() SupportedLimits {
 	var limits C.WGPUSupportedLimits
 
 	C.wgpuAdapterGetLimits(p.ref, &limits)
+	runtime.KeepAlive(p)
 
 	return SupportedLimits{limitsFromC(limits.limits)}
 }
@@ -49,6 +48,7 @@ func (p *Adapter) GetProperties() AdapterProperties {
 	var props C.WGPUAdapterProperties
 
 	C.wgpuAdapterGetProperties(p.ref, &props)
+	runtime.KeepAlive(p)
 
 	return AdapterProperties{
 		VendorID:          uint32(props.vendorID),
@@ -129,23 +129,17 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	var status RequestDeviceStatus
 	var device *Device
 
-	{
-		var cb requestDeviceCB = func(s RequestDeviceStatus, d *Device, _ string) {
-			status = s
-			device = d
-		}
-		handle := cgo.NewHandle(cb)
-		C.wgpuAdapterRequestDevice(p.ref, &desc, C.WGPURequestDeviceCallback(C.requestDeviceCallback_cgo), unsafe.Pointer(&handle))
+	var cb requestDeviceCB = func(s RequestDeviceStatus, d *Device, _ string) {
+		status = s
+		device = d
 	}
+	handle := cgo.NewHandle(cb)
+	C.wgpuAdapterRequestDevice(p.ref, &desc, C.WGPURequestDeviceCallback(C.requestDeviceCallback_cgo), unsafe.Pointer(&handle))
+	runtime.KeepAlive(p)
 
 	if status != RequestDeviceStatus_Success {
 		return nil, errors.New("failed to request device")
 	}
 
-	{
-		device.errChan = make(chan *Error, 1)
-		device.errorCbCgoHandle = cgo.NewHandle(device)
-		C.wgpuDeviceSetUncapturedErrorCallback(device.ref, C.WGPUErrorCallback(C.deviceUncapturedErrorCallback_cgo), unsafe.Pointer(&device.errorCbCgoHandle))
-	}
 	return device, nil
 }

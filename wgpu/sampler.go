@@ -9,6 +9,6 @@ import "C"
 
 type Sampler struct{ ref C.WGPUSampler }
 
-func (p *Sampler) Drop() {
+func samplerFinalizer(p *Sampler) {
 	C.wgpuSamplerDrop(p.ref)
 }

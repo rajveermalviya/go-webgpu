@@ -8,7 +8,10 @@ package wgpu
 
 */
 import "C"
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 type CommandEncoder struct{ ref C.WGPUCommandEncoder }
 
@@ -36,6 +39,7 @@ func (p *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *Co
 	}
 
 	ref := C.wgpuCommandEncoderBeginComputePass(p.ref, &desc)
+	runtime.KeepAlive(p)
 	if ref == nil {
 		panic("Failed to acquire ComputePassEncoder")
 	}
@@ -147,9 +151,22 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	}
 
 	ref := C.wgpuCommandEncoderBeginRenderPass(p.ref, &desc)
+	runtime.KeepAlive(p)
+	if descriptor != nil {
+		for _, v := range descriptor.ColorAttachments {
+			runtime.KeepAlive(v.View)
+			runtime.KeepAlive(v.ResolveTarget)
+		}
+
+		if descriptor.DepthStencilAttachment != nil {
+			runtime.KeepAlive(descriptor.DepthStencilAttachment.View)
+		}
+	}
+
 	if ref == nil {
 		panic("Failed to acquire RenderPassEncoder")
 	}
+
 	return &RenderPassEncoder{ref}
 }
 
@@ -162,6 +179,9 @@ func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64,
 		C.uint64_t(destinatonOffset),
 		C.uint64_t(size),
 	)
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(source)
+	runtime.KeepAlive(destination)
 }
 
 type TextureDataLayout struct {
@@ -225,6 +245,13 @@ func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destinatio
 	}
 
 	C.wgpuCommandEncoderCopyBufferToTexture(p.ref, &src, &dst, &cpySize)
+	runtime.KeepAlive(p)
+	if source != nil {
+		runtime.KeepAlive(source.Buffer)
+	}
+	if destination != nil {
+		runtime.KeepAlive(destination.Texture)
+	}
 }
 
 func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destination *ImageCopyBuffer, copySize *Extent3D) {
@@ -266,6 +293,13 @@ func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destinati
 	}
 
 	C.wgpuCommandEncoderCopyTextureToBuffer(p.ref, &src, &dst, &cpySize)
+	runtime.KeepAlive(p)
+	if source != nil {
+		runtime.KeepAlive(source.Texture)
+	}
+	if destination != nil {
+		runtime.KeepAlive(destination.Buffer)
+	}
 }
 
 func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destination *ImageCopyTexture, copySize *Extent3D) {
@@ -311,6 +345,13 @@ func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destinat
 	}
 
 	C.wgpuCommandEncoderCopyTextureToTexture(p.ref, &src, &dst, &cpySize)
+	runtime.KeepAlive(p)
+	if source != nil {
+		runtime.KeepAlive(source.Texture)
+	}
+	if destination != nil {
+		runtime.KeepAlive(destination.Texture)
+	}
 }
 
 type CommandBufferDescriptor struct {
@@ -328,12 +369,11 @@ func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 	}
 
 	ref := C.wgpuCommandEncoderFinish(p.ref, &desc)
+	runtime.KeepAlive(p)
+
 	if ref == nil {
 		panic("Failed to acquire CommandBuffer")
 	}
-	return &CommandBuffer{ref}
-}
 
-func (p *CommandEncoder) Drop() {
-	C.wgpuCommandEncoderDrop(p.ref)
+	return &CommandBuffer{ref}
 }

@@ -9,6 +9,6 @@ import "C"
 
 type BindGroupLayout struct{ ref C.WGPUBindGroupLayout }
 
-func (p *BindGroupLayout) Drop() {
+func bindGroupLayoutFinalizer(p *BindGroupLayout) {
 	C.wgpuBindGroupLayoutDrop(p.ref)
 }

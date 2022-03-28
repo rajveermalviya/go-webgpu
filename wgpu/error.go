@@ -1,5 +1,7 @@
 package wgpu
 
+import "fmt"
+
 func (v ErrorType) String() string {
 	switch v {
 	case ErrorType_NoError:
@@ -24,5 +26,5 @@ type Error struct {
 }
 
 func (v *Error) Error() string {
-	return v.Type.String() + " : " + v.Message
+	return fmt.Sprintf("%s : %s", v.Type, v.Message)
 }

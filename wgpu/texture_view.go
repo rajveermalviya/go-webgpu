@@ -9,6 +9,6 @@ import "C"
 
 type TextureView struct{ ref C.WGPUTextureView }
 
-func (p *TextureView) Drop() {
+func textureViewFinalizer(p *TextureView) {
 	C.wgpuTextureViewDrop(p.ref)
 }

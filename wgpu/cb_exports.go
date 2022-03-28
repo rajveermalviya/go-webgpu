@@ -4,10 +4,14 @@ package wgpu
 
 #include "./lib/wgpu.h"
 
+extern void deviceUncapturedErrorCallback_cgo(WGPUErrorType type,
+	                           char const * message, void * userdata);
+
 */
 import "C"
 
 import (
+	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -50,7 +54,21 @@ func requestDeviceCallback(status C.WGPURequestDeviceStatus, device C.WGPUDevice
 
 	cb, ok := handle.Value().(requestDeviceCB)
 	if ok {
-		cb(RequestDeviceStatus(status), &Device{ref: device}, C.GoString(message))
+		if status == C.WGPURequestDeviceStatus_Success {
+			d := &Device{
+				ref:     device,
+				errChan: make(chan *Error, 1),
+			}
+			d.handle = cgo.NewHandle(d)
+
+			C.wgpuDeviceSetUncapturedErrorCallback(d.ref, C.WGPUErrorCallback(C.deviceUncapturedErrorCallback_cgo), unsafe.Pointer(&d.handle))
+
+			runtime.SetFinalizer(d, deviceFinalizer)
+
+			cb(RequestDeviceStatus(status), d, C.GoString(message))
+		} else {
+			cb(RequestDeviceStatus(status), nil, C.GoString(message))
+		}
 	}
 }
 

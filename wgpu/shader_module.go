@@ -9,6 +9,6 @@ import "C"
 
 type ShaderModule struct{ ref C.WGPUShaderModule }
 
-func (p *ShaderModule) Drop() {
+func shaderModuleFinalizer(p *ShaderModule) {
 	C.wgpuShaderModuleDrop(p.ref)
 }

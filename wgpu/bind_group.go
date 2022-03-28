@@ -9,6 +9,6 @@ import "C"
 
 type BindGroup struct{ ref C.WGPUBindGroup }
 
-func (p *BindGroup) Drop() {
+func bindGroupFinalizer(p *BindGroup) {
 	C.wgpuBindGroupDrop(p.ref)
 }

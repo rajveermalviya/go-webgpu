@@ -57,7 +57,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer device.Drop()
 
 	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",

@@ -71,7 +71,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer device.Drop()
 
 	bufferDimensions := newBufferDimensions(uint64(width), uint64(height))
 

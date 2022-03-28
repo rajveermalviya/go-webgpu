@@ -11,6 +11,7 @@ type (
 	PipelineLayout      struct{ ref C.WGPUPipelineLayout }
 	QuerySet            struct{ ref C.WGPUQuerySet }
 	RenderBundleEncoder struct{ ref C.WGPURenderBundleEncoder }
+	CommandBuffer       struct{ ref C.WGPUCommandBuffer }
 )
 
 type Limits struct {
