@@ -57,7 +57,7 @@ jobs:
 
           - name: build - windows/386
             os: windows-latest
-            toolchain: stable-msvc
+            toolchain: stable-i686-pc-windows-msvc
             target: i686-pc-windows-msvc
             goos: windows
             goarch: "386"
