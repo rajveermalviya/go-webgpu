@@ -1,7 +1,13 @@
 {
   "gopls": {
     "build.env": {
-      "CGO_ENABLED": "1",
+      // "CC": "zig cc -target x86_64-windows-gnu",
+      // "CXX": "zig c++ -target x86_64-windows-gnu",
+      // "CGO_ENABLED": "1",
+      // "GOOS": "windows",
+    },
+    "ui.codelenses": {
+      "gc_details": true
     }
   }
 }
