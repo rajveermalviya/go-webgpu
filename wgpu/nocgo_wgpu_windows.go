@@ -140,7 +140,7 @@ var (
 	wgpuRenderPassEncoderEnd                 = lib.NewProc("wgpuRenderPassEncoderEnd")
 	wgpuRenderPassEncoderSetBindGroup        = lib.NewProc("wgpuRenderPassEncoderSetBindGroup")
 	wgpuRenderPassEncoderSetBlendConstant    = lib.NewProc("wgpuRenderPassEncoderSetBlendConstant")
-	wgpuRenderPassEncoderSetIndexBuffer      = lib.NewProc("wgpuRenderPassEncoderSetIndexBuffers")
+	wgpuRenderPassEncoderSetIndexBuffer      = lib.NewProc("wgpuRenderPassEncoderSetIndexBuffer")
 	wgpuRenderPassEncoderSetPipeline         = lib.NewProc("wgpuRenderPassEncoderSetPipeline")
 	wgpuRenderPassEncoderSetScissorRect      = lib.NewProc("wgpuRenderPassEncoderSetScissorRect")
 	wgpuRenderPassEncoderSetStencilReference = lib.NewProc("wgpuRenderPassEncoderSetStencilReference")
