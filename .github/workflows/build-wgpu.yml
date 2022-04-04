@@ -157,6 +157,7 @@ jobs:
           if [ ${{ matrix.goos }} == "windows" ]; then
             7z a -tgzip target/$CARGO_BUILD_TARGET/release/wgpu_native.dll.gz target/$CARGO_BUILD_TARGET/release/wgpu_native.dll
             mv target/$CARGO_BUILD_TARGET/release/wgpu_native.dll.gz $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.gz;
+            sha256sum target/$CARGO_BUILD_TARGET/release/wgpu_native.dll > $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.sum
           else
             mv target/$CARGO_BUILD_TARGET/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a;
           fi
