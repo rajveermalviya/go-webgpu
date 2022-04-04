@@ -4,5 +4,5 @@ package wgpu
 
 import _ "embed"
 
-//go:embed lib/windows/amd64/libwgpu.dll.gz
+//go:embed lib/windows/amd64/wgpu_native.dll.gz
 var libwgpuDllCompressed []byte
