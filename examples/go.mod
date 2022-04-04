@@ -5,7 +5,11 @@ go 1.18
 require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958
 	github.com/go-gl/mathgl v1.0.0
-	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220328185106-601f822a2d9a
+	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220404105140-9effdd8f60e6
 )
 
-require golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f // indirect
+require (
+	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb // indirect
+	golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f // indirect
+	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect
+)
