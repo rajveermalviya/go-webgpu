@@ -5,6 +5,8 @@ package wgpu
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -12,12 +14,29 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
+
+func writeDllToCacheDir(dllPath string) {
+	r, err := gzip.NewReader(bytes.NewReader(libwgpuDllCompressed))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Close()
+	f, err := os.OpenFile(dllPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		panic(err)
+	}
+	_, err = io.Copy(f, r)
+	if err1 := f.Close(); err1 != nil && err == nil {
+		panic(err1)
+	}
+}
 
 var lib = func() *windows.LazyDLL {
 	dir, err := os.UserCacheDir()
@@ -30,19 +49,25 @@ var lib = func() *windows.LazyDLL {
 		panic(err)
 	}
 
-	r, err := gzip.NewReader(bytes.NewReader(libwgpuDllCompressed))
-	if err != nil {
-		panic(err)
-	}
-	f, err := os.OpenFile(dllPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		panic(err)
-	}
-	if _, err := io.Copy(f, r); err != nil {
-		panic(err)
-	}
-	if err := f.Close(); err != nil {
-		panic(err)
+	if _, err := os.Stat(dllPath); err != nil {
+		// dll does not already exists
+		writeDllToCacheDir(dllPath)
+	} else {
+		// dll already exists
+		f, err := os.Open(dllPath)
+		if err != nil {
+			panic(err)
+		}
+		hash := sha256.New()
+		_, err = io.Copy(hash, f)
+		if err1 := f.Close(); err1 != nil && err == nil {
+			panic(err1)
+		}
+		sum := hash.Sum(nil)
+		if hex.EncodeToString(sum) != strings.Split(libwgpuDllSha256, " ")[0] {
+			// dll hash doesn't match
+			writeDllToCacheDir(dllPath)
+		}
 	}
 
 	lib := windows.NewLazyDLL(dllPath)
