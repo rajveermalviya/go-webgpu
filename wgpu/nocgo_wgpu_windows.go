@@ -24,8 +24,8 @@ var lib = func() *windows.LazyDLL {
 	if err != nil {
 		panic(err)
 	}
-	dir = filepath.Join(dir, "libwgpu")
-	dllPath := filepath.Join(dir, "libwgpu.dll")
+	dir = filepath.Join(dir, "go-webgpu")
+	dllPath := filepath.Join(dir, "wgpu_native.dll")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		panic(err)
 	}
