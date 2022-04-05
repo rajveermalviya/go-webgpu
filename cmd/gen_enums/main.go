@@ -142,6 +142,22 @@ loop:
 		}
 
 		fmt.Fprint(w, "\n")
+
+		fmt.Fprintf(w, "func (v %s) String() string {\n", e.Name)
+		fmt.Fprintf(w, "switch v {\n")
+		for _, v := range e.Enums {
+			fmt.Fprintf(w, "case %s:\n", v.Enum)
+			fmt.Fprintf(w, "return \"%s\"\n", strings.TrimPrefix(v.Enum, e.Name+"_"))
+		}
+		if e.Name == "ErrorType" {
+			fmt.Fprintf(w, "default:\n")
+			fmt.Fprintf(w, "return \"Unknown\"\n")
+		} else {
+			fmt.Fprintf(w, "default:\n")
+			fmt.Fprintf(w, "return \"\"\n")
+		}
+		fmt.Fprintf(w, "}\n")
+		fmt.Fprintf(w, "}\n")
 	}
 
 	out := mustv(os.Create(outputFile))
