@@ -11,6 +11,21 @@ const (
 	AdapterType_Unknown       AdapterType = 3
 )
 
+func (v AdapterType) String() string {
+	switch v {
+	case AdapterType_DiscreteGPU:
+		return "DiscreteGPU"
+	case AdapterType_IntegratedGPU:
+		return "IntegratedGPU"
+	case AdapterType_CPU:
+		return "CPU"
+	case AdapterType_Unknown:
+		return "Unknown"
+	default:
+		return ""
+	}
+}
+
 type AddressMode uint32
 
 const (
@@ -18,6 +33,19 @@ const (
 	AddressMode_MirrorRepeat AddressMode = 1
 	AddressMode_ClampToEdge  AddressMode = 2
 )
+
+func (v AddressMode) String() string {
+	switch v {
+	case AddressMode_Repeat:
+		return "Repeat"
+	case AddressMode_MirrorRepeat:
+		return "MirrorRepeat"
+	case AddressMode_ClampToEdge:
+		return "ClampToEdge"
+	default:
+		return ""
+	}
+}
 
 type BackendType uint32
 
@@ -31,6 +59,29 @@ const (
 	BackendType_OpenGL   BackendType = 6
 	BackendType_OpenGLES BackendType = 7
 )
+
+func (v BackendType) String() string {
+	switch v {
+	case BackendType_Null:
+		return "Null"
+	case BackendType_WebGPU:
+		return "WebGPU"
+	case BackendType_D3D11:
+		return "D3D11"
+	case BackendType_D3D12:
+		return "D3D12"
+	case BackendType_Metal:
+		return "Metal"
+	case BackendType_Vulkan:
+		return "Vulkan"
+	case BackendType_OpenGL:
+		return "OpenGL"
+	case BackendType_OpenGLES:
+		return "OpenGLES"
+	default:
+		return ""
+	}
+}
 
 type BlendFactor uint32
 
@@ -50,6 +101,39 @@ const (
 	BlendFactor_OneMinusConstant  BlendFactor = 12
 )
 
+func (v BlendFactor) String() string {
+	switch v {
+	case BlendFactor_Zero:
+		return "Zero"
+	case BlendFactor_One:
+		return "One"
+	case BlendFactor_Src:
+		return "Src"
+	case BlendFactor_OneMinusSrc:
+		return "OneMinusSrc"
+	case BlendFactor_SrcAlpha:
+		return "SrcAlpha"
+	case BlendFactor_OneMinusSrcAlpha:
+		return "OneMinusSrcAlpha"
+	case BlendFactor_Dst:
+		return "Dst"
+	case BlendFactor_OneMinusDst:
+		return "OneMinusDst"
+	case BlendFactor_DstAlpha:
+		return "DstAlpha"
+	case BlendFactor_OneMinusDstAlpha:
+		return "OneMinusDstAlpha"
+	case BlendFactor_SrcAlphaSaturated:
+		return "SrcAlphaSaturated"
+	case BlendFactor_Constant:
+		return "Constant"
+	case BlendFactor_OneMinusConstant:
+		return "OneMinusConstant"
+	default:
+		return ""
+	}
+}
+
 type BlendOperation uint32
 
 const (
@@ -60,6 +144,23 @@ const (
 	BlendOperation_Max             BlendOperation = 4
 )
 
+func (v BlendOperation) String() string {
+	switch v {
+	case BlendOperation_Add:
+		return "Add"
+	case BlendOperation_Subtract:
+		return "Subtract"
+	case BlendOperation_ReverseSubtract:
+		return "ReverseSubtract"
+	case BlendOperation_Min:
+		return "Min"
+	case BlendOperation_Max:
+		return "Max"
+	default:
+		return ""
+	}
+}
+
 type BufferBindingType uint32
 
 const (
@@ -68,6 +169,21 @@ const (
 	BufferBindingType_Storage         BufferBindingType = 2
 	BufferBindingType_ReadOnlyStorage BufferBindingType = 3
 )
+
+func (v BufferBindingType) String() string {
+	switch v {
+	case BufferBindingType_Undefined:
+		return "Undefined"
+	case BufferBindingType_Uniform:
+		return "Uniform"
+	case BufferBindingType_Storage:
+		return "Storage"
+	case BufferBindingType_ReadOnlyStorage:
+		return "ReadOnlyStorage"
+	default:
+		return ""
+	}
+}
 
 type BufferMapAsyncStatus uint32
 
@@ -79,6 +195,25 @@ const (
 	BufferMapAsyncStatus_DestroyedBeforeCallback BufferMapAsyncStatus = 4
 	BufferMapAsyncStatus_UnmappedBeforeCallback  BufferMapAsyncStatus = 5
 )
+
+func (v BufferMapAsyncStatus) String() string {
+	switch v {
+	case BufferMapAsyncStatus_Success:
+		return "Success"
+	case BufferMapAsyncStatus_Error:
+		return "Error"
+	case BufferMapAsyncStatus_Unknown:
+		return "Unknown"
+	case BufferMapAsyncStatus_DeviceLost:
+		return "DeviceLost"
+	case BufferMapAsyncStatus_DestroyedBeforeCallback:
+		return "DestroyedBeforeCallback"
+	case BufferMapAsyncStatus_UnmappedBeforeCallback:
+		return "UnmappedBeforeCallback"
+	default:
+		return ""
+	}
+}
 
 type BufferUsage uint32
 
@@ -96,6 +231,35 @@ const (
 	BufferUsage_QueryResolve BufferUsage = 512
 )
 
+func (v BufferUsage) String() string {
+	switch v {
+	case BufferUsage_None:
+		return "None"
+	case BufferUsage_MapRead:
+		return "MapRead"
+	case BufferUsage_MapWrite:
+		return "MapWrite"
+	case BufferUsage_CopySrc:
+		return "CopySrc"
+	case BufferUsage_CopyDst:
+		return "CopyDst"
+	case BufferUsage_Index:
+		return "Index"
+	case BufferUsage_Vertex:
+		return "Vertex"
+	case BufferUsage_Uniform:
+		return "Uniform"
+	case BufferUsage_Storage:
+		return "Storage"
+	case BufferUsage_Indirect:
+		return "Indirect"
+	case BufferUsage_QueryResolve:
+		return "QueryResolve"
+	default:
+		return ""
+	}
+}
+
 type ColorWriteMask uint32
 
 const (
@@ -106,6 +270,25 @@ const (
 	ColorWriteMask_Alpha ColorWriteMask = 8
 	ColorWriteMask_All   ColorWriteMask = 15
 )
+
+func (v ColorWriteMask) String() string {
+	switch v {
+	case ColorWriteMask_None:
+		return "None"
+	case ColorWriteMask_Red:
+		return "Red"
+	case ColorWriteMask_Green:
+		return "Green"
+	case ColorWriteMask_Blue:
+		return "Blue"
+	case ColorWriteMask_Alpha:
+		return "Alpha"
+	case ColorWriteMask_All:
+		return "All"
+	default:
+		return ""
+	}
+}
 
 type CompareFunction uint32
 
@@ -121,6 +304,31 @@ const (
 	CompareFunction_Always       CompareFunction = 8
 )
 
+func (v CompareFunction) String() string {
+	switch v {
+	case CompareFunction_Undefined:
+		return "Undefined"
+	case CompareFunction_Never:
+		return "Never"
+	case CompareFunction_Less:
+		return "Less"
+	case CompareFunction_LessEqual:
+		return "LessEqual"
+	case CompareFunction_Greater:
+		return "Greater"
+	case CompareFunction_GreaterEqual:
+		return "GreaterEqual"
+	case CompareFunction_Equal:
+		return "Equal"
+	case CompareFunction_NotEqual:
+		return "NotEqual"
+	case CompareFunction_Always:
+		return "Always"
+	default:
+		return ""
+	}
+}
+
 type CompilationInfoRequestStatus uint32
 
 const (
@@ -130,6 +338,21 @@ const (
 	CompilationInfoRequestStatus_Unknown    CompilationInfoRequestStatus = 3
 )
 
+func (v CompilationInfoRequestStatus) String() string {
+	switch v {
+	case CompilationInfoRequestStatus_Success:
+		return "Success"
+	case CompilationInfoRequestStatus_Error:
+		return "Error"
+	case CompilationInfoRequestStatus_DeviceLost:
+		return "DeviceLost"
+	case CompilationInfoRequestStatus_Unknown:
+		return "Unknown"
+	default:
+		return ""
+	}
+}
+
 type CompilationMessageType uint32
 
 const (
@@ -138,12 +361,36 @@ const (
 	CompilationMessageType_Info    CompilationMessageType = 2
 )
 
+func (v CompilationMessageType) String() string {
+	switch v {
+	case CompilationMessageType_Error:
+		return "Error"
+	case CompilationMessageType_Warning:
+		return "Warning"
+	case CompilationMessageType_Info:
+		return "Info"
+	default:
+		return ""
+	}
+}
+
 type ComputePassTimestampLocation uint32
 
 const (
 	ComputePassTimestampLocation_Beginning ComputePassTimestampLocation = 0
 	ComputePassTimestampLocation_End       ComputePassTimestampLocation = 1
 )
+
+func (v ComputePassTimestampLocation) String() string {
+	switch v {
+	case ComputePassTimestampLocation_Beginning:
+		return "Beginning"
+	case ComputePassTimestampLocation_End:
+		return "End"
+	default:
+		return ""
+	}
+}
 
 type CreatePipelineAsyncStatus uint32
 
@@ -155,6 +402,23 @@ const (
 	CreatePipelineAsyncStatus_Unknown         CreatePipelineAsyncStatus = 4
 )
 
+func (v CreatePipelineAsyncStatus) String() string {
+	switch v {
+	case CreatePipelineAsyncStatus_Success:
+		return "Success"
+	case CreatePipelineAsyncStatus_Error:
+		return "Error"
+	case CreatePipelineAsyncStatus_DeviceLost:
+		return "DeviceLost"
+	case CreatePipelineAsyncStatus_DeviceDestroyed:
+		return "DeviceDestroyed"
+	case CreatePipelineAsyncStatus_Unknown:
+		return "Unknown"
+	default:
+		return ""
+	}
+}
+
 type CullMode uint32
 
 const (
@@ -163,6 +427,19 @@ const (
 	CullMode_Back  CullMode = 2
 )
 
+func (v CullMode) String() string {
+	switch v {
+	case CullMode_None:
+		return "None"
+	case CullMode_Front:
+		return "Front"
+	case CullMode_Back:
+		return "Back"
+	default:
+		return ""
+	}
+}
+
 type DeviceLostReason uint32
 
 const (
@@ -170,12 +447,34 @@ const (
 	DeviceLostReason_Destroyed DeviceLostReason = 1
 )
 
+func (v DeviceLostReason) String() string {
+	switch v {
+	case DeviceLostReason_Undefined:
+		return "Undefined"
+	case DeviceLostReason_Destroyed:
+		return "Destroyed"
+	default:
+		return ""
+	}
+}
+
 type ErrorFilter uint32
 
 const (
 	ErrorFilter_Validation  ErrorFilter = 0
 	ErrorFilter_OutOfMemory ErrorFilter = 1
 )
+
+func (v ErrorFilter) String() string {
+	switch v {
+	case ErrorFilter_Validation:
+		return "Validation"
+	case ErrorFilter_OutOfMemory:
+		return "OutOfMemory"
+	default:
+		return ""
+	}
+}
 
 type ErrorType uint32
 
@@ -186,6 +485,23 @@ const (
 	ErrorType_Unknown     ErrorType = 3
 	ErrorType_DeviceLost  ErrorType = 4
 )
+
+func (v ErrorType) String() string {
+	switch v {
+	case ErrorType_NoError:
+		return "NoError"
+	case ErrorType_Validation:
+		return "Validation"
+	case ErrorType_OutOfMemory:
+		return "OutOfMemory"
+	case ErrorType_Unknown:
+		return "Unknown"
+	case ErrorType_DeviceLost:
+		return "DeviceLost"
+	default:
+		return "Unknown"
+	}
+}
 
 type FeatureName uint32
 
@@ -202,6 +518,33 @@ const (
 	FeatureName_IndirectFirstInstance   FeatureName = 9
 )
 
+func (v FeatureName) String() string {
+	switch v {
+	case FeatureName_Undefined:
+		return "Undefined"
+	case FeatureName_DepthClipControl:
+		return "DepthClipControl"
+	case FeatureName_Depth24UnormStencil8:
+		return "Depth24UnormStencil8"
+	case FeatureName_Depth32FloatStencil8:
+		return "Depth32FloatStencil8"
+	case FeatureName_TimestampQuery:
+		return "TimestampQuery"
+	case FeatureName_PipelineStatisticsQuery:
+		return "PipelineStatisticsQuery"
+	case FeatureName_TextureCompressionBC:
+		return "TextureCompressionBC"
+	case FeatureName_TextureCompressionETC2:
+		return "TextureCompressionETC2"
+	case FeatureName_TextureCompressionASTC:
+		return "TextureCompressionASTC"
+	case FeatureName_IndirectFirstInstance:
+		return "IndirectFirstInstance"
+	default:
+		return ""
+	}
+}
+
 type FilterMode uint32
 
 const (
@@ -209,12 +552,34 @@ const (
 	FilterMode_Linear  FilterMode = 1
 )
 
+func (v FilterMode) String() string {
+	switch v {
+	case FilterMode_Nearest:
+		return "Nearest"
+	case FilterMode_Linear:
+		return "Linear"
+	default:
+		return ""
+	}
+}
+
 type FrontFace uint32
 
 const (
 	FrontFace_CCW FrontFace = 0
 	FrontFace_CW  FrontFace = 1
 )
+
+func (v FrontFace) String() string {
+	switch v {
+	case FrontFace_CCW:
+		return "CCW"
+	case FrontFace_CW:
+		return "CW"
+	default:
+		return ""
+	}
+}
 
 type IndexFormat uint32
 
@@ -224,6 +589,19 @@ const (
 	IndexFormat_Uint32    IndexFormat = 2
 )
 
+func (v IndexFormat) String() string {
+	switch v {
+	case IndexFormat_Undefined:
+		return "Undefined"
+	case IndexFormat_Uint16:
+		return "Uint16"
+	case IndexFormat_Uint32:
+		return "Uint32"
+	default:
+		return ""
+	}
+}
+
 type LoadOp uint32
 
 const (
@@ -231,6 +609,19 @@ const (
 	LoadOp_Clear     LoadOp = 1
 	LoadOp_Load      LoadOp = 2
 )
+
+func (v LoadOp) String() string {
+	switch v {
+	case LoadOp_Undefined:
+		return "Undefined"
+	case LoadOp_Clear:
+		return "Clear"
+	case LoadOp_Load:
+		return "Load"
+	default:
+		return ""
+	}
+}
 
 type LogLevel uint32
 
@@ -243,6 +634,25 @@ const (
 	LogLevel_Trace LogLevel = 5
 )
 
+func (v LogLevel) String() string {
+	switch v {
+	case LogLevel_Off:
+		return "Off"
+	case LogLevel_Error:
+		return "Error"
+	case LogLevel_Warn:
+		return "Warn"
+	case LogLevel_Info:
+		return "Info"
+	case LogLevel_Debug:
+		return "Debug"
+	case LogLevel_Trace:
+		return "Trace"
+	default:
+		return ""
+	}
+}
+
 type MapMode uint32
 
 const (
@@ -251,6 +661,19 @@ const (
 	MapMode_Write MapMode = 2
 )
 
+func (v MapMode) String() string {
+	switch v {
+	case MapMode_None:
+		return "None"
+	case MapMode_Read:
+		return "Read"
+	case MapMode_Write:
+		return "Write"
+	default:
+		return ""
+	}
+}
+
 type MipmapFilterMode uint32
 
 const (
@@ -258,9 +681,29 @@ const (
 	MipmapFilterMode_Linear  MipmapFilterMode = 1
 )
 
+func (v MipmapFilterMode) String() string {
+	switch v {
+	case MipmapFilterMode_Nearest:
+		return "Nearest"
+	case MipmapFilterMode_Linear:
+		return "Linear"
+	default:
+		return ""
+	}
+}
+
 type NativeFeature uint32
 
 const NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES NativeFeature = 268435456
+
+func (v NativeFeature) String() string {
+	switch v {
+	case NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES:
+		return "TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES"
+	default:
+		return ""
+	}
+}
 
 type PipelineStatisticName uint32
 
@@ -272,6 +715,23 @@ const (
 	PipelineStatisticName_ComputeShaderInvocations  PipelineStatisticName = 4
 )
 
+func (v PipelineStatisticName) String() string {
+	switch v {
+	case PipelineStatisticName_VertexShaderInvocations:
+		return "VertexShaderInvocations"
+	case PipelineStatisticName_ClipperInvocations:
+		return "ClipperInvocations"
+	case PipelineStatisticName_ClipperPrimitivesOut:
+		return "ClipperPrimitivesOut"
+	case PipelineStatisticName_FragmentShaderInvocations:
+		return "FragmentShaderInvocations"
+	case PipelineStatisticName_ComputeShaderInvocations:
+		return "ComputeShaderInvocations"
+	default:
+		return ""
+	}
+}
+
 type PowerPreference uint32
 
 const (
@@ -280,12 +740,36 @@ const (
 	PowerPreference_HighPerformance PowerPreference = 2
 )
 
+func (v PowerPreference) String() string {
+	switch v {
+	case PowerPreference_Undefined:
+		return "Undefined"
+	case PowerPreference_LowPower:
+		return "LowPower"
+	case PowerPreference_HighPerformance:
+		return "HighPerformance"
+	default:
+		return ""
+	}
+}
+
 type PredefinedColorSpace uint32
 
 const (
 	PredefinedColorSpace_Undefined PredefinedColorSpace = 0
 	PredefinedColorSpace_Srgb      PredefinedColorSpace = 1
 )
+
+func (v PredefinedColorSpace) String() string {
+	switch v {
+	case PredefinedColorSpace_Undefined:
+		return "Undefined"
+	case PredefinedColorSpace_Srgb:
+		return "Srgb"
+	default:
+		return ""
+	}
+}
 
 type PresentMode uint32
 
@@ -294,6 +778,19 @@ const (
 	PresentMode_Mailbox   PresentMode = 1
 	PresentMode_Fifo      PresentMode = 2
 )
+
+func (v PresentMode) String() string {
+	switch v {
+	case PresentMode_Immediate:
+		return "Immediate"
+	case PresentMode_Mailbox:
+		return "Mailbox"
+	case PresentMode_Fifo:
+		return "Fifo"
+	default:
+		return ""
+	}
+}
 
 type PrimitiveTopology uint32
 
@@ -305,6 +802,23 @@ const (
 	PrimitiveTopology_TriangleStrip PrimitiveTopology = 4
 )
 
+func (v PrimitiveTopology) String() string {
+	switch v {
+	case PrimitiveTopology_PointList:
+		return "PointList"
+	case PrimitiveTopology_LineList:
+		return "LineList"
+	case PrimitiveTopology_LineStrip:
+		return "LineStrip"
+	case PrimitiveTopology_TriangleList:
+		return "TriangleList"
+	case PrimitiveTopology_TriangleStrip:
+		return "TriangleStrip"
+	default:
+		return ""
+	}
+}
+
 type QueryType uint32
 
 const (
@@ -312,6 +826,19 @@ const (
 	QueryType_PipelineStatistics QueryType = 1
 	QueryType_Timestamp          QueryType = 2
 )
+
+func (v QueryType) String() string {
+	switch v {
+	case QueryType_Occlusion:
+		return "Occlusion"
+	case QueryType_PipelineStatistics:
+		return "PipelineStatistics"
+	case QueryType_Timestamp:
+		return "Timestamp"
+	default:
+		return ""
+	}
+}
 
 type QueueWorkDoneStatus uint32
 
@@ -322,12 +849,38 @@ const (
 	QueueWorkDoneStatus_DeviceLost QueueWorkDoneStatus = 3
 )
 
+func (v QueueWorkDoneStatus) String() string {
+	switch v {
+	case QueueWorkDoneStatus_Success:
+		return "Success"
+	case QueueWorkDoneStatus_Error:
+		return "Error"
+	case QueueWorkDoneStatus_Unknown:
+		return "Unknown"
+	case QueueWorkDoneStatus_DeviceLost:
+		return "DeviceLost"
+	default:
+		return ""
+	}
+}
+
 type RenderPassTimestampLocation uint32
 
 const (
 	RenderPassTimestampLocation_Beginning RenderPassTimestampLocation = 0
 	RenderPassTimestampLocation_End       RenderPassTimestampLocation = 1
 )
+
+func (v RenderPassTimestampLocation) String() string {
+	switch v {
+	case RenderPassTimestampLocation_Beginning:
+		return "Beginning"
+	case RenderPassTimestampLocation_End:
+		return "End"
+	default:
+		return ""
+	}
+}
 
 type RequestAdapterStatus uint32
 
@@ -338,6 +891,21 @@ const (
 	RequestAdapterStatus_Unknown     RequestAdapterStatus = 3
 )
 
+func (v RequestAdapterStatus) String() string {
+	switch v {
+	case RequestAdapterStatus_Success:
+		return "Success"
+	case RequestAdapterStatus_Unavailable:
+		return "Unavailable"
+	case RequestAdapterStatus_Error:
+		return "Error"
+	case RequestAdapterStatus_Unknown:
+		return "Unknown"
+	default:
+		return ""
+	}
+}
+
 type RequestDeviceStatus uint32
 
 const (
@@ -345,6 +913,19 @@ const (
 	RequestDeviceStatus_Error   RequestDeviceStatus = 1
 	RequestDeviceStatus_Unknown RequestDeviceStatus = 2
 )
+
+func (v RequestDeviceStatus) String() string {
+	switch v {
+	case RequestDeviceStatus_Success:
+		return "Success"
+	case RequestDeviceStatus_Error:
+		return "Error"
+	case RequestDeviceStatus_Unknown:
+		return "Unknown"
+	default:
+		return ""
+	}
+}
 
 type SamplerBindingType uint32
 
@@ -355,6 +936,21 @@ const (
 	SamplerBindingType_Comparison   SamplerBindingType = 3
 )
 
+func (v SamplerBindingType) String() string {
+	switch v {
+	case SamplerBindingType_Undefined:
+		return "Undefined"
+	case SamplerBindingType_Filtering:
+		return "Filtering"
+	case SamplerBindingType_NonFiltering:
+		return "NonFiltering"
+	case SamplerBindingType_Comparison:
+		return "Comparison"
+	default:
+		return ""
+	}
+}
+
 type ShaderStage uint32
 
 const (
@@ -363,6 +959,21 @@ const (
 	ShaderStage_Fragment ShaderStage = 2
 	ShaderStage_Compute  ShaderStage = 4
 )
+
+func (v ShaderStage) String() string {
+	switch v {
+	case ShaderStage_None:
+		return "None"
+	case ShaderStage_Vertex:
+		return "Vertex"
+	case ShaderStage_Fragment:
+		return "Fragment"
+	case ShaderStage_Compute:
+		return "Compute"
+	default:
+		return ""
+	}
+}
 
 type StencilOperation uint32
 
@@ -377,12 +988,46 @@ const (
 	StencilOperation_DecrementWrap  StencilOperation = 7
 )
 
+func (v StencilOperation) String() string {
+	switch v {
+	case StencilOperation_Keep:
+		return "Keep"
+	case StencilOperation_Zero:
+		return "Zero"
+	case StencilOperation_Replace:
+		return "Replace"
+	case StencilOperation_Invert:
+		return "Invert"
+	case StencilOperation_IncrementClamp:
+		return "IncrementClamp"
+	case StencilOperation_DecrementClamp:
+		return "DecrementClamp"
+	case StencilOperation_IncrementWrap:
+		return "IncrementWrap"
+	case StencilOperation_DecrementWrap:
+		return "DecrementWrap"
+	default:
+		return ""
+	}
+}
+
 type StorageTextureAccess uint32
 
 const (
 	StorageTextureAccess_Undefined StorageTextureAccess = 0
 	StorageTextureAccess_WriteOnly StorageTextureAccess = 1
 )
+
+func (v StorageTextureAccess) String() string {
+	switch v {
+	case StorageTextureAccess_Undefined:
+		return "Undefined"
+	case StorageTextureAccess_WriteOnly:
+		return "WriteOnly"
+	default:
+		return ""
+	}
+}
 
 type StoreOp uint32
 
@@ -392,6 +1037,19 @@ const (
 	StoreOp_Discard   StoreOp = 2
 )
 
+func (v StoreOp) String() string {
+	switch v {
+	case StoreOp_Undefined:
+		return "Undefined"
+	case StoreOp_Store:
+		return "Store"
+	case StoreOp_Discard:
+		return "Discard"
+	default:
+		return ""
+	}
+}
+
 type TextureAspect uint32
 
 const (
@@ -399,6 +1057,19 @@ const (
 	TextureAspect_StencilOnly TextureAspect = 1
 	TextureAspect_DepthOnly   TextureAspect = 2
 )
+
+func (v TextureAspect) String() string {
+	switch v {
+	case TextureAspect_All:
+		return "All"
+	case TextureAspect_StencilOnly:
+		return "StencilOnly"
+	case TextureAspect_DepthOnly:
+		return "DepthOnly"
+	default:
+		return ""
+	}
+}
 
 type TextureComponentType uint32
 
@@ -409,6 +1080,21 @@ const (
 	TextureComponentType_DepthComparison TextureComponentType = 3
 )
 
+func (v TextureComponentType) String() string {
+	switch v {
+	case TextureComponentType_Float:
+		return "Float"
+	case TextureComponentType_Sint:
+		return "Sint"
+	case TextureComponentType_Uint:
+		return "Uint"
+	case TextureComponentType_DepthComparison:
+		return "DepthComparison"
+	default:
+		return ""
+	}
+}
+
 type TextureDimension uint32
 
 const (
@@ -416,6 +1102,19 @@ const (
 	TextureDimension_2D TextureDimension = 1
 	TextureDimension_3D TextureDimension = 2
 )
+
+func (v TextureDimension) String() string {
+	switch v {
+	case TextureDimension_1D:
+		return "1D"
+	case TextureDimension_2D:
+		return "2D"
+	case TextureDimension_3D:
+		return "3D"
+	default:
+		return ""
+	}
+}
 
 type TextureFormat uint32
 
@@ -518,6 +1217,205 @@ const (
 	TextureFormat_ASTC12x12UnormSrgb   TextureFormat = 95
 )
 
+func (v TextureFormat) String() string {
+	switch v {
+	case TextureFormat_Undefined:
+		return "Undefined"
+	case TextureFormat_R8Unorm:
+		return "R8Unorm"
+	case TextureFormat_R8Snorm:
+		return "R8Snorm"
+	case TextureFormat_R8Uint:
+		return "R8Uint"
+	case TextureFormat_R8Sint:
+		return "R8Sint"
+	case TextureFormat_R16Uint:
+		return "R16Uint"
+	case TextureFormat_R16Sint:
+		return "R16Sint"
+	case TextureFormat_R16Float:
+		return "R16Float"
+	case TextureFormat_RG8Unorm:
+		return "RG8Unorm"
+	case TextureFormat_RG8Snorm:
+		return "RG8Snorm"
+	case TextureFormat_RG8Uint:
+		return "RG8Uint"
+	case TextureFormat_RG8Sint:
+		return "RG8Sint"
+	case TextureFormat_R32Float:
+		return "R32Float"
+	case TextureFormat_R32Uint:
+		return "R32Uint"
+	case TextureFormat_R32Sint:
+		return "R32Sint"
+	case TextureFormat_RG16Uint:
+		return "RG16Uint"
+	case TextureFormat_RG16Sint:
+		return "RG16Sint"
+	case TextureFormat_RG16Float:
+		return "RG16Float"
+	case TextureFormat_RGBA8Unorm:
+		return "RGBA8Unorm"
+	case TextureFormat_RGBA8UnormSrgb:
+		return "RGBA8UnormSrgb"
+	case TextureFormat_RGBA8Snorm:
+		return "RGBA8Snorm"
+	case TextureFormat_RGBA8Uint:
+		return "RGBA8Uint"
+	case TextureFormat_RGBA8Sint:
+		return "RGBA8Sint"
+	case TextureFormat_BGRA8Unorm:
+		return "BGRA8Unorm"
+	case TextureFormat_BGRA8UnormSrgb:
+		return "BGRA8UnormSrgb"
+	case TextureFormat_RGB10A2Unorm:
+		return "RGB10A2Unorm"
+	case TextureFormat_RG11B10Ufloat:
+		return "RG11B10Ufloat"
+	case TextureFormat_RGB9E5Ufloat:
+		return "RGB9E5Ufloat"
+	case TextureFormat_RG32Float:
+		return "RG32Float"
+	case TextureFormat_RG32Uint:
+		return "RG32Uint"
+	case TextureFormat_RG32Sint:
+		return "RG32Sint"
+	case TextureFormat_RGBA16Uint:
+		return "RGBA16Uint"
+	case TextureFormat_RGBA16Sint:
+		return "RGBA16Sint"
+	case TextureFormat_RGBA16Float:
+		return "RGBA16Float"
+	case TextureFormat_RGBA32Float:
+		return "RGBA32Float"
+	case TextureFormat_RGBA32Uint:
+		return "RGBA32Uint"
+	case TextureFormat_RGBA32Sint:
+		return "RGBA32Sint"
+	case TextureFormat_Stencil8:
+		return "Stencil8"
+	case TextureFormat_Depth16Unorm:
+		return "Depth16Unorm"
+	case TextureFormat_Depth24Plus:
+		return "Depth24Plus"
+	case TextureFormat_Depth24PlusStencil8:
+		return "Depth24PlusStencil8"
+	case TextureFormat_Depth24UnormStencil8:
+		return "Depth24UnormStencil8"
+	case TextureFormat_Depth32Float:
+		return "Depth32Float"
+	case TextureFormat_Depth32FloatStencil8:
+		return "Depth32FloatStencil8"
+	case TextureFormat_BC1RGBAUnorm:
+		return "BC1RGBAUnorm"
+	case TextureFormat_BC1RGBAUnormSrgb:
+		return "BC1RGBAUnormSrgb"
+	case TextureFormat_BC2RGBAUnorm:
+		return "BC2RGBAUnorm"
+	case TextureFormat_BC2RGBAUnormSrgb:
+		return "BC2RGBAUnormSrgb"
+	case TextureFormat_BC3RGBAUnorm:
+		return "BC3RGBAUnorm"
+	case TextureFormat_BC3RGBAUnormSrgb:
+		return "BC3RGBAUnormSrgb"
+	case TextureFormat_BC4RUnorm:
+		return "BC4RUnorm"
+	case TextureFormat_BC4RSnorm:
+		return "BC4RSnorm"
+	case TextureFormat_BC5RGUnorm:
+		return "BC5RGUnorm"
+	case TextureFormat_BC5RGSnorm:
+		return "BC5RGSnorm"
+	case TextureFormat_BC6HRGBUfloat:
+		return "BC6HRGBUfloat"
+	case TextureFormat_BC6HRGBFloat:
+		return "BC6HRGBFloat"
+	case TextureFormat_BC7RGBAUnorm:
+		return "BC7RGBAUnorm"
+	case TextureFormat_BC7RGBAUnormSrgb:
+		return "BC7RGBAUnormSrgb"
+	case TextureFormat_ETC2RGB8Unorm:
+		return "ETC2RGB8Unorm"
+	case TextureFormat_ETC2RGB8UnormSrgb:
+		return "ETC2RGB8UnormSrgb"
+	case TextureFormat_ETC2RGB8A1Unorm:
+		return "ETC2RGB8A1Unorm"
+	case TextureFormat_ETC2RGB8A1UnormSrgb:
+		return "ETC2RGB8A1UnormSrgb"
+	case TextureFormat_ETC2RGBA8Unorm:
+		return "ETC2RGBA8Unorm"
+	case TextureFormat_ETC2RGBA8UnormSrgb:
+		return "ETC2RGBA8UnormSrgb"
+	case TextureFormat_EACR11Unorm:
+		return "EACR11Unorm"
+	case TextureFormat_EACR11Snorm:
+		return "EACR11Snorm"
+	case TextureFormat_EACRG11Unorm:
+		return "EACRG11Unorm"
+	case TextureFormat_EACRG11Snorm:
+		return "EACRG11Snorm"
+	case TextureFormat_ASTC4x4Unorm:
+		return "ASTC4x4Unorm"
+	case TextureFormat_ASTC4x4UnormSrgb:
+		return "ASTC4x4UnormSrgb"
+	case TextureFormat_ASTC5x4Unorm:
+		return "ASTC5x4Unorm"
+	case TextureFormat_ASTC5x4UnormSrgb:
+		return "ASTC5x4UnormSrgb"
+	case TextureFormat_ASTC5x5Unorm:
+		return "ASTC5x5Unorm"
+	case TextureFormat_ASTC5x5UnormSrgb:
+		return "ASTC5x5UnormSrgb"
+	case TextureFormat_ASTC6x5Unorm:
+		return "ASTC6x5Unorm"
+	case TextureFormat_ASTC6x5UnormSrgb:
+		return "ASTC6x5UnormSrgb"
+	case TextureFormat_ASTC6x6Unorm:
+		return "ASTC6x6Unorm"
+	case TextureFormat_ASTC6x6UnormSrgb:
+		return "ASTC6x6UnormSrgb"
+	case TextureFormat_ASTC8x5Unorm:
+		return "ASTC8x5Unorm"
+	case TextureFormat_ASTC8x5UnormSrgb:
+		return "ASTC8x5UnormSrgb"
+	case TextureFormat_ASTC8x6Unorm:
+		return "ASTC8x6Unorm"
+	case TextureFormat_ASTC8x6UnormSrgb:
+		return "ASTC8x6UnormSrgb"
+	case TextureFormat_ASTC8x8Unorm:
+		return "ASTC8x8Unorm"
+	case TextureFormat_ASTC8x8UnormSrgb:
+		return "ASTC8x8UnormSrgb"
+	case TextureFormat_ASTC10x5Unorm:
+		return "ASTC10x5Unorm"
+	case TextureFormat_ASTC10x5UnormSrgb:
+		return "ASTC10x5UnormSrgb"
+	case TextureFormat_ASTC10x6Unorm:
+		return "ASTC10x6Unorm"
+	case TextureFormat_ASTC10x6UnormSrgb:
+		return "ASTC10x6UnormSrgb"
+	case TextureFormat_ASTC10x8Unorm:
+		return "ASTC10x8Unorm"
+	case TextureFormat_ASTC10x8UnormSrgb:
+		return "ASTC10x8UnormSrgb"
+	case TextureFormat_ASTC10x10Unorm:
+		return "ASTC10x10Unorm"
+	case TextureFormat_ASTC10x10UnormSrgb:
+		return "ASTC10x10UnormSrgb"
+	case TextureFormat_ASTC12x10Unorm:
+		return "ASTC12x10Unorm"
+	case TextureFormat_ASTC12x10UnormSrgb:
+		return "ASTC12x10UnormSrgb"
+	case TextureFormat_ASTC12x12Unorm:
+		return "ASTC12x12Unorm"
+	case TextureFormat_ASTC12x12UnormSrgb:
+		return "ASTC12x12UnormSrgb"
+	default:
+		return ""
+	}
+}
+
 type TextureSampleType uint32
 
 const (
@@ -528,6 +1426,25 @@ const (
 	TextureSampleType_Sint              TextureSampleType = 4
 	TextureSampleType_Uint              TextureSampleType = 5
 )
+
+func (v TextureSampleType) String() string {
+	switch v {
+	case TextureSampleType_Undefined:
+		return "Undefined"
+	case TextureSampleType_Float:
+		return "Float"
+	case TextureSampleType_UnfilterableFloat:
+		return "UnfilterableFloat"
+	case TextureSampleType_Depth:
+		return "Depth"
+	case TextureSampleType_Sint:
+		return "Sint"
+	case TextureSampleType_Uint:
+		return "Uint"
+	default:
+		return ""
+	}
+}
 
 type TextureUsage uint32
 
@@ -540,6 +1457,25 @@ const (
 	TextureUsage_RenderAttachment TextureUsage = 16
 )
 
+func (v TextureUsage) String() string {
+	switch v {
+	case TextureUsage_None:
+		return "None"
+	case TextureUsage_CopySrc:
+		return "CopySrc"
+	case TextureUsage_CopyDst:
+		return "CopyDst"
+	case TextureUsage_TextureBinding:
+		return "TextureBinding"
+	case TextureUsage_StorageBinding:
+		return "StorageBinding"
+	case TextureUsage_RenderAttachment:
+		return "RenderAttachment"
+	default:
+		return ""
+	}
+}
+
 type TextureViewDimension uint32
 
 const (
@@ -551,6 +1487,27 @@ const (
 	TextureViewDimension_CubeArray TextureViewDimension = 5
 	TextureViewDimension_3D        TextureViewDimension = 6
 )
+
+func (v TextureViewDimension) String() string {
+	switch v {
+	case TextureViewDimension_Undefined:
+		return "Undefined"
+	case TextureViewDimension_1D:
+		return "1D"
+	case TextureViewDimension_2D:
+		return "2D"
+	case TextureViewDimension_2DArray:
+		return "2DArray"
+	case TextureViewDimension_Cube:
+		return "Cube"
+	case TextureViewDimension_CubeArray:
+		return "CubeArray"
+	case TextureViewDimension_3D:
+		return "3D"
+	default:
+		return ""
+	}
+}
 
 type VertexFormat uint32
 
@@ -588,9 +1545,89 @@ const (
 	VertexFormat_Sint32x4  VertexFormat = 30
 )
 
+func (v VertexFormat) String() string {
+	switch v {
+	case VertexFormat_Undefined:
+		return "Undefined"
+	case VertexFormat_Uint8x2:
+		return "Uint8x2"
+	case VertexFormat_Uint8x4:
+		return "Uint8x4"
+	case VertexFormat_Sint8x2:
+		return "Sint8x2"
+	case VertexFormat_Sint8x4:
+		return "Sint8x4"
+	case VertexFormat_Unorm8x2:
+		return "Unorm8x2"
+	case VertexFormat_Unorm8x4:
+		return "Unorm8x4"
+	case VertexFormat_Snorm8x2:
+		return "Snorm8x2"
+	case VertexFormat_Snorm8x4:
+		return "Snorm8x4"
+	case VertexFormat_Uint16x2:
+		return "Uint16x2"
+	case VertexFormat_Uint16x4:
+		return "Uint16x4"
+	case VertexFormat_Sint16x2:
+		return "Sint16x2"
+	case VertexFormat_Sint16x4:
+		return "Sint16x4"
+	case VertexFormat_Unorm16x2:
+		return "Unorm16x2"
+	case VertexFormat_Unorm16x4:
+		return "Unorm16x4"
+	case VertexFormat_Snorm16x2:
+		return "Snorm16x2"
+	case VertexFormat_Snorm16x4:
+		return "Snorm16x4"
+	case VertexFormat_Float16x2:
+		return "Float16x2"
+	case VertexFormat_Float16x4:
+		return "Float16x4"
+	case VertexFormat_Float32:
+		return "Float32"
+	case VertexFormat_Float32x2:
+		return "Float32x2"
+	case VertexFormat_Float32x3:
+		return "Float32x3"
+	case VertexFormat_Float32x4:
+		return "Float32x4"
+	case VertexFormat_Uint32:
+		return "Uint32"
+	case VertexFormat_Uint32x2:
+		return "Uint32x2"
+	case VertexFormat_Uint32x3:
+		return "Uint32x3"
+	case VertexFormat_Uint32x4:
+		return "Uint32x4"
+	case VertexFormat_Sint32:
+		return "Sint32"
+	case VertexFormat_Sint32x2:
+		return "Sint32x2"
+	case VertexFormat_Sint32x3:
+		return "Sint32x3"
+	case VertexFormat_Sint32x4:
+		return "Sint32x4"
+	default:
+		return ""
+	}
+}
+
 type VertexStepMode uint32
 
 const (
 	VertexStepMode_Vertex   VertexStepMode = 0
 	VertexStepMode_Instance VertexStepMode = 1
 )
+
+func (v VertexStepMode) String() string {
+	switch v {
+	case VertexStepMode_Vertex:
+		return "Vertex"
+	case VertexStepMode_Instance:
+		return "Instance"
+	default:
+		return ""
+	}
+}
