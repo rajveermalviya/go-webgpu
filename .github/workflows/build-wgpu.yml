@@ -3,7 +3,7 @@ name: Build wgpu-native
 on: [workflow_dispatch]
 
 env:
-  WGPU_COMMIT: d3ed341aef2862626c3ef7da9cc66944895c4727
+  WGPU_COMMIT: 0ff888a666e6e787af9bc9c9afc35a5055547b5a
   ANDROID_NDK_VERSION: "22.1.7171670"
   ANDROID_API_LEVEL: "21"
 
