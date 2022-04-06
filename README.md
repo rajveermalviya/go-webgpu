@@ -39,3 +39,11 @@ This example uses [go-glfw](https://github.com/go-gl/glfw) so it will use cgo on
 ```shell
 go run github.com/rajveermalviya/go-webgpu/examples/triangle@latest
 ```
+
+### [gio-windowing](./examples/gio-windowing/main.go)
+
+This example uses [gio](https://gioui.org) toolkit for windowing, it **doesn't** use cgo on windows.
+
+```shell
+go run github.com/rajveermalviya/go-webgpu/examples/gio-windowing@latest
+```
