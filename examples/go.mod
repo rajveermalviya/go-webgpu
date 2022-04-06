@@ -6,7 +6,7 @@ require (
 	gioui.org v0.0.0-20220405111203-69f982e26f21
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958
 	github.com/go-gl/mathgl v1.0.0
-	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220404183946-af2c178b9687
+	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220406162758-b68aae63f18c
 	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0
 )
 
