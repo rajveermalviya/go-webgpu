@@ -1,3 +1,5 @@
+github.com/rajveermalviya/gio v0.0.0-20220407081512-669757591f4c h1:9v6DL4oAc1lhHYOe8GtyKqldZBLZJnv+qw/SdvI1IiQ=
+github.com/rajveermalviya/gio v0.0.0-20220407081512-669757591f4c/go.mod h1:b8vBukexG6eYuXZa14asjLAWJ+JjbZ/ophEnS2FjYUg=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

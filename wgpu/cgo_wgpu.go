@@ -5,7 +5,7 @@ package wgpu
 /*
 
 // Android
-#cgo android LDFLAGS: -landroid
+#cgo android LDFLAGS: -landroid -lm
 
 #cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64
 #cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64
