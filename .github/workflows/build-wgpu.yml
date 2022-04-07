@@ -128,6 +128,26 @@ jobs:
             pr_title: Update wgpu-native static library for android/arm64
             pr_body: Auto-generated pull request to build wgpu-native for android/arm64
 
+          - name: build - android/arm
+            os: ubuntu-latest
+            toolchain: stable
+            target: armv7-linux-androideabi
+            goos: android
+            goarch: arm
+            setup_env: |
+              set -x
+
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
+              echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
+              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+
+              echo "CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+            pr_commit_message: Update wgpu-native static library for android/arm
+            pr_title: Update wgpu-native static library for android/arm
+            pr_body: Auto-generated pull request to build wgpu-native for android/arm
+
     steps:
       # Checkout
       - uses: actions/checkout@v2
