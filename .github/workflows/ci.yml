@@ -49,6 +49,7 @@ jobs:
         run: |
           set -x;
           export WGPU_FORCE_FALLBACK_ADAPTER=1;
+          export WGPU_LOG_LEVEL=TRACE;
           go run github.com/rajveermalviya/go-webgpu/examples/compute;
           go run github.com/rajveermalviya/go-webgpu/examples/capture;
         shell: bash
