@@ -1,4 +1,4 @@
-//go:build wayland
+//go:build linux && !android && wayland
 
 package main
 

@@ -1,10 +1,17 @@
 {
   "gopls": {
     "build.env": {
+      // Windows
       // "CC": "zig cc -target x86_64-windows-gnu",
       // "CXX": "zig c++ -target x86_64-windows-gnu",
       // "CGO_ENABLED": "1",
       // "GOOS": "windows",
+      //
+      // Android
+      // "CC": "/home/rajveer/sdk/android_sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang",
+      // "CXX": "/home/rajveer/sdk/android_sdk/ndk/22.1.7171670/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang++",
+      // "CGO_ENABLED": "1",
+      // "GOOS": "android",
     },
     "ui.codelenses": {
       "gc_details": true
