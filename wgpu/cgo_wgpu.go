@@ -4,6 +4,13 @@ package wgpu
 
 /*
 
+// Android
+#cgo android LDFLAGS: -landroid
+
+#cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64
+#cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64
+#cgo android,arm LDFLAGS: -L${SRCDIR}/lib/android/arm
+
 // Linux
 #cgo linux LDFLAGS: -lm -ldl
 
@@ -15,12 +22,6 @@ package wgpu
 
 #cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin/amd64
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
-
-// Android
-#cgo android LDFLAGS: -landroid
-
-#cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64
-#cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64
 
 // Common
 #cgo CFLAGS: -fPIC -flto -Wall
