@@ -8,5 +8,9 @@ import (
 )
 
 func getSurfaceDescriptor(ve app.ViewEvent) *wgpu.SurfaceDescriptor {
-	panic("TODO")
+	return &wgpu.SurfaceDescriptor{
+		AndroidNativeWindow: &wgpu.SurfaceDescriptorFromAndroidNativeWindow{
+			Window: ve.ANativeWindow,
+		},
+	}
 }

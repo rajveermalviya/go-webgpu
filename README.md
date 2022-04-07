@@ -47,3 +47,17 @@ This example uses [gio](https://gioui.org) toolkit for windowing, it **doesn't**
 ```shell
 go run github.com/rajveermalviya/go-webgpu/examples/gio-windowing@latest
 ```
+
+This example also supports [running on android](https://gioui.org/doc/install/android).
+
+```shell
+# install android sdk with ndk bundle
+sdkmanager ndk-bundle
+
+# install gogio to build apk
+go install gioui.org/cmd/gogio@latest
+
+cd examples/gio-windowing
+gogio -arch arm64 -target android .
+adb install gio-windowing.apk
+```

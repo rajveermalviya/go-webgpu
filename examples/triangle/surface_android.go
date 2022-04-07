@@ -8,5 +8,5 @@ import (
 )
 
 func getSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
-	panic("TODO")
+	panic("glfw doesn't support android")
 }

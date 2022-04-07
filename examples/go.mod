@@ -6,7 +6,7 @@ require (
 	gioui.org v0.0.0-20220405111203-69f982e26f21
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958
 	github.com/go-gl/mathgl v1.0.0
-	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220406162758-b68aae63f18c
+	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220407072601-9915701ef3b4
 	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0
 )
 
@@ -21,3 +21,5 @@ require (
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/text v0.3.6 // indirect
 )
+
+replace gioui.org v0.0.0-20220405111203-69f982e26f21 => github.com/rajveermalviya/gio v0.0.0-20220407081512-669757591f4c
