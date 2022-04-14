@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -34,6 +35,8 @@ func init() {
 var shader string
 
 func main() {
+	runtime.LockOSThread()
+
 	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
@@ -127,7 +130,7 @@ func main() {
 		Format:      swapChainFormat,
 		Width:       uint32(prevWidth),
 		Height:      uint32(prevHeight),
-		PresentMode: wgpu.PresentMode_Fifo,
+		PresentMode: wgpu.PresentMode_Mailbox,
 	})
 	if err != nil {
 		panic(err)
@@ -150,7 +153,7 @@ func main() {
 						Format:      swapChainFormat,
 						Width:       uint32(prevWidth),
 						Height:      uint32(prevHeight),
-						PresentMode: wgpu.PresentMode_Fifo,
+						PresentMode: wgpu.PresentMode_Mailbox,
 					})
 				if err != nil {
 					panic(err)
