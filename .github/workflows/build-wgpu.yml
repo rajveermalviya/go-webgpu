@@ -42,6 +42,19 @@ jobs:
             pr_title: Update wgpu-native static library for linux/386
             pr_body: Auto-generated pull request to build wgpu-native for linux/386
 
+          - name: build - linux/arm64
+            os: ubuntu-latest
+            toolchain: stable
+            target: aarch64-unknown-linux-gnu
+            goos: linux
+            goarch: arm64
+            setup_env: |
+              sudo apt update -y;
+              sudo apt install -y gcc-multilib;
+            pr_commit_message: Update wgpu-native static library for linux/arm64
+            pr_title: Update wgpu-native static library for linux/arm64
+            pr_body: Auto-generated pull request to build wgpu-native for linux/arm64
+
           - name: build - windows/amd64
             os: windows-latest
             toolchain: stable-msvc

@@ -12,10 +12,11 @@ package wgpu
 #cgo android,arm LDFLAGS: -L${SRCDIR}/lib/android/arm
 
 // Linux
-#cgo linux LDFLAGS: -lm -ldl
+#cgo linux,!android LDFLAGS: -lm -ldl
 
-#cgo linux,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64
-#cgo linux,386 LDFLAGS: -L${SRCDIR}/lib/linux/386
+#cgo linux,!android,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64
+#cgo linux,!android,386 LDFLAGS: -L${SRCDIR}/lib/linux/386
+#cgo linux,!android,arm64 LDFLAGS: -L${SRCDIR}/lib/linux/arm64
 
 // Darwin
 #cgo darwin LDFLAGS: -framework QuartzCore -framework Metal
@@ -57,12 +58,12 @@ import (
 	"unsafe"
 )
 
+var logCb LogCallback
+
 func init() {
 	logCb = defaultlogCallback
 	C.wgpuSetLogCallback(C.WGPULogCallback(C.logCallback_cgo))
 }
-
-var logCb LogCallback
 
 func SetLogCallback(f LogCallback) {
 	logCb = f
