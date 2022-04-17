@@ -58,6 +58,6 @@ sdkmanager ndk-bundle
 go install gioui.org/cmd/gogio@latest
 
 cd examples/gio-windowing
-gogio -arch arm64 -target android .
+gogio -arch arm64,arm,amd64 -target android .
 adb install gio-windowing.apk
 ```
