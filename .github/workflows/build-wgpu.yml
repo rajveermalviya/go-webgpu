@@ -49,8 +49,15 @@ jobs:
             goos: linux
             goarch: arm64
             setup_env: |
-              sudo apt update -y;
-              sudo apt install -y gcc-aarch64-linux-gnu;
+              set -x
+              sudo apt update -y
+              sudo apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
+
+              echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+              echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+
+              echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+
             pr_commit_message: Update wgpu-native static library for linux/arm64
             pr_title: Update wgpu-native static library for linux/arm64
             pr_body: Auto-generated pull request to build wgpu-native for linux/arm64
