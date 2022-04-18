@@ -16,7 +16,6 @@ package wgpu
 
 #cgo linux,!android,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64
 #cgo linux,!android,386 LDFLAGS: -L${SRCDIR}/lib/linux/386
-#cgo linux,!android,arm64 LDFLAGS: -L${SRCDIR}/lib/linux/arm64
 
 // Darwin
 #cgo darwin LDFLAGS: -framework QuartzCore -framework Metal

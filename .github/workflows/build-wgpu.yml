@@ -19,157 +19,137 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - name: build - linux/amd64
-          #   os: ubuntu-latest
-          #   toolchain: stable
-          #   target: x86_64-unknown-linux-gnu
-          #   goos: linux
-          #   goarch: amd64
-          #   pr_commit_message: Update wgpu-native static library for linux/amd64
-          #   pr_title: Update wgpu-native static library for linux/amd64
-          #   pr_body: Auto-generated pull request to build wgpu-native for linux/amd64
-
-          # - name: build - linux/386
-          #   os: ubuntu-latest
-          #   toolchain: stable
-          #   target: i686-unknown-linux-gnu
-          #   goos: linux
-          #   goarch: "386"
-          #   setup_env: |
-          #     sudo apt update -y;
-          #     sudo apt install -y gcc-multilib;
-          #   pr_commit_message: Update wgpu-native static library for linux/386
-          #   pr_title: Update wgpu-native static library for linux/386
-          #   pr_body: Auto-generated pull request to build wgpu-native for linux/386
-
-          - name: build - linux/arm64
+          - name: build - linux/amd64
             os: ubuntu-latest
             toolchain: stable
-            target: aarch64-unknown-linux-gnu
+            target: x86_64-unknown-linux-gnu
             goos: linux
+            goarch: amd64
+            pr_commit_message: Update wgpu-native static library for linux/amd64
+            pr_title: Update wgpu-native static library for linux/amd64
+            pr_body: Auto-generated pull request to build wgpu-native for linux/amd64
+
+          - name: build - linux/386
+            os: ubuntu-latest
+            toolchain: stable
+            target: i686-unknown-linux-gnu
+            goos: linux
+            goarch: "386"
+            setup_env: |
+              sudo apt update -y;
+              sudo apt install -y gcc-multilib;
+            pr_commit_message: Update wgpu-native static library for linux/386
+            pr_title: Update wgpu-native static library for linux/386
+            pr_body: Auto-generated pull request to build wgpu-native for linux/386
+
+          - name: build - windows/amd64
+            os: windows-latest
+            toolchain: stable-msvc
+            target: x86_64-pc-windows-msvc
+            goos: windows
+            goarch: amd64
+            setup_env: |
+              choco install -y --force llvm | exit 0
+              echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
+            pr_commit_message: Update wgpu-native dll for windows/amd64
+            pr_title: Update wgpu-native dll for windows/amd64
+            pr_body: Auto-generated pull request to build wgpu-native for windows/amd64
+
+          - name: build - windows/386
+            os: windows-latest
+            toolchain: stable-i686-pc-windows-msvc
+            target: i686-pc-windows-msvc
+            goos: windows
+            goarch: "386"
+            setup_env: |
+              choco install -y --force --x86 llvm | exit 0
+              echo "LIBCLANG_PATH=C:\Program Files (x86)\LLVM\lib" >> $GITHUB_ENV
+            pr_commit_message: Update wgpu-native dll for windows/386
+            pr_title: Update wgpu-native dll for windows/386
+            pr_body: Auto-generated pull request to build wgpu-native for windows/386
+
+          - name: build - darwin/amd64
+            os: macos-latest
+            toolchain: stable
+            target: x86_64-apple-darwin
+            goos: darwin
+            goarch: amd64
+            pr_commit_message: Update wgpu-native static library for darwin/amd64
+            pr_title: Update wgpu-native static library for darwin/amd64
+            pr_body: Auto-generated pull request to build wgpu-native for darwin/amd64
+
+          - name: build - darwin/arm64
+            os: macos-latest
+            toolchain: stable
+            target: aarch64-apple-darwin
+            goos: darwin
+            goarch: arm64
+            pr_commit_message: Update wgpu-native static library for darwin/arm64
+            pr_title: Update wgpu-native static library for darwin/arm64
+            pr_body: Auto-generated pull request to build wgpu-native for darwin/arm64
+
+          - name: build - android/amd64
+            os: ubuntu-latest
+            toolchain: stable
+            target: x86_64-linux-android
+            goos: android
+            goarch: amd64
+            setup_env: |
+              set -x
+
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
+              echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
+              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+              echo "CXX=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang++" >> $GITHUB_ENV
+              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+
+              echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+            pr_commit_message: Update wgpu-native static library for android/amd64
+            pr_title: Update wgpu-native static library for android/amd64
+            pr_body: Auto-generated pull request to build wgpu-native for android/amd64
+
+          - name: build - android/arm64
+            os: ubuntu-latest
+            toolchain: stable
+            target: aarch64-linux-android
+            goos: android
             goarch: arm64
             setup_env: |
               set -x
-              sudo apt update -y
-              sudo apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
 
-              echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-              echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
+              echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
+              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+              echo "CXX=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang++" >> $GITHUB_ENV
+              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
 
-              echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+              echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+            pr_commit_message: Update wgpu-native static library for android/arm64
+            pr_title: Update wgpu-native static library for android/arm64
+            pr_body: Auto-generated pull request to build wgpu-native for android/arm64
 
-            pr_commit_message: Update wgpu-native static library for linux/arm64
-            pr_title: Update wgpu-native static library for linux/arm64
-            pr_body: Auto-generated pull request to build wgpu-native for linux/arm64
+          - name: build - android/arm
+            os: ubuntu-latest
+            toolchain: stable
+            target: armv7-linux-androideabi
+            goos: android
+            goarch: arm
+            setup_env: |
+              set -x
 
-          # - name: build - windows/amd64
-          #   os: windows-latest
-          #   toolchain: stable-msvc
-          #   target: x86_64-pc-windows-msvc
-          #   goos: windows
-          #   goarch: amd64
-          #   setup_env: |
-          #     choco install -y --force llvm | exit 0
-          #     echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
-          #   pr_commit_message: Update wgpu-native dll for windows/amd64
-          #   pr_title: Update wgpu-native dll for windows/amd64
-          #   pr_body: Auto-generated pull request to build wgpu-native for windows/amd64
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
+              echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
+              echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+              echo "CXX=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang++" >> $GITHUB_ENV
+              echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
 
-          # - name: build - windows/386
-          #   os: windows-latest
-          #   toolchain: stable-i686-pc-windows-msvc
-          #   target: i686-pc-windows-msvc
-          #   goos: windows
-          #   goarch: "386"
-          #   setup_env: |
-          #     choco install -y --force --x86 llvm | exit 0
-          #     echo "LIBCLANG_PATH=C:\Program Files (x86)\LLVM\lib" >> $GITHUB_ENV
-          #   pr_commit_message: Update wgpu-native dll for windows/386
-          #   pr_title: Update wgpu-native dll for windows/386
-          #   pr_body: Auto-generated pull request to build wgpu-native for windows/386
-
-          # - name: build - darwin/amd64
-          #   os: macos-latest
-          #   toolchain: stable
-          #   target: x86_64-apple-darwin
-          #   goos: darwin
-          #   goarch: amd64
-          #   pr_commit_message: Update wgpu-native static library for darwin/amd64
-          #   pr_title: Update wgpu-native static library for darwin/amd64
-          #   pr_body: Auto-generated pull request to build wgpu-native for darwin/amd64
-
-          # - name: build - darwin/arm64
-          #   os: macos-latest
-          #   toolchain: stable
-          #   target: aarch64-apple-darwin
-          #   goos: darwin
-          #   goarch: arm64
-          #   pr_commit_message: Update wgpu-native static library for darwin/arm64
-          #   pr_title: Update wgpu-native static library for darwin/arm64
-          #   pr_body: Auto-generated pull request to build wgpu-native for darwin/arm64
-
-          # - name: build - android/amd64
-          #   os: ubuntu-latest
-          #   toolchain: stable
-          #   target: x86_64-linux-android
-          #   goos: android
-          #   goarch: amd64
-          #   setup_env: |
-          #     set -x
-
-          #     echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
-          #     echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
-          #     echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
-          #     echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-          #     echo "CXX=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang++" >> $GITHUB_ENV
-          #     echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-
-          #     echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-          #   pr_commit_message: Update wgpu-native static library for android/amd64
-          #   pr_title: Update wgpu-native static library for android/amd64
-          #   pr_body: Auto-generated pull request to build wgpu-native for android/amd64
-
-          # - name: build - android/arm64
-          #   os: ubuntu-latest
-          #   toolchain: stable
-          #   target: aarch64-linux-android
-          #   goos: android
-          #   goarch: arm64
-          #   setup_env: |
-          #     set -x
-
-          #     echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
-          #     echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
-          #     echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
-          #     echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-          #     echo "CXX=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang++" >> $GITHUB_ENV
-          #     echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-
-          #     echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-          #   pr_commit_message: Update wgpu-native static library for android/arm64
-          #   pr_title: Update wgpu-native static library for android/arm64
-          #   pr_body: Auto-generated pull request to build wgpu-native for android/arm64
-
-          # - name: build - android/arm
-          #   os: ubuntu-latest
-          #   toolchain: stable
-          #   target: armv7-linux-androideabi
-          #   goos: android
-          #   goarch: arm
-          #   setup_env: |
-          #     set -x
-
-          #     echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
-          #     echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
-          #     echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
-          #     echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-          #     echo "CXX=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang++" >> $GITHUB_ENV
-          #     echo "CLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-
-          #     echo "CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
-          #   pr_commit_message: Update wgpu-native static library for android/arm
-          #   pr_title: Update wgpu-native static library for android/arm
-          #   pr_body: Auto-generated pull request to build wgpu-native for android/arm
+              echo "CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
+            pr_commit_message: Update wgpu-native static library for android/arm
+            pr_title: Update wgpu-native static library for android/arm
+            pr_body: Auto-generated pull request to build wgpu-native for android/arm
 
     steps:
       # Checkout
