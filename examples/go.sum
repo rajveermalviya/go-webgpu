@@ -39,8 +39,8 @@ github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1y
 github.com/onsi/gomega v1.10.5/go.mod h1:gza4q3jKQJijlu05nKWRCW/GavJumGt8aNRxWg7mt48=
 github.com/rajveermalviya/gio v0.0.0-20220407081512-669757591f4c h1:9v6DL4oAc1lhHYOe8GtyKqldZBLZJnv+qw/SdvI1IiQ=
 github.com/rajveermalviya/gio v0.0.0-20220407081512-669757591f4c/go.mod h1:b8vBukexG6eYuXZa14asjLAWJ+JjbZ/ophEnS2FjYUg=
-github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220407072601-9915701ef3b4 h1:+DMX/6yTa5mIFsAYS+cMlVOhcwjrhWOzqDE15BFeGnk=
-github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220407072601-9915701ef3b4/go.mod h1:a8otxFj3omOkqCzgGaFbYiQ/PLSghjEvkEioSm94vLo=
+github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220418062642-658eb4bf501a h1:kKpUz8/XDYRXfFfsIKAeCDeQY/sZXdQoUvsqWo0XDts=
+github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220418062642-658eb4bf501a/go.mod h1:a8otxFj3omOkqCzgGaFbYiQ/PLSghjEvkEioSm94vLo=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
