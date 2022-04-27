@@ -119,6 +119,7 @@ var (
 	wgpuBufferMapAsync                       = lib.NewProc("wgpuBufferMapAsync")
 	wgpuCommandEncoderBeginComputePass       = lib.NewProc("wgpuCommandEncoderBeginComputePass")
 	wgpuCommandEncoderBeginRenderPass        = lib.NewProc("wgpuCommandEncoderBeginRenderPass")
+	wgpuCommandEncoderClearBuffer            = lib.NewProc("wgpuCommandEncoderClearBuffer")
 	wgpuCommandEncoderCopyBufferToBuffer     = lib.NewProc("wgpuCommandEncoderCopyBufferToBuffer")
 	wgpuCommandEncoderCopyBufferToTexture    = lib.NewProc("wgpuCommandEncoderCopyBufferToTexture")
 	wgpuCommandEncoderCopyTextureToBuffer    = lib.NewProc("wgpuCommandEncoderCopyTextureToBuffer")
@@ -1268,6 +1269,17 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	}
 
 	return &RenderPassEncoder{ref: wgpuRenderPassEncoder(ref)}
+}
+
+func (p *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) {
+	wgpuCommandEncoderClearBuffer.Call(
+		uintptr(p.ref),
+		uintptr(buffer.ref),
+		uintptr(offset),
+		uintptr(size),
+	)
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(buffer)
 }
 
 func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinatonOffset uint64, size uint64) {
