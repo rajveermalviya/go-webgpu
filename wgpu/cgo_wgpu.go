@@ -1292,6 +1292,17 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	return &RenderPassEncoder{ref}
 }
 
+func (p *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) {
+	C.wgpuCommandEncoderClearBuffer(
+		p.ref,
+		buffer.ref,
+		C.uint64_t(offset),
+		C.uint64_t(size),
+	)
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(buffer)
+}
+
 func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinatonOffset uint64, size uint64) {
 	C.wgpuCommandEncoderCopyBufferToBuffer(
 		p.ref,
