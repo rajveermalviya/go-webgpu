@@ -88,6 +88,26 @@ jobs:
             pr_title: Update wgpu-native static library for darwin/arm64
             pr_body: Auto-generated pull request to build wgpu-native for darwin/arm64
 
+          - name: build - ios/amd64
+            os: macos-latest
+            toolchain: stable
+            target: x86_64-apple-ios
+            goos: ios
+            goarch: amd64
+            pr_commit_message: Update wgpu-native static library for ios/amd64
+            pr_title: Update wgpu-native static library for ios/amd64
+            pr_body: Auto-generated pull request to build wgpu-native for ios/amd64
+
+          - name: build - ios/arm64
+            os: macos-latest
+            toolchain: stable
+            target: aarch64-apple-ios
+            goos: ios
+            goarch: arm64
+            pr_commit_message: Update wgpu-native static library for ios/arm64
+            pr_title: Update wgpu-native static library for ios/arm64
+            pr_body: Auto-generated pull request to build wgpu-native for ios/arm64
+
           - name: build - android/amd64
             os: ubuntu-latest
             toolchain: stable
