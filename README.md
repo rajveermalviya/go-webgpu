@@ -1,6 +1,8 @@
 # go-webgpu
 
-Go bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native).
+Go bindings for [`wgpu-native`](https://github.com/gfx-rs/wgpu-native).
+
+`wgpu-native` is a cross-platform, safe, graphics api. It runs natively on Vulkan, Metal, D3D12.
 
 For more info check:
 - [WebGPU](https://gpuweb.github.io/gpuweb/)
