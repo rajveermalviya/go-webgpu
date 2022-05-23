@@ -5,26 +5,23 @@ package wgpu
 /*
 
 // Android
+#cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64 -lwgpu_native
+#cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64 -lwgpu_native
+#cgo android,arm LDFLAGS: -L${SRCDIR}/lib/android/arm -lwgpu_native
+
 #cgo android LDFLAGS: -landroid -lm
 
-#cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64
-#cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64
-#cgo android,arm LDFLAGS: -L${SRCDIR}/lib/android/arm
-
 // Linux
+#cgo linux,!android,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64 -lwgpu_native
+#cgo linux,!android,386 LDFLAGS: -L${SRCDIR}/lib/linux/386 -lwgpu_native
+
 #cgo linux,!android LDFLAGS: -lm -ldl
 
-#cgo linux,!android,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64
-#cgo linux,!android,386 LDFLAGS: -L${SRCDIR}/lib/linux/386
-
 // Darwin
+#cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin/amd64 -lwgpu_native
+#cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64 -lwgpu_native
+
 #cgo darwin LDFLAGS: -framework QuartzCore -framework Metal
-
-#cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/lib/darwin/amd64
-#cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
-
-// Common
-#cgo LDFLAGS: -lwgpu_native
 
 #include <stdlib.h>
 #include "./lib/wgpu.h"
