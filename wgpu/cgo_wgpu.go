@@ -24,7 +24,6 @@ package wgpu
 #cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/lib/darwin/arm64
 
 // Common
-#cgo CFLAGS: -fPIC -flto -Wall
 #cgo LDFLAGS: -lwgpu_native
 
 #include <stdlib.h>
