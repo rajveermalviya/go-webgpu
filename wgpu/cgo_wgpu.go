@@ -72,6 +72,12 @@ func GetVersion() Version {
 	return Version(C.wgpuGetVersion())
 }
 
+func GetResourceUsageString() string {
+	usage := C.wgpuGetResourceUsageString()
+	defer C.free(unsafe.Pointer(usage))
+	return C.GoString(usage)
+}
+
 type (
 	Adapter             struct{ ref C.WGPUAdapter }
 	BindGroup           struct{ ref C.WGPUBindGroup }
