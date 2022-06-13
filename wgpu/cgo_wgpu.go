@@ -1530,6 +1530,27 @@ func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 	return &CommandBuffer{ref}
 }
 
+func (p *CommandEncoder) InsertDebugMarker(markerLabel string) {
+	markerLabelStr := C.CString(markerLabel)
+	defer C.free(unsafe.Pointer(markerLabelStr))
+
+	C.wgpuCommandEncoderInsertDebugMarker(p.ref, markerLabelStr)
+	runtime.KeepAlive(p)
+}
+
+func (p *CommandEncoder) PopDebugGroup() {
+	C.wgpuCommandEncoderPopDebugGroup(p.ref)
+	runtime.KeepAlive(p)
+}
+
+func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
+	groupLabelStr := C.CString(groupLabel)
+	defer C.free(unsafe.Pointer(groupLabelStr))
+
+	C.wgpuCommandEncoderPushDebugGroup(p.ref, groupLabelStr)
+	runtime.KeepAlive(p)
+}
+
 func (p *ComputePassEncoder) Dispatch(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
 	C.wgpuComputePassEncoderDispatch(p.ref, C.uint32_t(workgroupCountX), C.uint32_t(workgroupCountY), C.uint32_t(workgroupCountZ))
 	runtime.KeepAlive(p)
@@ -1565,6 +1586,27 @@ func (p *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
 	C.wgpuComputePassEncoderSetPipeline(p.ref, pipeline.ref)
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(pipeline)
+}
+
+func (p *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
+	markerLabelStr := C.CString(markerLabel)
+	defer C.free(unsafe.Pointer(markerLabelStr))
+
+	C.wgpuComputePassEncoderInsertDebugMarker(p.ref, markerLabelStr)
+	runtime.KeepAlive(p)
+}
+
+func (p *ComputePassEncoder) PopDebugGroup() {
+	C.wgpuComputePassEncoderPopDebugGroup(p.ref)
+	runtime.KeepAlive(p)
+}
+
+func (p *ComputePassEncoder) PushDebugGroup(groupLabel string) {
+	groupLabelStr := C.CString(groupLabel)
+	defer C.free(unsafe.Pointer(groupLabelStr))
+
+	C.wgpuComputePassEncoderPushDebugGroup(p.ref, groupLabelStr)
+	runtime.KeepAlive(p)
 }
 
 func (p *Queue) Submit(commands ...*CommandBuffer) {
@@ -1793,6 +1835,27 @@ func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth 
 		C.float(minDepth),
 		C.float(maxDepth),
 	)
+	runtime.KeepAlive(p)
+}
+
+func (p *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
+	markerLabelStr := C.CString(markerLabel)
+	defer C.free(unsafe.Pointer(markerLabelStr))
+
+	C.wgpuRenderPassEncoderInsertDebugMarker(p.ref, markerLabelStr)
+	runtime.KeepAlive(p)
+}
+
+func (p *RenderPassEncoder) PopDebugGroup() {
+	C.wgpuRenderPassEncoderPopDebugGroup(p.ref)
+	runtime.KeepAlive(p)
+}
+
+func (p *RenderPassEncoder) PushDebugGroup(groupLabel string) {
+	groupLabelStr := C.CString(groupLabel)
+	defer C.free(unsafe.Pointer(groupLabelStr))
+
+	C.wgpuRenderPassEncoderPushDebugGroup(p.ref, groupLabelStr)
 	runtime.KeepAlive(p)
 }
 

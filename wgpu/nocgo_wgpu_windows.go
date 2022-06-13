@@ -126,11 +126,17 @@ var (
 	wgpuCommandEncoderCopyTextureToBuffer    = lib.NewProc("wgpuCommandEncoderCopyTextureToBuffer")
 	wgpuCommandEncoderCopyTextureToTexture   = lib.NewProc("wgpuCommandEncoderCopyTextureToTexture")
 	wgpuCommandEncoderFinish                 = lib.NewProc("wgpuCommandEncoderFinish")
+	wgpuCommandEncoderInsertDebugMarker      = lib.NewProc("wgpuCommandEncoderInsertDebugMarker")
+	wgpuCommandEncoderPopDebugGroup          = lib.NewProc("wgpuCommandEncoderPopDebugGroup")
+	wgpuCommandEncoderPushDebugGroup         = lib.NewProc("wgpuCommandEncoderPushDebugGroup")
 	wgpuComputePassEncoderDispatch           = lib.NewProc("wgpuComputePassEncoderDispatch")
 	wgpuComputePassEncoderDispatchIndirect   = lib.NewProc("wgpuComputePassEncoderDispatchIndirect")
 	wgpuComputePassEncoderEnd                = lib.NewProc("wgpuComputePassEncoderEnd")
 	wgpuComputePassEncoderSetBindGroup       = lib.NewProc("wgpuComputePassEncoderSetBindGroup")
 	wgpuComputePassEncoderSetPipeline        = lib.NewProc("wgpuComputePassEncoderSetPipeline")
+	wgpuComputePassEncoderInsertDebugMarker  = lib.NewProc("wgpuComputePassEncoderInsertDebugMarker")
+	wgpuComputePassEncoderPopDebugGroup      = lib.NewProc("wgpuComputePassEncoderPopDebugGroup")
+	wgpuComputePassEncoderPushDebugGroup     = lib.NewProc("wgpuComputePassEncoderPushDebugGroup")
 	wgpuQueueSubmit                          = lib.NewProc("wgpuQueueSubmit")
 	wgpuQueueWriteBuffer                     = lib.NewProc("wgpuQueueWriteBuffer")
 	wgpuQueueWriteTexture                    = lib.NewProc("wgpuQueueWriteTexture")
@@ -148,6 +154,9 @@ var (
 	wgpuRenderPassEncoderSetStencilReference = lib.NewProc("wgpuRenderPassEncoderSetStencilReference")
 	wgpuRenderPassEncoderSetVertexBuffer     = lib.NewProc("wgpuRenderPassEncoderSetVertexBuffer")
 	wgpuRenderPassEncoderSetViewport         = lib.NewProc("wgpuRenderPassEncoderSetViewport")
+	wgpuRenderPassEncoderInsertDebugMarker   = lib.NewProc("wgpuRenderPassEncoderInsertDebugMarker")
+	wgpuRenderPassEncoderPopDebugGroup       = lib.NewProc("wgpuRenderPassEncoderPopDebugGroup")
+	wgpuRenderPassEncoderPushDebugGroup      = lib.NewProc("wgpuRenderPassEncoderPushDebugGroup")
 	wgpuSurfaceGetPreferredFormat            = lib.NewProc("wgpuSurfaceGetPreferredFormat")
 	wgpuSwapChainGetCurrentTextureView       = lib.NewProc("wgpuSwapChainGetCurrentTextureView")
 	wgpuSwapChainPresent                     = lib.NewProc("wgpuSwapChainPresent")
@@ -1523,6 +1532,21 @@ func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 	return &CommandBuffer{ref: wgpuCommandBuffer(ref)}
 }
 
+func (p *CommandEncoder) InsertDebugMarker(markerLabel string) {
+	wgpuCommandEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(markerLabel))))
+	runtime.KeepAlive(p)
+}
+
+func (p *CommandEncoder) PopDebugGroup() {
+	wgpuCommandEncoderPopDebugGroup.Call(uintptr(p.ref))
+	runtime.KeepAlive(p)
+}
+
+func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
+	wgpuCommandEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(groupLabel))))
+	runtime.KeepAlive(p)
+}
+
 func (p *ComputePassEncoder) Dispatch(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
 	wgpuComputePassEncoderDispatch.Call(
 		uintptr(p.ref),
@@ -1567,6 +1591,21 @@ func (p *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
 	wgpuComputePassEncoderSetPipeline.Call(uintptr(p.ref), uintptr(pipeline.ref))
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(pipeline)
+}
+
+func (p *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
+	wgpuComputePassEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(markerLabel))))
+	runtime.KeepAlive(p)
+}
+
+func (p *ComputePassEncoder) PopDebugGroup() {
+	wgpuComputePassEncoderPopDebugGroup.Call(uintptr(p.ref))
+	runtime.KeepAlive(p)
+}
+
+func (p *ComputePassEncoder) PushDebugGroup(groupLabel string) {
+	wgpuComputePassEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(groupLabel))))
+	runtime.KeepAlive(p)
 }
 
 func (p *Queue) Submit(commands ...*CommandBuffer) {
@@ -1826,6 +1865,21 @@ func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth 
 		uintptr(math.Float32bits(minDepth)),
 		uintptr(math.Float32bits(maxDepth)),
 	)
+	runtime.KeepAlive(p)
+}
+
+func (p *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
+	wgpuRenderPassEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(markerLabel))))
+	runtime.KeepAlive(p)
+}
+
+func (p *RenderPassEncoder) PopDebugGroup() {
+	wgpuRenderPassEncoderPopDebugGroup.Call(uintptr(p.ref))
+	runtime.KeepAlive(p)
+}
+
+func (p *RenderPassEncoder) PushDebugGroup(groupLabel string) {
+	wgpuRenderPassEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(groupLabel))))
 	runtime.KeepAlive(p)
 }
 
