@@ -115,6 +115,13 @@ type DeviceExtras struct {
 
 type RequiredLimits struct {
 	Limits Limits
+
+	// WGPUChainedStruct -> WGPURequiredLimitsExtras
+	RequiredLimitsExtras *RequiredLimitsExtras
+}
+
+type RequiredLimitsExtras struct {
+	MaxPushConstantSize uint32
 }
 
 type DeviceDescriptor struct {
@@ -289,9 +296,22 @@ type ComputePipelineDescriptor struct {
 	Compute ProgrammableStageDescriptor
 }
 
+type PushConstantRange struct {
+	Stages ShaderStage
+	Start  uint32
+	End    uint32
+}
+
+type PipelineLayoutExtras struct {
+	PushConstantRanges []PushConstantRange
+}
+
 type PipelineLayoutDescriptor struct {
 	Label            string
 	BindGroupLayouts []*BindGroupLayout
+
+	// WGPUChainedStruct -> WGPUPipelineLayoutExtras
+	PipelineLayoutExtras *PipelineLayoutExtras
 }
 
 type VertexAttribute struct {

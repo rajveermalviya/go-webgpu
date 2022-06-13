@@ -329,7 +329,6 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	defer C.free(unsafe.Pointer(desc.requiredLimits))
 
 	if descriptor != nil {
-		desc.requiredLimits.nextInChain = nil
 		if descriptor.RequiredLimits != nil {
 			l := descriptor.RequiredLimits.Limits
 			desc.requiredLimits.limits = C.WGPULimits{
@@ -359,6 +358,19 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 				maxComputeWorkgroupSizeY:                  C.uint32_t(l.MaxComputeWorkgroupSizeY),
 				maxComputeWorkgroupSizeZ:                  C.uint32_t(l.MaxComputeWorkgroupSizeZ),
 				maxComputeWorkgroupsPerDimension:          C.uint32_t(l.MaxComputeWorkgroupsPerDimension),
+			}
+
+			if descriptor.RequiredLimits.RequiredLimitsExtras != nil {
+				requiredLimitsExtras := (*C.WGPURequiredLimitsExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimitsExtras{}))))
+				defer C.free(unsafe.Pointer(requiredLimitsExtras))
+
+				requiredLimitsExtras.chain.next = nil
+				requiredLimitsExtras.chain.sType = C.WGPUSType_RequiredLimitsExtras
+				requiredLimitsExtras.maxPushConstantSize = C.uint32_t(descriptor.RequiredLimits.RequiredLimitsExtras.MaxPushConstantSize)
+
+				desc.requiredLimits.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(requiredLimitsExtras))
+			} else {
+				desc.requiredLimits.nextInChain = nil
 			}
 		} else {
 			desc.requiredLimits.limits = C.WGPULimits{}
@@ -708,6 +720,37 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 
 			desc.bindGroupLayoutCount = C.uint32_t(bindGroupLayoutCount)
 			desc.bindGroupLayouts = (*C.WGPUBindGroupLayout)(bindGroupLayouts)
+		}
+
+		if descriptor.PipelineLayoutExtras != nil {
+			pipelineLayoutExtras := (*C.WGPUPipelineLayoutExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUPipelineLayoutExtras{}))))
+			defer C.free(unsafe.Pointer(pipelineLayoutExtras))
+
+			pipelineLayoutExtras.chain.next = nil
+			pipelineLayoutExtras.chain.sType = C.WGPUSType_PipelineLayoutExtras
+
+			pushConstantRangeCount := len(descriptor.PipelineLayoutExtras.PushConstantRanges)
+			if pushConstantRangeCount > 0 {
+				pushConstantRanges := C.malloc(C.size_t(pushConstantRangeCount) * C.size_t(unsafe.Sizeof(C.WGPUPushConstantRange{})))
+				defer C.free(pushConstantRanges)
+
+				pushConstantRangesSlice := unsafe.Slice((*C.WGPUPushConstantRange)(pushConstantRanges), pushConstantRangeCount)
+
+				for i, v := range descriptor.PipelineLayoutExtras.PushConstantRanges {
+					pushConstantRangesSlice[i] = C.WGPUPushConstantRange{
+						stages: C.WGPUShaderStageFlags(v.Stages),
+						start:  C.uint32_t(v.Start),
+						end:    C.uint32_t(v.End),
+					}
+				}
+
+				pipelineLayoutExtras.pushConstantRangeCount = C.uint32_t(pushConstantRangeCount)
+				pipelineLayoutExtras.pushConstantRanges = (*C.WGPUPushConstantRange)(pushConstantRanges)
+			}
+
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(pipelineLayoutExtras))
+		} else {
+			desc.nextInChain = nil
 		}
 	}
 

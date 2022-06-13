@@ -371,7 +371,6 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	desc.requiredLimits = &wgpuRequiredLimits{}
 
 	if descriptor != nil {
-		desc.requiredLimits.nextInChain = nil
 		if descriptor.RequiredLimits != nil {
 			l := descriptor.RequiredLimits.Limits
 			desc.requiredLimits.limits = wgpuLimits{
@@ -401,6 +400,18 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 				maxComputeWorkgroupSizeY:                  l.MaxComputeWorkgroupSizeY,
 				maxComputeWorkgroupSizeZ:                  l.MaxComputeWorkgroupSizeZ,
 				maxComputeWorkgroupsPerDimension:          l.MaxComputeWorkgroupsPerDimension,
+			}
+
+			if descriptor.RequiredLimits.RequiredLimitsExtras != nil {
+				var requiredLimitsExtras wgpuRequiredLimitsExtras
+
+				requiredLimitsExtras.chain.next = nil
+				requiredLimitsExtras.chain.sType = sType_RequiredLimitsExtras
+				requiredLimitsExtras.maxPushConstantSize = descriptor.RequiredLimits.RequiredLimitsExtras.MaxPushConstantSize
+
+				desc.requiredLimits.nextInChain = (*wgpuChainedStruct)(unsafe.Pointer(&requiredLimitsExtras))
+			} else {
+				desc.requiredLimits.nextInChain = nil
 			}
 		} else {
 			desc.requiredLimits.limits = wgpuLimits{}
@@ -715,6 +726,33 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 
 			desc.bindGroupLayoutCount = uint32(bindGroupLayoutCount)
 			desc.bindGroupLayouts = (*wgpuBindGroupLayout)(unsafe.Pointer(&bindGroupLayouts[0]))
+		}
+
+		if descriptor.PipelineLayoutExtras != nil {
+			var pipelineLayoutExtras wgpuPipelineLayoutExtras
+
+			pipelineLayoutExtras.chain.next = nil
+			pipelineLayoutExtras.chain.sType = sType_PipelineLayoutExtras
+
+			pushConstantRangeCount := len(descriptor.PipelineLayoutExtras.PushConstantRanges)
+			if pushConstantRangeCount > 0 {
+				pushConstantRanges := make([]wgpuPushConstantRange, pushConstantRangeCount)
+
+				for i, v := range descriptor.PipelineLayoutExtras.PushConstantRanges {
+					pushConstantRanges[i] = wgpuPushConstantRange{
+						stages: v.Stages,
+						start:  v.Start,
+						end:    v.End,
+					}
+				}
+
+				pipelineLayoutExtras.pushConstantRangeCount = uint32(pushConstantRangeCount)
+				pipelineLayoutExtras.pushConstantRanges = (*wgpuPushConstantRange)(unsafe.Pointer(&pushConstantRanges[0]))
+			}
+
+			desc.nextInChain = (*wgpuChainedStruct)(unsafe.Pointer(&pipelineLayoutExtras))
+		} else {
+			desc.nextInChain = nil
 		}
 	}
 
