@@ -1,0 +1,6 @@
+# functions pending to implement from wgpu-native
+
+- wgpuDeviceSetDeviceLostCallback
+- wgpuRenderPipelineGetBindGroupLayout
+- wgpuDeviceDestroy
+- wgpuComputePipelineGetBindGroupLayout
