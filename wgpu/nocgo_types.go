@@ -67,8 +67,10 @@ const (
 
 // wgpu.h
 const (
-	sType_DeviceExtras  = 0x60000001
-	sType_AdapterExtras = 0x60000002
+	sType_DeviceExtras         = 0x60000001
+	sType_AdapterExtras        = 0x60000002
+	sType_RequiredLimitsExtras = 0x60000003
+	sType_PipelineLayoutExtras = 0x60000004
 )
 
 type wgpuChainedStruct struct {
@@ -160,6 +162,12 @@ type wgpuQueueDescriptor struct {
 type wgpuRequiredLimits struct {
 	nextInChain *wgpuChainedStruct
 	limits      wgpuLimits
+}
+
+type wgpuRequiredLimitsExtras struct {
+	chain               wgpuChainedStruct
+	maxPushConstantSize uint32
+	_                   [4]byte
 }
 
 type wgpuDeviceDescriptor struct {
@@ -282,6 +290,18 @@ type wgpuPipelineLayoutDescriptor struct {
 	label                *byte
 	bindGroupLayoutCount uint32
 	bindGroupLayouts     *wgpuBindGroupLayout
+}
+
+type wgpuPipelineLayoutExtras struct {
+	chain                  wgpuChainedStruct
+	pushConstantRangeCount uint32
+	pushConstantRanges     *wgpuPushConstantRange
+}
+
+type wgpuPushConstantRange struct {
+	stages ShaderStage
+	start  uint32
+	end    uint32
 }
 
 type wgpuVertexAttribute struct {
