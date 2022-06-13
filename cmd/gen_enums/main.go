@@ -79,7 +79,7 @@ func main() {
 	sources := []cc.Source{
 		{
 			Name:  "defaults.h",
-			Value: "#define __STDC_HOSTED__ 1",
+			Value: string(mustv(exec.Command("sh", "-c", "cc -dM -E - < /dev/null").Output())),
 		},
 		{
 			Name:  filepath.Base(inputFile),
@@ -138,7 +138,7 @@ loop:
 		for _, v := range e.Enums {
 			enum := v.Enum
 			value := v.Value
-			fmt.Fprintf(w, "const %s %s = %d\n", enum, e.Name, value)
+			fmt.Fprintf(w, "const %s %s = 0x%.8X\n", enum, e.Name, value)
 		}
 
 		fmt.Fprint(w, "\n")
