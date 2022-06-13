@@ -78,9 +78,10 @@ var lib = func() *windows.LazyDLL {
 }()
 
 var (
-	wgpuSetLogCallback = lib.NewProc("wgpuSetLogCallback")
-	wgpuSetLogLevel    = lib.NewProc("wgpuSetLogLevel")
-	wgpuGetVersion     = lib.NewProc("wgpuGetVersion")
+	wgpuSetLogCallback         = lib.NewProc("wgpuSetLogCallback")
+	wgpuSetLogLevel            = lib.NewProc("wgpuSetLogLevel")
+	wgpuGetVersion             = lib.NewProc("wgpuGetVersion")
+	wgpuGetResourceUsageString = lib.NewProc("wgpuGetResourceUsageString")
 
 	wgpuDeviceDrop          = lib.NewProc("wgpuDeviceDrop")
 	wgpuBindGroupLayoutDrop = lib.NewProc("wgpuBindGroupLayoutDrop")
@@ -177,6 +178,12 @@ func SetLogLevel(level LogLevel) {
 func GetVersion() Version {
 	r, _, _ := wgpuGetVersion.Call()
 	return Version(r)
+}
+
+func GetResourceUsageString() string {
+	r, _, _ := wgpuGetResourceUsageString.Call()
+	// TODO: figure out a way to free it
+	return gostring((*byte)(unsafe.Pointer(r)))
 }
 
 type (
