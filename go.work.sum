@@ -1,5 +1,10 @@
-github.com/rajveermalviya/gio v0.0.0-20220407081512-669757591f4c h1:9v6DL4oAc1lhHYOe8GtyKqldZBLZJnv+qw/SdvI1IiQ=
-github.com/rajveermalviya/gio v0.0.0-20220407081512-669757591f4c/go.mod h1:b8vBukexG6eYuXZa14asjLAWJ+JjbZ/ophEnS2FjYUg=
+github.com/benoitkugler/textlayout v0.1.1 h1:hizE/085xAeY8q7gwV00uHR2Q27KYB2g1HW+UacXl68=
+github.com/benoitkugler/textlayout v0.1.1/go.mod h1:o+1hFV+JSHBC9qNLIuwVoLedERU7sBPgEFcuSgfvi/w=
+github.com/benoitkugler/textlayout-testdata v0.1.1/go.mod h1:i/qZl09BbUOtd7Bu/W1CAubRwTWrEXWq6JwMkw8wYxo=
+github.com/go-text/typesetting v0.0.0-20220411150340-35994bc27a7b h1:WINlj3ANt+CVrO2B4NGDHRlPvEWZPxjhb7z+JKypwXI=
+github.com/go-text/typesetting v0.0.0-20220411150340-35994bc27a7b/go.mod h1:ZNYu5saGoMOqtkVH5T8onTwhzenDUVszI+5WFHJRaxQ=
+github.com/rajveermalviya/gio v0.0.0-20220614040930-5982d10dbfcc h1:gFiHAhItCeJ/KwWoBPxoKQhq9/LHYU5it/SE4+ezw6Q=
+github.com/rajveermalviya/gio v0.0.0-20220614040930-5982d10dbfcc/go.mod h1:WHoHbUjH91BJS2xkfps2AhKxji+9o3xwfsphGsCBfnM=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
