@@ -4,7 +4,7 @@ on: [workflow_dispatch]
 
 env:
   WGPU_COMMIT: d67a5c6c471ae58beea05ac861e5070df9ea1970
-  ANDROID_NDK_VERSION: "22.1.7171670"
+  ANDROID_NDK_VERSION: "24.0.8215888"
   ANDROID_API_LEVEL: "21"
 
 jobs:
@@ -36,8 +36,8 @@ jobs:
             goos: linux
             goarch: "386"
             setup_env: |
-              sudo apt update -y;
-              sudo apt install -y gcc-multilib;
+              sudo apt update -y
+              sudo apt install -y gcc-multilib
             pr_commit_message: Update wgpu-native static library for linux/386
             pr_title: Update wgpu-native static library for linux/386
             pr_body: Auto-generated pull request to build wgpu-native for linux/386
@@ -117,7 +117,7 @@ jobs:
             setup_env: |
               set -x
 
-              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
               echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
               echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
               echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
@@ -138,7 +138,7 @@ jobs:
             setup_env: |
               set -x
 
-              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
               echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
               echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
               echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
@@ -159,7 +159,7 @@ jobs:
             setup_env: |
               set -x
 
-              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.11git" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
               echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
               echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
               echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
@@ -187,25 +187,33 @@ jobs:
         shell: bash
       - name: Build
         run: |
-          set -ex;
-          git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp;
-          cd tmp;
-          git checkout $WGPU_COMMIT;
-          export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1;
-          cargo build --release;
-          ls -al target/$CARGO_BUILD_TARGET/release/;
-          mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH;
+          set -ex
+          git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
+          cd tmp
+          git checkout $WGPU_COMMIT
+
+          # workaround missing libgcc in ndk r23+
+          if [ ${{ matrix.goos }} == "android" ]; then
+            mkdir -p tmp-lib
+            echo "INPUT(-lunwind)" | tee tmp-lib/libgcc.a
+            export RUSTFLAGS="-L $PWD/tmp-lib"
+          fi
+
+          export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+          cargo build --release
+          ls -al target/$CARGO_BUILD_TARGET/release/
+          mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
 
           if [ ${{ matrix.goos }} == "windows" ]; then
             7z a -tgzip target/$CARGO_BUILD_TARGET/release/wgpu_native.dll.gz target/$CARGO_BUILD_TARGET/release/wgpu_native.dll
-            mv target/$CARGO_BUILD_TARGET/release/wgpu_native.dll.gz $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.gz;
+            mv target/$CARGO_BUILD_TARGET/release/wgpu_native.dll.gz $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.gz
             sha256sum target/$CARGO_BUILD_TARGET/release/wgpu_native.dll > $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.sum
           else
-            mv target/$CARGO_BUILD_TARGET/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a;
+            mv target/$CARGO_BUILD_TARGET/release/libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a
           fi
 
-          cd ..;
-          rm -rf tmp;
+          cd ..
+          rm -rf tmp
         shell: bash
       # Send a PR
       - name: Create Pull Request
