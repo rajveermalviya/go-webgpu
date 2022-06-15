@@ -189,10 +189,6 @@ jobs:
         run: |
           set -ex
 
-          cc --version
-          c++ --version
-          ld --version
-
           git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
           cd tmp
           git checkout $WGPU_COMMIT
