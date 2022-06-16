@@ -191,7 +191,7 @@ func GetVersion() Version {
 
 func GetResourceUsageString() string {
 	r, _, _ := wgpuGetResourceUsageString.Call()
-	// TODO: figure out a way to free it
+	defer free(r)
 	return gostring((*byte)(unsafe.Pointer(r)))
 }
 
