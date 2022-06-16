@@ -137,6 +137,7 @@ var (
 	wgpuComputePassEncoderInsertDebugMarker  = lib.NewProc("wgpuComputePassEncoderInsertDebugMarker")
 	wgpuComputePassEncoderPopDebugGroup      = lib.NewProc("wgpuComputePassEncoderPopDebugGroup")
 	wgpuComputePassEncoderPushDebugGroup     = lib.NewProc("wgpuComputePassEncoderPushDebugGroup")
+	wgpuComputePipelineGetBindGroupLayout    = lib.NewProc("wgpuComputePipelineGetBindGroupLayout")
 	wgpuQueueSubmit                          = lib.NewProc("wgpuQueueSubmit")
 	wgpuQueueWriteBuffer                     = lib.NewProc("wgpuQueueWriteBuffer")
 	wgpuQueueWriteTexture                    = lib.NewProc("wgpuQueueWriteTexture")
@@ -157,6 +158,7 @@ var (
 	wgpuRenderPassEncoderInsertDebugMarker   = lib.NewProc("wgpuRenderPassEncoderInsertDebugMarker")
 	wgpuRenderPassEncoderPopDebugGroup       = lib.NewProc("wgpuRenderPassEncoderPopDebugGroup")
 	wgpuRenderPassEncoderPushDebugGroup      = lib.NewProc("wgpuRenderPassEncoderPushDebugGroup")
+	wgpuRenderPipelineGetBindGroupLayout     = lib.NewProc("wgpuRenderPipelineGetBindGroupLayout")
 	wgpuSurfaceGetPreferredFormat            = lib.NewProc("wgpuSurfaceGetPreferredFormat")
 	wgpuSwapChainGetCurrentTextureView       = lib.NewProc("wgpuSwapChainGetCurrentTextureView")
 	wgpuSwapChainPresent                     = lib.NewProc("wgpuSwapChainPresent")
@@ -1608,6 +1610,19 @@ func (p *ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	runtime.KeepAlive(p)
 }
 
+func (p *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+	ref, _, _ := wgpuComputePipelineGetBindGroupLayout.Call(uintptr(p.ref), uintptr(groupIndex))
+	runtime.KeepAlive(p)
+
+	if ref == 0 {
+		panic("Failed to accquire BindGroupLayout")
+	}
+
+	bindGroupLayout := &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}
+	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
+	return bindGroupLayout
+}
+
 func (p *Queue) Submit(commands ...*CommandBuffer) {
 	commandCount := len(commands)
 	if commandCount == 0 {
@@ -1881,6 +1896,19 @@ func (p *RenderPassEncoder) PopDebugGroup() {
 func (p *RenderPassEncoder) PushDebugGroup(groupLabel string) {
 	wgpuRenderPassEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(groupLabel))))
 	runtime.KeepAlive(p)
+}
+
+func (p *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+	ref, _, _ := wgpuRenderPipelineGetBindGroupLayout.Call(uintptr(p.ref), uintptr(groupIndex))
+	runtime.KeepAlive(p)
+
+	if ref == 0 {
+		panic("Failed to accquire BindGroupLayout")
+	}
+
+	bindGroupLayout := &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}
+	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
+	return bindGroupLayout
 }
 
 func (p *Surface) GetPreferredFormat(adapter *Adapter) TextureFormat {
