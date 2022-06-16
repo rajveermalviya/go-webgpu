@@ -1609,6 +1609,19 @@ func (p *ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	runtime.KeepAlive(p)
 }
 
+func (p *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+	ref := C.wgpuComputePipelineGetBindGroupLayout(p.ref, C.uint32_t(groupIndex))
+	runtime.KeepAlive(p)
+
+	if ref == nil {
+		panic("Failed to accquire BindGroupLayout")
+	}
+
+	bindGroupLayout := &BindGroupLayout{ref}
+	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
+	return bindGroupLayout
+}
+
 func (p *Queue) Submit(commands ...*CommandBuffer) {
 	commandCount := len(commands)
 	if commandCount == 0 {
@@ -1857,6 +1870,19 @@ func (p *RenderPassEncoder) PushDebugGroup(groupLabel string) {
 
 	C.wgpuRenderPassEncoderPushDebugGroup(p.ref, groupLabelStr)
 	runtime.KeepAlive(p)
+}
+
+func (p *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
+	ref := C.wgpuRenderPipelineGetBindGroupLayout(p.ref, C.uint32_t(groupIndex))
+	runtime.KeepAlive(p)
+
+	if ref == nil {
+		panic("Failed to accquire BindGroupLayout")
+	}
+
+	bindGroupLayout := &BindGroupLayout{ref}
+	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
+	return bindGroupLayout
 }
 
 func (p *Surface) GetPreferredFormat(adapter *Adapter) TextureFormat {
