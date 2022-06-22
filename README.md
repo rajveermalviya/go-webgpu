@@ -40,6 +40,14 @@ This example uses [go-glfw](https://github.com/go-gl/glfw) so it will use cgo on
 go run github.com/rajveermalviya/go-webgpu/examples/triangle@latest
 ```
 
+### [boids](./examples/boids/main.go)
+
+This example also uses [go-glfw](https://github.com/go-gl/glfw).
+
+```shell
+go run github.com/rajveermalviya/go-webgpu/examples/boids@latest
+```
+
 ### [gio-windowing](./examples/gio-windowing/main.go)
 
 This example uses [gio](https://gioui.org) toolkit for windowing, it **doesn't** use cgo on windows.
