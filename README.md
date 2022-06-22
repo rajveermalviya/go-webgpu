@@ -40,6 +40,14 @@ This example uses [go-glfw](https://github.com/go-gl/glfw) so it will use cgo on
 go run github.com/rajveermalviya/go-webgpu/examples/triangle@latest
 ```
 
+### [cube](./examples/cube/main.go)
+
+This example also uses [go-glfw](https://github.com/go-gl/glfw).
+
+```shell
+go run github.com/rajveermalviya/go-webgpu/examples/cube@latest
+```
+
 ### [boids](./examples/boids/main.go)
 
 This example also uses [go-glfw](https://github.com/go-gl/glfw).
