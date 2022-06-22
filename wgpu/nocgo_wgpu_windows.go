@@ -94,76 +94,77 @@ var (
 	wgpuTextureViewDrop     = lib.NewProc("wgpuTextureViewDrop")
 	wgpuTextureDrop         = lib.NewProc("wgpuTextureDrop")
 
-	wgpuInstanceRequestAdapter               = lib.NewProc("wgpuInstanceRequestAdapter")
-	wgpuInstanceCreateSurface                = lib.NewProc("wgpuInstanceCreateSurface")
-	wgpuAdapterGetLimits                     = lib.NewProc("wgpuAdapterGetLimits")
-	wgpuAdapterGetProperties                 = lib.NewProc("wgpuAdapterGetProperties")
-	wgpuAdapterRequestDevice                 = lib.NewProc("wgpuAdapterRequestDevice")
-	wgpuDeviceSetUncapturedErrorCallback     = lib.NewProc("wgpuDeviceSetUncapturedErrorCallback")
-	wgpuDevicePoll                           = lib.NewProc("wgpuDevicePoll")
-	wgpuDeviceCreateBindGroupLayout          = lib.NewProc("wgpuDeviceCreateBindGroupLayout")
-	wgpuDeviceCreateBindGroup                = lib.NewProc("wgpuDeviceCreateBindGroup")
-	wgpuDeviceCreateBuffer                   = lib.NewProc("wgpuDeviceCreateBuffer")
-	wgpuDeviceCreateCommandEncoder           = lib.NewProc("wgpuDeviceCreateCommandEncoder")
-	wgpuDeviceCreateComputePipeline          = lib.NewProc("wgpuDeviceCreateComputePipeline")
-	wgpuDeviceCreatePipelineLayout           = lib.NewProc("wgpuDeviceCreatePipelineLayout")
-	wgpuDeviceCreateRenderPipeline           = lib.NewProc("wgpuDeviceCreateRenderPipeline")
-	wgpuDeviceCreateSampler                  = lib.NewProc("wgpuDeviceCreateSampler")
-	wgpuDeviceCreateShaderModule             = lib.NewProc("wgpuDeviceCreateShaderModule")
-	wgpuDeviceCreateSwapChain                = lib.NewProc("wgpuDeviceCreateSwapChain")
-	wgpuDeviceCreateTexture                  = lib.NewProc("wgpuDeviceCreateTexture")
-	wgpuDeviceGetLimits                      = lib.NewProc("wgpuDeviceGetLimits")
-	wgpuDeviceGetQueue                       = lib.NewProc("wgpuDeviceGetQueue")
-	wgpuBufferGetMappedRange                 = lib.NewProc("wgpuBufferGetMappedRange")
-	wgpuBufferUnmap                          = lib.NewProc("wgpuBufferUnmap")
-	wgpuBufferDestroy                        = lib.NewProc("wgpuBufferDestroy")
-	wgpuBufferMapAsync                       = lib.NewProc("wgpuBufferMapAsync")
-	wgpuCommandEncoderBeginComputePass       = lib.NewProc("wgpuCommandEncoderBeginComputePass")
-	wgpuCommandEncoderBeginRenderPass        = lib.NewProc("wgpuCommandEncoderBeginRenderPass")
-	wgpuCommandEncoderClearBuffer            = lib.NewProc("wgpuCommandEncoderClearBuffer")
-	wgpuCommandEncoderCopyBufferToBuffer     = lib.NewProc("wgpuCommandEncoderCopyBufferToBuffer")
-	wgpuCommandEncoderCopyBufferToTexture    = lib.NewProc("wgpuCommandEncoderCopyBufferToTexture")
-	wgpuCommandEncoderCopyTextureToBuffer    = lib.NewProc("wgpuCommandEncoderCopyTextureToBuffer")
-	wgpuCommandEncoderCopyTextureToTexture   = lib.NewProc("wgpuCommandEncoderCopyTextureToTexture")
-	wgpuCommandEncoderFinish                 = lib.NewProc("wgpuCommandEncoderFinish")
-	wgpuCommandEncoderInsertDebugMarker      = lib.NewProc("wgpuCommandEncoderInsertDebugMarker")
-	wgpuCommandEncoderPopDebugGroup          = lib.NewProc("wgpuCommandEncoderPopDebugGroup")
-	wgpuCommandEncoderPushDebugGroup         = lib.NewProc("wgpuCommandEncoderPushDebugGroup")
-	wgpuComputePassEncoderDispatch           = lib.NewProc("wgpuComputePassEncoderDispatch")
-	wgpuComputePassEncoderDispatchIndirect   = lib.NewProc("wgpuComputePassEncoderDispatchIndirect")
-	wgpuComputePassEncoderEnd                = lib.NewProc("wgpuComputePassEncoderEnd")
-	wgpuComputePassEncoderSetBindGroup       = lib.NewProc("wgpuComputePassEncoderSetBindGroup")
-	wgpuComputePassEncoderSetPipeline        = lib.NewProc("wgpuComputePassEncoderSetPipeline")
-	wgpuComputePassEncoderInsertDebugMarker  = lib.NewProc("wgpuComputePassEncoderInsertDebugMarker")
-	wgpuComputePassEncoderPopDebugGroup      = lib.NewProc("wgpuComputePassEncoderPopDebugGroup")
-	wgpuComputePassEncoderPushDebugGroup     = lib.NewProc("wgpuComputePassEncoderPushDebugGroup")
-	wgpuComputePipelineGetBindGroupLayout    = lib.NewProc("wgpuComputePipelineGetBindGroupLayout")
-	wgpuQueueSubmit                          = lib.NewProc("wgpuQueueSubmit")
-	wgpuQueueWriteBuffer                     = lib.NewProc("wgpuQueueWriteBuffer")
-	wgpuQueueWriteTexture                    = lib.NewProc("wgpuQueueWriteTexture")
-	wgpuRenderPassEncoderSetPushConstants    = lib.NewProc("wgpuRenderPassEncoderSetPushConstants")
-	wgpuRenderPassEncoderDraw                = lib.NewProc("wgpuRenderPassEncoderDraw")
-	wgpuRenderPassEncoderDrawIndexed         = lib.NewProc("wgpuRenderPassEncoderDrawIndexed")
-	wgpuRenderPassEncoderDrawIndexedIndirect = lib.NewProc("wgpuRenderPassEncoderDrawIndexedIndirect")
-	wgpuRenderPassEncoderDrawIndirect        = lib.NewProc("wgpuRenderPassEncoderDrawIndirect")
-	wgpuRenderPassEncoderEnd                 = lib.NewProc("wgpuRenderPassEncoderEnd")
-	wgpuRenderPassEncoderSetBindGroup        = lib.NewProc("wgpuRenderPassEncoderSetBindGroup")
-	wgpuRenderPassEncoderSetBlendConstant    = lib.NewProc("wgpuRenderPassEncoderSetBlendConstant")
-	wgpuRenderPassEncoderSetIndexBuffer      = lib.NewProc("wgpuRenderPassEncoderSetIndexBuffer")
-	wgpuRenderPassEncoderSetPipeline         = lib.NewProc("wgpuRenderPassEncoderSetPipeline")
-	wgpuRenderPassEncoderSetScissorRect      = lib.NewProc("wgpuRenderPassEncoderSetScissorRect")
-	wgpuRenderPassEncoderSetStencilReference = lib.NewProc("wgpuRenderPassEncoderSetStencilReference")
-	wgpuRenderPassEncoderSetVertexBuffer     = lib.NewProc("wgpuRenderPassEncoderSetVertexBuffer")
-	wgpuRenderPassEncoderSetViewport         = lib.NewProc("wgpuRenderPassEncoderSetViewport")
-	wgpuRenderPassEncoderInsertDebugMarker   = lib.NewProc("wgpuRenderPassEncoderInsertDebugMarker")
-	wgpuRenderPassEncoderPopDebugGroup       = lib.NewProc("wgpuRenderPassEncoderPopDebugGroup")
-	wgpuRenderPassEncoderPushDebugGroup      = lib.NewProc("wgpuRenderPassEncoderPushDebugGroup")
-	wgpuRenderPipelineGetBindGroupLayout     = lib.NewProc("wgpuRenderPipelineGetBindGroupLayout")
-	wgpuSurfaceGetPreferredFormat            = lib.NewProc("wgpuSurfaceGetPreferredFormat")
-	wgpuSwapChainGetCurrentTextureView       = lib.NewProc("wgpuSwapChainGetCurrentTextureView")
-	wgpuSwapChainPresent                     = lib.NewProc("wgpuSwapChainPresent")
-	wgpuTextureCreateView                    = lib.NewProc("wgpuTextureCreateView")
-	wgpuTextureDestroy                       = lib.NewProc("wgpuTextureDestroy")
+	wgpuInstanceRequestAdapter                       = lib.NewProc("wgpuInstanceRequestAdapter")
+	wgpuInstanceCreateSurface                        = lib.NewProc("wgpuInstanceCreateSurface")
+	wgpuAdapterGetLimits                             = lib.NewProc("wgpuAdapterGetLimits")
+	wgpuAdapterGetProperties                         = lib.NewProc("wgpuAdapterGetProperties")
+	wgpuAdapterRequestDevice                         = lib.NewProc("wgpuAdapterRequestDevice")
+	wgpuDeviceSetUncapturedErrorCallback             = lib.NewProc("wgpuDeviceSetUncapturedErrorCallback")
+	wgpuDevicePoll                                   = lib.NewProc("wgpuDevicePoll")
+	wgpuDeviceCreateBindGroupLayout                  = lib.NewProc("wgpuDeviceCreateBindGroupLayout")
+	wgpuDeviceCreateBindGroup                        = lib.NewProc("wgpuDeviceCreateBindGroup")
+	wgpuDeviceCreateBuffer                           = lib.NewProc("wgpuDeviceCreateBuffer")
+	wgpuDeviceCreateCommandEncoder                   = lib.NewProc("wgpuDeviceCreateCommandEncoder")
+	wgpuDeviceCreateComputePipeline                  = lib.NewProc("wgpuDeviceCreateComputePipeline")
+	wgpuDeviceCreatePipelineLayout                   = lib.NewProc("wgpuDeviceCreatePipelineLayout")
+	wgpuDeviceCreateRenderPipeline                   = lib.NewProc("wgpuDeviceCreateRenderPipeline")
+	wgpuDeviceCreateSampler                          = lib.NewProc("wgpuDeviceCreateSampler")
+	wgpuDeviceCreateShaderModule                     = lib.NewProc("wgpuDeviceCreateShaderModule")
+	wgpuDeviceCreateSwapChain                        = lib.NewProc("wgpuDeviceCreateSwapChain")
+	wgpuDeviceCreateTexture                          = lib.NewProc("wgpuDeviceCreateTexture")
+	wgpuDeviceGetLimits                              = lib.NewProc("wgpuDeviceGetLimits")
+	wgpuDeviceGetQueue                               = lib.NewProc("wgpuDeviceGetQueue")
+	wgpuBufferGetMappedRange                         = lib.NewProc("wgpuBufferGetMappedRange")
+	wgpuBufferUnmap                                  = lib.NewProc("wgpuBufferUnmap")
+	wgpuBufferDestroy                                = lib.NewProc("wgpuBufferDestroy")
+	wgpuBufferMapAsync                               = lib.NewProc("wgpuBufferMapAsync")
+	wgpuCommandEncoderBeginComputePass               = lib.NewProc("wgpuCommandEncoderBeginComputePass")
+	wgpuCommandEncoderBeginRenderPass                = lib.NewProc("wgpuCommandEncoderBeginRenderPass")
+	wgpuCommandEncoderClearBuffer                    = lib.NewProc("wgpuCommandEncoderClearBuffer")
+	wgpuCommandEncoderCopyBufferToBuffer             = lib.NewProc("wgpuCommandEncoderCopyBufferToBuffer")
+	wgpuCommandEncoderCopyBufferToTexture            = lib.NewProc("wgpuCommandEncoderCopyBufferToTexture")
+	wgpuCommandEncoderCopyTextureToBuffer            = lib.NewProc("wgpuCommandEncoderCopyTextureToBuffer")
+	wgpuCommandEncoderCopyTextureToTexture           = lib.NewProc("wgpuCommandEncoderCopyTextureToTexture")
+	wgpuCommandEncoderFinish                         = lib.NewProc("wgpuCommandEncoderFinish")
+	wgpuCommandEncoderInsertDebugMarker              = lib.NewProc("wgpuCommandEncoderInsertDebugMarker")
+	wgpuCommandEncoderPopDebugGroup                  = lib.NewProc("wgpuCommandEncoderPopDebugGroup")
+	wgpuCommandEncoderPushDebugGroup                 = lib.NewProc("wgpuCommandEncoderPushDebugGroup")
+	wgpuComputePassEncoderDispatchWorkgroups         = lib.NewProc("wgpuComputePassEncoderDispatchWorkgroups")
+	wgpuComputePassEncoderDispatchWorkgroupsIndirect = lib.NewProc("wgpuComputePassEncoderDispatchWorkgroupsIndirect")
+	wgpuComputePassEncoderEnd                        = lib.NewProc("wgpuComputePassEncoderEnd")
+	wgpuComputePassEncoderSetBindGroup               = lib.NewProc("wgpuComputePassEncoderSetBindGroup")
+	wgpuComputePassEncoderSetPipeline                = lib.NewProc("wgpuComputePassEncoderSetPipeline")
+	wgpuComputePassEncoderInsertDebugMarker          = lib.NewProc("wgpuComputePassEncoderInsertDebugMarker")
+	wgpuComputePassEncoderPopDebugGroup              = lib.NewProc("wgpuComputePassEncoderPopDebugGroup")
+	wgpuComputePassEncoderPushDebugGroup             = lib.NewProc("wgpuComputePassEncoderPushDebugGroup")
+	wgpuComputePipelineGetBindGroupLayout            = lib.NewProc("wgpuComputePipelineGetBindGroupLayout")
+	wgpuQueueSubmitForIndex                          = lib.NewProc("wgpuQueueSubmitForIndex")
+	wgpuQueueWriteBuffer                             = lib.NewProc("wgpuQueueWriteBuffer")
+	wgpuQueueWriteTexture                            = lib.NewProc("wgpuQueueWriteTexture")
+	wgpuRenderPassEncoderSetPushConstants            = lib.NewProc("wgpuRenderPassEncoderSetPushConstants")
+	wgpuRenderPassEncoderDraw                        = lib.NewProc("wgpuRenderPassEncoderDraw")
+	wgpuRenderPassEncoderDrawIndexed                 = lib.NewProc("wgpuRenderPassEncoderDrawIndexed")
+	wgpuRenderPassEncoderDrawIndexedIndirect         = lib.NewProc("wgpuRenderPassEncoderDrawIndexedIndirect")
+	wgpuRenderPassEncoderDrawIndirect                = lib.NewProc("wgpuRenderPassEncoderDrawIndirect")
+	wgpuRenderPassEncoderEnd                         = lib.NewProc("wgpuRenderPassEncoderEnd")
+	wgpuRenderPassEncoderSetBindGroup                = lib.NewProc("wgpuRenderPassEncoderSetBindGroup")
+	wgpuRenderPassEncoderSetBlendConstant            = lib.NewProc("wgpuRenderPassEncoderSetBlendConstant")
+	wgpuRenderPassEncoderSetIndexBuffer              = lib.NewProc("wgpuRenderPassEncoderSetIndexBuffer")
+	wgpuRenderPassEncoderSetPipeline                 = lib.NewProc("wgpuRenderPassEncoderSetPipeline")
+	wgpuRenderPassEncoderSetScissorRect              = lib.NewProc("wgpuRenderPassEncoderSetScissorRect")
+	wgpuRenderPassEncoderSetStencilReference         = lib.NewProc("wgpuRenderPassEncoderSetStencilReference")
+	wgpuRenderPassEncoderSetVertexBuffer             = lib.NewProc("wgpuRenderPassEncoderSetVertexBuffer")
+	wgpuRenderPassEncoderSetViewport                 = lib.NewProc("wgpuRenderPassEncoderSetViewport")
+	wgpuRenderPassEncoderInsertDebugMarker           = lib.NewProc("wgpuRenderPassEncoderInsertDebugMarker")
+	wgpuRenderPassEncoderPopDebugGroup               = lib.NewProc("wgpuRenderPassEncoderPopDebugGroup")
+	wgpuRenderPassEncoderPushDebugGroup              = lib.NewProc("wgpuRenderPassEncoderPushDebugGroup")
+	wgpuRenderPipelineGetBindGroupLayout             = lib.NewProc("wgpuRenderPipelineGetBindGroupLayout")
+	wgpuSurfaceGetPreferredFormat                    = lib.NewProc("wgpuSurfaceGetPreferredFormat")
+	wgpuSurfaceGetSupportedFormats                   = lib.NewProc("wgpuSurfaceGetSupportedFormats")
+	wgpuSwapChainGetCurrentTextureView               = lib.NewProc("wgpuSwapChainGetCurrentTextureView")
+	wgpuSwapChainPresent                             = lib.NewProc("wgpuSwapChainPresent")
+	wgpuTextureCreateView                            = lib.NewProc("wgpuTextureCreateView")
+	wgpuTextureDestroy                               = lib.NewProc("wgpuTextureDestroy")
 )
 
 func init() {
@@ -433,6 +434,7 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 			}
 		} else {
 			desc.requiredLimits.limits = wgpuLimits{}
+			desc.requiredLimits.nextInChain = nil
 		}
 
 		if descriptor.DeviceExtras != nil {
@@ -501,9 +503,21 @@ loop:
 	close(p.errChan)
 }
 
-func (p *Device) Poll(forceWait bool) {
-	wgpuDevicePoll.Call(uintptr(p.ref), cbool[uintptr](forceWait))
+func (p *Device) Poll(wait bool, wrappedSubmissionIndex *WrappedSubmissionIndex) (queueEmpty bool) {
+	if wrappedSubmissionIndex != nil {
+		var index wgpuWrappedSubmissionIndex
+		index.queue = wrappedSubmissionIndex.Queue.ref
+		index.submissionIndex = wgpuSubmissionIndex(wrappedSubmissionIndex.SubmissionIndex)
+
+		r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool[uintptr](wait), uintptr(unsafe.Pointer(&index)))
+		runtime.KeepAlive(p)
+		runtime.KeepAlive(wrappedSubmissionIndex.Queue)
+		return gobool(r)
+	}
+
+	r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool[uintptr](wait), 0)
 	runtime.KeepAlive(p)
+	return gobool(r)
 }
 
 func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*BindGroupLayout, error) {
@@ -1549,8 +1563,8 @@ func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
 	runtime.KeepAlive(p)
 }
 
-func (p *ComputePassEncoder) Dispatch(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
-	wgpuComputePassEncoderDispatch.Call(
+func (p *ComputePassEncoder) DispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
+	wgpuComputePassEncoderDispatchWorkgroups.Call(
 		uintptr(p.ref),
 		uintptr(workgroupCountX),
 		uintptr(workgroupCountY),
@@ -1559,8 +1573,8 @@ func (p *ComputePassEncoder) Dispatch(workgroupCountX, workgroupCountY, workgrou
 	runtime.KeepAlive(p)
 }
 
-func (p *ComputePassEncoder) DispatchIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
-	wgpuComputePassEncoderDispatchIndirect.Call(
+func (p *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	wgpuComputePassEncoderDispatchWorkgroupsIndirect.Call(
 		uintptr(p.ref),
 		uintptr(indirectBuffer.ref),
 		uintptr(indirectOffset),
@@ -1623,28 +1637,30 @@ func (p *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout
 	return bindGroupLayout
 }
 
-func (p *Queue) Submit(commands ...*CommandBuffer) {
+func (p *Queue) Submit(commands ...*CommandBuffer) (submissionIndex SubmissionIndex) {
 	commandCount := len(commands)
 	if commandCount == 0 {
-		wgpuQueueSubmit.Call(uintptr(p.ref), 0, 0)
-	} else {
-		commandRefs := make([]wgpuCommandBuffer, commandCount)
-		for i, v := range commands {
-			commandRefs[i] = v.ref
-		}
-
-		wgpuQueueSubmit.Call(
-			uintptr(p.ref),
-			uintptr(commandCount),
-			uintptr(unsafe.Pointer(&commandRefs[0])),
-		)
+		r, _, _ := wgpuQueueSubmitForIndex.Call(uintptr(p.ref), 0, 0)
+		runtime.KeepAlive(p)
+		return SubmissionIndex(r)
 	}
 
+	commandRefs := make([]wgpuCommandBuffer, commandCount)
+	for i, v := range commands {
+		commandRefs[i] = v.ref
+	}
+
+	r, _, _ := wgpuQueueSubmitForIndex.Call(
+		uintptr(p.ref),
+		uintptr(commandCount),
+		uintptr(unsafe.Pointer(&commandRefs[0])),
+	)
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(commands)
 	for _, v := range commands {
 		runtime.KeepAlive(v)
 	}
+	return SubmissionIndex(r)
 }
 
 func (p *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data []byte) {
@@ -1916,6 +1932,24 @@ func (p *Surface) GetPreferredFormat(adapter *Adapter) TextureFormat {
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(adapter)
 	return TextureFormat(format)
+}
+
+func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
+	var count uint64
+
+	formatsPtr, _, _ := wgpuSurfaceGetSupportedFormats.Call(
+		uintptr(p.ref),
+		uintptr(adapter.ref),
+		uintptr(unsafe.Pointer(&count)),
+	)
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(adapter)
+	defer free(formatsPtr)
+
+	formatsSlice := unsafe.Slice((*TextureFormat)(unsafe.Pointer(formatsPtr)), count)
+	formats := make([]TextureFormat, count)
+	copy(formats, formatsSlice)
+	return formats
 }
 
 func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {

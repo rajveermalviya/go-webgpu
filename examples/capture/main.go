@@ -133,14 +133,17 @@ func main() {
 	)
 
 	queue := device.GetQueue()
-	queue.Submit(encoder.Finish(nil))
+	index := queue.Submit(encoder.Finish(nil))
 
 	outputBuffer.MapAsync(wgpu.MapMode_Read, 0, bufferSize, func(status wgpu.BufferMapAsyncStatus) {
 		if status != wgpu.BufferMapAsyncStatus_Success {
 			panic("failed to map buffer")
 		}
 	})
-	device.Poll(true)
+	device.Poll(true, &wgpu.WrappedSubmissionIndex{
+		Queue:           queue,
+		SubmissionIndex: index,
+	})
 	defer outputBuffer.Unmap()
 
 	data := outputBuffer.GetMappedRange(0, bufferSize)

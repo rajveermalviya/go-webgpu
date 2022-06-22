@@ -152,7 +152,7 @@ func loop(w *app.Window) (err error) {
 					Format:      swapChainFormat,
 					Width:       uint32(size.X),
 					Height:      uint32(size.Y),
-					PresentMode: wgpu.PresentMode_Mailbox,
+					PresentMode: wgpu.PresentMode_Fifo,
 				})
 				if err != nil {
 					panic(err)

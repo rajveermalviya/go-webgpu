@@ -380,6 +380,7 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 			}
 		} else {
 			desc.requiredLimits.limits = C.WGPULimits{}
+			desc.requiredLimits.nextInChain = nil
 		}
 
 		if descriptor.DeviceExtras != nil {
@@ -452,9 +453,21 @@ loop:
 	close(p.errChan)
 }
 
-func (p *Device) Poll(forceWait bool) {
-	C.wgpuDevicePoll(p.ref, C.bool(forceWait))
+func (p *Device) Poll(wait bool, wrappedSubmissionIndex *WrappedSubmissionIndex) (queueEmpty bool) {
+	if wrappedSubmissionIndex != nil {
+		var index C.WGPUWrappedSubmissionIndex
+		index.queue = wrappedSubmissionIndex.Queue.ref
+		index.submissionIndex = C.WGPUSubmissionIndex(wrappedSubmissionIndex.SubmissionIndex)
+
+		queueEmpty = bool(C.wgpuDevicePoll(p.ref, C.bool(wait), &index))
+		runtime.KeepAlive(p)
+		runtime.KeepAlive(wrappedSubmissionIndex.Queue)
+		return
+	}
+
+	queueEmpty = bool(C.wgpuDevicePoll(p.ref, C.bool(wait), nil))
 	runtime.KeepAlive(p)
+	return
 }
 
 func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*BindGroupLayout, error) {
@@ -1551,13 +1564,13 @@ func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
 	runtime.KeepAlive(p)
 }
 
-func (p *ComputePassEncoder) Dispatch(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
-	C.wgpuComputePassEncoderDispatch(p.ref, C.uint32_t(workgroupCountX), C.uint32_t(workgroupCountY), C.uint32_t(workgroupCountZ))
+func (p *ComputePassEncoder) DispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
+	C.wgpuComputePassEncoderDispatchWorkgroups(p.ref, C.uint32_t(workgroupCountX), C.uint32_t(workgroupCountY), C.uint32_t(workgroupCountZ))
 	runtime.KeepAlive(p)
 }
 
-func (p *ComputePassEncoder) DispatchIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
-	C.wgpuComputePassEncoderDispatchIndirect(p.ref, indirectBuffer.ref, C.uint64_t(indirectOffset))
+func (p *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	C.wgpuComputePassEncoderDispatchWorkgroupsIndirect(p.ref, indirectBuffer.ref, C.uint64_t(indirectOffset))
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(indirectBuffer)
 }
@@ -1622,32 +1635,34 @@ func (p *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout
 	return bindGroupLayout
 }
 
-func (p *Queue) Submit(commands ...*CommandBuffer) {
+func (p *Queue) Submit(commands ...*CommandBuffer) (submissionIndex SubmissionIndex) {
 	commandCount := len(commands)
 	if commandCount == 0 {
-		C.wgpuQueueSubmit(p.ref, 0, nil)
-	} else {
-		commandRefs := C.malloc(C.size_t(commandCount) * C.size_t(unsafe.Sizeof(C.WGPUCommandBuffer(nil))))
-		defer C.free(commandRefs)
-
-		commandRefsSlice := unsafe.Slice((*C.WGPUCommandBuffer)(commandRefs), commandCount)
-
-		for i, v := range commands {
-			commandRefsSlice[i] = v.ref
-		}
-
-		C.wgpuQueueSubmit(
-			p.ref,
-			C.uint32_t(commandCount),
-			(*C.WGPUCommandBuffer)(commandRefs),
-		)
+		r := C.wgpuQueueSubmitForIndex(p.ref, 0, nil)
+		runtime.KeepAlive(p)
+		return SubmissionIndex(r)
 	}
 
+	commandRefs := C.malloc(C.size_t(commandCount) * C.size_t(unsafe.Sizeof(C.WGPUCommandBuffer(nil))))
+	defer C.free(commandRefs)
+
+	commandRefsSlice := unsafe.Slice((*C.WGPUCommandBuffer)(commandRefs), commandCount)
+
+	for i, v := range commands {
+		commandRefsSlice[i] = v.ref
+	}
+
+	r := C.wgpuQueueSubmitForIndex(
+		p.ref,
+		C.uint32_t(commandCount),
+		(*C.WGPUCommandBuffer)(commandRefs),
+	)
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(commands)
 	for _, v := range commands {
 		runtime.KeepAlive(v)
 	}
+	return SubmissionIndex(r)
 }
 
 func (p *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data []byte) {
@@ -1890,6 +1905,19 @@ func (p *Surface) GetPreferredFormat(adapter *Adapter) TextureFormat {
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(adapter)
 	return TextureFormat(format)
+}
+
+func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
+	var size C.size_t
+	formatsPtr := C.wgpuSurfaceGetSupportedFormats(p.ref, adapter.ref, &size)
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(adapter)
+	defer C.free(unsafe.Pointer(formatsPtr))
+
+	formatsSlice := unsafe.Slice((*TextureFormat)(formatsPtr), size)
+	formats := make([]TextureFormat, size)
+	copy(formats, formatsSlice)
+	return formats
 }
 
 func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {

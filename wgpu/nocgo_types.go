@@ -51,6 +51,13 @@ func cbool[T constraints.Integer](v bool) T {
 	return 0
 }
 
+func gobool[T constraints.Integer](v T) bool {
+	if v == 0 {
+		return false
+	}
+	return true
+}
+
 type (
 	wgpuAdapter             uintptr
 	wgpuBindGroup           uintptr
@@ -604,4 +611,11 @@ type wgpuTextureViewDescriptor struct {
 	arrayLayerCount uint32
 	aspect          TextureAspect
 	_               [4]byte
+}
+
+type wgpuSubmissionIndex uint64
+
+type wgpuWrappedSubmissionIndex struct {
+	queue           wgpuQueue
+	submissionIndex wgpuSubmissionIndex
 }
