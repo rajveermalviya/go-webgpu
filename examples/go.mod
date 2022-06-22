@@ -4,9 +4,9 @@ go 1.18
 
 require (
 	gioui.org v0.0.0-20220405111203-69f982e26f21
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958
-	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220614035029-9d2303468110
-	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0
+	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220516021902-eb3e265c7661
+	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220622084212-8af688b86d8e
+	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c
 )
 
 require (
