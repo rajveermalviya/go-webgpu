@@ -2,13 +2,14 @@ package wgpu
 
 import "unsafe"
 
-func FromBytes[E any](src []byte, zeroElm E) []E {
+func FromBytes[E any](src []byte) []E {
 	l := uintptr(len(src))
 	if l == 0 {
 		return nil
 	}
 
-	elmSize := unsafe.Sizeof(zeroElm)
+	var zero E
+	elmSize := unsafe.Sizeof(zero)
 	if l%elmSize != 0 {
 		panic("invalid src")
 	}

@@ -129,7 +129,7 @@ func main() {
 		Format:      swapChainFormat,
 		Width:       uint32(prevWidth),
 		Height:      uint32(prevHeight),
-		PresentMode: wgpu.PresentMode_Mailbox,
+		PresentMode: wgpu.PresentMode_Fifo,
 	})
 	if err != nil {
 		panic(err)
@@ -152,7 +152,7 @@ func main() {
 						Format:      swapChainFormat,
 						Width:       uint32(prevWidth),
 						Height:      uint32(prevHeight),
-						PresentMode: wgpu.PresentMode_Mailbox,
+						PresentMode: wgpu.PresentMode_Fifo,
 					})
 				if err != nil {
 					panic(err)

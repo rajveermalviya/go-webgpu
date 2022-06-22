@@ -473,3 +473,10 @@ type TextureViewDescriptor struct {
 	ArrayLayerCount uint32
 	Aspect          TextureAspect
 }
+
+type SubmissionIndex uint64
+
+type WrappedSubmissionIndex struct {
+	Queue           *Queue
+	SubmissionIndex SubmissionIndex
+}

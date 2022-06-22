@@ -35,7 +35,6 @@ var shader string
 func main() {
 	numbers := []uint32{1, 2, 3, 4}
 	numbersSize := len(numbers) * int(unsafe.Sizeof(uint32(0)))
-	numbersLength := len(numbers)
 
 	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
@@ -154,7 +153,7 @@ func main() {
 
 	computePass.SetPipeline(computePipeline)
 	computePass.SetBindGroup(0, bindGroup, nil)
-	computePass.Dispatch(uint32(numbersLength), 1, 1)
+	computePass.DispatchWorkgroups(uint32(len(numbers)), 1, 1)
 	computePass.End()
 
 	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, uint64(numbersSize))
@@ -162,15 +161,18 @@ func main() {
 	queue := device.GetQueue()
 	cmdBuffer := encoder.Finish(nil)
 	queue.WriteBuffer(storageBuffer, 0, wgpu.ToBytes(numbers))
-	queue.Submit(cmdBuffer)
+	index := queue.Submit(cmdBuffer)
 
 	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, uint64(numbersSize), func(status wgpu.BufferMapAsyncStatus) {
 		fmt.Println("MapAsync status:", status)
 	})
-	device.Poll(true)
+	device.Poll(true, &wgpu.WrappedSubmissionIndex{
+		Queue:           queue,
+		SubmissionIndex: wgpu.SubmissionIndex(index),
+	})
 
 	times := stagingBuffer.GetMappedRange(0, uint64(numbersSize))
-	fmt.Println(wgpu.FromBytes(times, uint32(0)))
+	fmt.Println(wgpu.FromBytes[uint32](times))
 
 	stagingBuffer.Unmap()
 }
