@@ -3,7 +3,7 @@ name: Build wgpu-native
 on: [workflow_dispatch]
 
 env:
-  WGPU_COMMIT: ee74c62d2355d4679ca0279b4c796cf888c672c4
+  WGPU_COMMIT: 62fc447aba13ef21ff2af86b428d3b10e539c02d
   ANDROID_NDK_VERSION: "24.0.8215888"
   ANDROID_API_LEVEL: "21"
 
@@ -189,7 +189,7 @@ jobs:
         run: |
           set -ex
 
-          git clone --recursive https://github.com/rajveermalviya/wgpu-native.git tmp
+          git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
           cd tmp
           git checkout $WGPU_COMMIT
 

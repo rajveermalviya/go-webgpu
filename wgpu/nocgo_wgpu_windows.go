@@ -82,6 +82,8 @@ var (
 	wgpuSetLogLevel            = lib.NewProc("wgpuSetLogLevel")
 	wgpuGetVersion             = lib.NewProc("wgpuGetVersion")
 	wgpuGetResourceUsageString = lib.NewProc("wgpuGetResourceUsageString")
+	wgpuGenerateReport         = lib.NewProc("wgpuGenerateReport")
+	wgpuFree                   = lib.NewProc("wgpuFree")
 
 	wgpuDeviceDrop          = lib.NewProc("wgpuDeviceDrop")
 	wgpuBindGroupLayoutDrop = lib.NewProc("wgpuBindGroupLayoutDrop")
@@ -192,10 +194,66 @@ func GetVersion() Version {
 	return Version(r)
 }
 
-func GetResourceUsageString() string {
-	r, _, _ := wgpuGetResourceUsageString.Call()
-	defer free(r)
-	return gostring((*byte)(unsafe.Pointer(r)))
+func GenerateReport() GlobalReport {
+	var r wgpuGlobalReport
+	wgpuGenerateReport.Call(uintptr(unsafe.Pointer(&r)))
+
+	mapStorageReport := func(creport wgpuStorageReport) StorageReport {
+		return StorageReport{
+			NumOccupied: uint64(creport.numOccupied),
+			NumVacant:   uint64(creport.numVacant),
+			NumError:    uint64(creport.numError),
+			ElementSize: uint64(creport.elementSize),
+		}
+	}
+
+	mapHubReport := func(creport wgpuHubReport) *HubReport {
+		return &HubReport{
+			Adapters:         mapStorageReport(creport.adapters),
+			Devices:          mapStorageReport(creport.devices),
+			PipelineLayouts:  mapStorageReport(creport.pipelineLayouts),
+			ShaderModules:    mapStorageReport(creport.shaderModules),
+			BindGroupLayouts: mapStorageReport(creport.bindGroupLayouts),
+			BindGroups:       mapStorageReport(creport.bindGroups),
+			CommandBuffers:   mapStorageReport(creport.commandBuffers),
+			RenderBundles:    mapStorageReport(creport.renderBundles),
+			RenderPipelines:  mapStorageReport(creport.renderPipelines),
+			ComputePipelines: mapStorageReport(creport.computePipelines),
+			QuerySets:        mapStorageReport(creport.querySets),
+			Buffers:          mapStorageReport(creport.buffers),
+			Textures:         mapStorageReport(creport.textures),
+			TextureViews:     mapStorageReport(creport.textureViews),
+			Samplers:         mapStorageReport(creport.samplers),
+		}
+	}
+
+	report := GlobalReport{
+		Surfaces: mapStorageReport(r.surfaces),
+	}
+
+	switch r.backendType {
+	case BackendType_Vulkan:
+		report.Vulkan = mapHubReport(r.vulkan)
+	case BackendType_Metal:
+		report.Metal = mapHubReport(r.metal)
+	case BackendType_D3D12:
+		report.Dx12 = mapHubReport(r.dx12)
+	case BackendType_D3D11:
+		report.Dx11 = mapHubReport(r.dx11)
+	case BackendType_OpenGL:
+		report.Gl = mapHubReport(r.gl)
+	}
+
+	return report
+}
+
+func free[T any](ptr uintptr, len uintptr) {
+	var v T
+	wgpuFree.Call(
+		ptr,
+		len*unsafe.Sizeof(v),
+		unsafe.Alignof(v),
+	)
 }
 
 type (
@@ -1935,7 +1993,7 @@ func (p *Surface) GetPreferredFormat(adapter *Adapter) TextureFormat {
 }
 
 func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
-	var count uint64
+	var count uintptr
 
 	formatsPtr, _, _ := wgpuSurfaceGetSupportedFormats.Call(
 		uintptr(p.ref),
@@ -1944,7 +2002,7 @@ func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 	)
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(adapter)
-	defer free(formatsPtr)
+	defer free[TextureFormat](formatsPtr, count)
 
 	formatsSlice := unsafe.Slice((*TextureFormat)(unsafe.Pointer(formatsPtr)), count)
 	formats := make([]TextureFormat, count)

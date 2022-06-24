@@ -72,10 +72,66 @@ func GetVersion() Version {
 	return Version(C.wgpuGetVersion())
 }
 
-func GetResourceUsageString() string {
-	usage := C.wgpuGetResourceUsageString()
-	defer C.free(unsafe.Pointer(usage))
-	return C.GoString(usage)
+func GenerateReport() GlobalReport {
+	var r C.WGPUGlobalReport
+	C.wgpuGenerateReport(&r)
+
+	mapStorageReport := func(creport C.WGPUStorageReport) StorageReport {
+		return StorageReport{
+			NumOccupied: uint64(creport.numOccupied),
+			NumVacant:   uint64(creport.numVacant),
+			NumError:    uint64(creport.numError),
+			ElementSize: uint64(creport.elementSize),
+		}
+	}
+
+	mapHubReport := func(creport C.WGPUHubReport) *HubReport {
+		return &HubReport{
+			Adapters:         mapStorageReport(creport.adapters),
+			Devices:          mapStorageReport(creport.devices),
+			PipelineLayouts:  mapStorageReport(creport.pipelineLayouts),
+			ShaderModules:    mapStorageReport(creport.shaderModules),
+			BindGroupLayouts: mapStorageReport(creport.bindGroupLayouts),
+			BindGroups:       mapStorageReport(creport.bindGroups),
+			CommandBuffers:   mapStorageReport(creport.commandBuffers),
+			RenderBundles:    mapStorageReport(creport.renderBundles),
+			RenderPipelines:  mapStorageReport(creport.renderPipelines),
+			ComputePipelines: mapStorageReport(creport.computePipelines),
+			QuerySets:        mapStorageReport(creport.querySets),
+			Buffers:          mapStorageReport(creport.buffers),
+			Textures:         mapStorageReport(creport.textures),
+			TextureViews:     mapStorageReport(creport.textureViews),
+			Samplers:         mapStorageReport(creport.samplers),
+		}
+	}
+
+	report := GlobalReport{
+		Surfaces: mapStorageReport(r.surfaces),
+	}
+
+	switch r.backendType {
+	case C.WGPUBackendType_Vulkan:
+		report.Vulkan = mapHubReport(r.vulkan)
+	case C.WGPUBackendType_Metal:
+		report.Metal = mapHubReport(r.metal)
+	case C.WGPUBackendType_D3D12:
+		report.Dx12 = mapHubReport(r.dx12)
+	case C.WGPUBackendType_D3D11:
+		report.Dx11 = mapHubReport(r.dx11)
+	case C.WGPUBackendType_OpenGL:
+		report.Gl = mapHubReport(r.gl)
+	}
+
+	return report
+}
+
+func free[T any](ptr unsafe.Pointer, len C.size_t) {
+	var v T
+	C.wgpuFree(
+		unsafe.Pointer(ptr),
+		len*C.size_t(unsafe.Sizeof(v)),
+		C.size_t(unsafe.Alignof(v)),
+	)
 }
 
 type (
@@ -1912,7 +1968,7 @@ func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 	formatsPtr := C.wgpuSurfaceGetSupportedFormats(p.ref, adapter.ref, &size)
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(adapter)
-	defer C.free(unsafe.Pointer(formatsPtr))
+	defer free[C.WGPUTextureFormat](unsafe.Pointer(formatsPtr), size)
 
 	formatsSlice := unsafe.Slice((*TextureFormat)(formatsPtr), size)
 	formats := make([]TextureFormat, size)

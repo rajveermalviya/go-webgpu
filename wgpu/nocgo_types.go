@@ -3,37 +3,10 @@
 package wgpu
 
 import (
-	"sync/atomic"
 	"unsafe"
 
 	"golang.org/x/exp/constraints"
-	"golang.org/x/sys/windows"
 )
-
-// https://github.com/rust-lang/rust/blob/d40f24e956a698e47a209541031c4045acc5a684/library/std/src/sys/windows/alloc.rs
-
-var (
-	kernel32        = windows.NewLazySystemDLL("kernel32.dll")
-	_GetProcessHeap = kernel32.NewProc("GetProcessHeap")
-	_HeapFree       = kernel32.NewProc("HeapFree")
-)
-
-var processHeapHandle uintptr
-
-func getProcessHeap() uintptr {
-	handle := atomic.LoadUintptr(&processHeapHandle)
-	if handle == 0 {
-		r, _, _ := _GetProcessHeap.Call()
-		atomic.StoreUintptr(&processHeapHandle, r)
-		return r
-	}
-
-	return handle
-}
-
-func free(ptr uintptr) {
-	_HeapFree.Call(getProcessHeap(), 0, ptr)
-}
 
 //go:linkname gostring runtime.gostring
 func gostring(*byte) string
@@ -618,4 +591,39 @@ type wgpuSubmissionIndex uint64
 type wgpuWrappedSubmissionIndex struct {
 	queue           wgpuQueue
 	submissionIndex wgpuSubmissionIndex
+}
+
+type wgpuStorageReport struct {
+	numOccupied uintptr
+	numVacant   uintptr
+	numError    uintptr
+	elementSize uintptr
+}
+
+type wgpuHubReport struct {
+	adapters         wgpuStorageReport
+	devices          wgpuStorageReport
+	pipelineLayouts  wgpuStorageReport
+	shaderModules    wgpuStorageReport
+	bindGroupLayouts wgpuStorageReport
+	bindGroups       wgpuStorageReport
+	commandBuffers   wgpuStorageReport
+	renderBundles    wgpuStorageReport
+	renderPipelines  wgpuStorageReport
+	computePipelines wgpuStorageReport
+	querySets        wgpuStorageReport
+	buffers          wgpuStorageReport
+	textures         wgpuStorageReport
+	textureViews     wgpuStorageReport
+	samplers         wgpuStorageReport
+}
+
+type wgpuGlobalReport struct {
+	surfaces    wgpuStorageReport
+	backendType BackendType
+	vulkan      wgpuHubReport
+	metal       wgpuHubReport
+	dx12        wgpuHubReport
+	dx11        wgpuHubReport
+	gl          wgpuHubReport
 }
