@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
@@ -134,6 +135,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		// Print resource usage on pressing 'R'
+		if key == glfw.KeyR && (action == glfw.Press || action == glfw.Repeat) {
+			r, _ := json.MarshalIndent(wgpu.GenerateReport(), "", "  ")
+			fmt.Print(string(r))
+		}
+	})
 
 	for !window.ShouldClose() {
 		var nextTexture *wgpu.TextureView

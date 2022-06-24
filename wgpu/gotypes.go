@@ -480,3 +480,37 @@ type WrappedSubmissionIndex struct {
 	Queue           *Queue
 	SubmissionIndex SubmissionIndex
 }
+
+type StorageReport struct {
+	NumOccupied uint64
+	NumVacant   uint64
+	NumError    uint64
+	ElementSize uint64
+}
+
+type HubReport struct {
+	Adapters         StorageReport
+	Devices          StorageReport
+	PipelineLayouts  StorageReport
+	ShaderModules    StorageReport
+	BindGroupLayouts StorageReport
+	BindGroups       StorageReport
+	CommandBuffers   StorageReport
+	RenderBundles    StorageReport
+	RenderPipelines  StorageReport
+	ComputePipelines StorageReport
+	QuerySets        StorageReport
+	Buffers          StorageReport
+	Textures         StorageReport
+	TextureViews     StorageReport
+	Samplers         StorageReport
+}
+
+type GlobalReport struct {
+	Surfaces StorageReport
+	Vulkan   *HubReport
+	Metal    *HubReport
+	Dx12     *HubReport
+	Dx11     *HubReport
+	Gl       *HubReport
+}
