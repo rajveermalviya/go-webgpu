@@ -56,7 +56,7 @@ func main() {
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	window, err := glfw.CreateWindow(800, 600, "go-webgpu with glfw", nil, nil)
+	window, err := glfw.CreateWindow(640, 480, "go-webgpu with glfw", nil, nil)
 	if err != nil {
 		panic(err)
 	}

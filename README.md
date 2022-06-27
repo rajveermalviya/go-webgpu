@@ -40,6 +40,8 @@ This example uses [go-glfw](https://github.com/go-gl/glfw) so it will use cgo on
 go run github.com/rajveermalviya/go-webgpu/examples/triangle@latest
 ```
 
+![](./examples/triangle/image.png)
+
 ### [cube](./examples/cube/main.go)
 
 This example also uses [go-glfw](https://github.com/go-gl/glfw).
@@ -48,6 +50,8 @@ This example also uses [go-glfw](https://github.com/go-gl/glfw).
 go run github.com/rajveermalviya/go-webgpu/examples/cube@latest
 ```
 
+![](./examples/cube/image.png)
+
 ### [boids](./examples/boids/main.go)
 
 This example also uses [go-glfw](https://github.com/go-gl/glfw).
@@ -55,6 +59,8 @@ This example also uses [go-glfw](https://github.com/go-gl/glfw).
 ```shell
 go run github.com/rajveermalviya/go-webgpu/examples/boids@latest
 ```
+
+![](./examples/boids/image.png)
 
 ### [gio-windowing](./examples/gio-windowing/main.go)
 
