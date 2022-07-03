@@ -3,8 +3,8 @@ name: Build wgpu-native
 on: [workflow_dispatch]
 
 env:
-  WGPU_COMMIT: 62fc447aba13ef21ff2af86b428d3b10e539c02d
-  ANDROID_NDK_VERSION: "24.0.8215888"
+  WGPU_COMMIT: 1b0900009f8f39ff722bf1115e7d46e32b2a79ed
+  ANDROID_NDK_VERSION: "23.2.8568313"
   ANDROID_API_LEVEL: "21"
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
       matrix:
         include:
           - name: build - linux/amd64
-            os: ubuntu-22.04
+            os: ubuntu-18.04
             toolchain: stable
             target: x86_64-unknown-linux-gnu
             goos: linux
@@ -30,7 +30,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for linux/amd64
 
           - name: build - linux/386
-            os: ubuntu-22.04
+            os: ubuntu-18.04
             toolchain: stable
             target: i686-unknown-linux-gnu
             goos: linux
@@ -43,7 +43,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for linux/386
 
           - name: build - windows/amd64
-            os: windows-2022
+            os: windows-2016
             toolchain: stable-msvc
             target: x86_64-pc-windows-msvc
             goos: windows
@@ -56,7 +56,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for windows/amd64
 
           - name: build - windows/386
-            os: windows-2022
+            os: windows-2016
             toolchain: stable-i686-pc-windows-msvc
             target: i686-pc-windows-msvc
             goos: windows
@@ -69,7 +69,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for windows/386
 
           - name: build - darwin/amd64
-            os: macos-12
+            os: macos-11
             toolchain: stable
             target: x86_64-apple-darwin
             goos: darwin
@@ -79,7 +79,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for darwin/amd64
 
           - name: build - darwin/arm64
-            os: macos-12
+            os: macos-11
             toolchain: stable
             target: aarch64-apple-darwin
             goos: darwin
@@ -89,7 +89,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for darwin/arm64
 
           - name: build - ios/amd64
-            os: macos-12
+            os: macos-11
             toolchain: stable
             target: x86_64-apple-ios
             goos: ios
@@ -99,7 +99,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for ios/amd64
 
           - name: build - ios/arm64
-            os: macos-12
+            os: macos-11
             toolchain: stable
             target: aarch64-apple-ios
             goos: ios
