@@ -43,7 +43,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for linux/386
 
           - name: build - windows/amd64
-            os: windows-2016
+            os: windows-2019
             toolchain: stable-msvc
             target: x86_64-pc-windows-msvc
             goos: windows
@@ -56,7 +56,7 @@ jobs:
             pr_body: Auto-generated pull request to build wgpu-native for windows/amd64
 
           - name: build - windows/386
-            os: windows-2016
+            os: windows-2019
             toolchain: stable-i686-pc-windows-msvc
             target: i686-pc-windows-msvc
             goos: windows
