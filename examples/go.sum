@@ -42,6 +42,8 @@ github.com/rajveermalviya/gio v0.0.0-20220614040930-5982d10dbfcc h1:gFiHAhItCeJ/
 github.com/rajveermalviya/gio v0.0.0-20220614040930-5982d10dbfcc/go.mod h1:WHoHbUjH91BJS2xkfps2AhKxji+9o3xwfsphGsCBfnM=
 github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220624145716-20d27adb7be9 h1:D0Egwim40JRzQ8RMXf2HxltYS8/c+U33J+sFHfoWuiA=
 github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220624145716-20d27adb7be9/go.mod h1:a8otxFj3omOkqCzgGaFbYiQ/PLSghjEvkEioSm94vLo=
+github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220703043251-f9a0e53173ae h1:DWuILESbMO+q4RhmtxpyezqmP3ln3otJo2sVnfhDFuc=
+github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220703043251-f9a0e53173ae/go.mod h1:a8otxFj3omOkqCzgGaFbYiQ/PLSghjEvkEioSm94vLo=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
