@@ -3,7 +3,7 @@ package glm
 import "math"
 
 func PerspectiveRH[T float](fovYradians, aspectRatio, zNear, zFar T) Mat4[T] {
-	sinFov, cosFov := math.Sin(float64(0.5)*float64(fovYradians)), math.Cos(float64(0.5)*float64(fovYradians))
+	sinFov, cosFov := math.Sincos(float64(0.5) * float64(fovYradians))
 	h := T(cosFov) / T(sinFov)
 	w := h / aspectRatio
 	r := zFar / (zNear - zFar)

@@ -87,7 +87,18 @@ func main() {
 		panic(err)
 	}
 
-	swapChainFormat := surface.GetPreferredFormat(adapter)
+	width, height := window.GetSize()
+	config := &wgpu.SwapChainDescriptor{
+		Usage:       wgpu.TextureUsage_RenderAttachment,
+		Format:      surface.GetPreferredFormat(adapter),
+		Width:       uint32(width),
+		Height:      uint32(height),
+		PresentMode: wgpu.PresentMode_Fifo,
+	}
+	swapChain, err := device.CreateSwapChain(surface, config)
+	if err != nil {
+		panic(err)
+	}
 
 	pipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label:  "Render Pipeline",
@@ -104,7 +115,7 @@ func main() {
 		},
 		Multisample: wgpu.MultisampleState{
 			Count:                  1,
-			Mask:                   ^uint32(0),
+			Mask:                   0xFFFFFFFF,
 			AlphaToCoverageEnabled: false,
 		},
 		Fragment: &wgpu.FragmentState{
@@ -112,25 +123,12 @@ func main() {
 			EntryPoint: "fs_main",
 			Targets: []wgpu.ColorTargetState{
 				{
-					Format:    swapChainFormat,
+					Format:    config.Format,
 					Blend:     &wgpu.BlendState_Replace,
 					WriteMask: wgpu.ColorWriteMask_All,
 				},
 			},
 		},
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	prevWidth, prevHeight := window.GetSize()
-
-	swapChain, err := device.CreateSwapChain(surface, &wgpu.SwapChainDescriptor{
-		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      swapChainFormat,
-		Width:       uint32(prevWidth),
-		Height:      uint32(prevHeight),
-		PresentMode: wgpu.PresentMode_Fifo,
 	})
 	if err != nil {
 		panic(err)
@@ -150,19 +148,11 @@ func main() {
 		for attempt := 0; attempt < 2; attempt++ {
 			width, height := window.GetSize()
 
-			if width != prevWidth || height != prevHeight {
-				prevWidth = width
-				prevHeight = height
+			if width != int(config.Width) || height != int(config.Height) {
+				config.Width = uint32(width)
+				config.Height = uint32(height)
 
-				swapChain, err = device.CreateSwapChain(
-					surface,
-					&wgpu.SwapChainDescriptor{
-						Usage:       wgpu.TextureUsage_RenderAttachment,
-						Format:      swapChainFormat,
-						Width:       uint32(prevWidth),
-						Height:      uint32(prevHeight),
-						PresentMode: wgpu.PresentMode_Fifo,
-					})
+				swapChain, err = device.CreateSwapChain(surface, config)
 				if err != nil {
 					panic(err)
 				}
@@ -174,8 +164,8 @@ func main() {
 			}
 			if attempt == 0 && nextTexture == nil {
 				fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
-				prevWidth = 0
-				prevHeight = 0
+				config.Width = 0
+				config.Height = 0
 				continue
 			}
 
