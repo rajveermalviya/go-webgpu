@@ -1,4 +1,4 @@
 # functions pending to implement from wgpu-native
 
 - wgpuDeviceSetDeviceLostCallback
-- wgpuDeviceDestroy
+- wgpuDeviceDestroy (noop in wgpu-native)

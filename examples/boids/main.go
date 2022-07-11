@@ -240,7 +240,7 @@ func main() {
 		},
 		Multisample: wgpu.MultisampleState{
 			Count:                  1,
-			Mask:                   ^uint32(0),
+			Mask:                   0xFFFFFFFF,
 			AlphaToCoverageEnabled: false,
 		},
 	})
