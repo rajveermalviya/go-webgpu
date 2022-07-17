@@ -17,17 +17,15 @@ jobs:
             name: Linux
             run_examples: true
             setup_env: |
+              set -x
               sudo apt-get update
-              sudo apt-get install -f -y libegl1-mesa-dev
-              sudo apt-get install -f -y mesa-vulkan-drivers
+              sudo apt-get install -f -y libwayland-dev xorg-dev libx11-dev libx11-xcb-dev libxkbcommon-x11-dev libgles2-mesa-dev libegl1-mesa-dev libffi-dev libxcursor-dev libvulkan-dev mesa-vulkan-drivers
           - os: macos-latest
             name: Darwin
             run_examples: false # macos vm doesn't have software metal api
           - os: windows-latest
             name: Windows
             run_examples: true
-            setup_env: |
-              echo "CGO_ENABLED=0" >> $GITHUB_ENV
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -38,11 +36,16 @@ jobs:
       - name: Setup Environment
         run: ${{ matrix.setup_env }}
         shell: bash
-      - name: Run tests
+      - name: Run build tests
         run: |
           set -x;
-          cd wgpu;
-          go test;
+          go build github.com/rajveermalviya/go-webgpu/examples/gio-windowing;
+          go build github.com/rajveermalviya/go-webgpu/examples/capture;
+          go build github.com/rajveermalviya/go-webgpu/examples/compute;
+          go build github.com/rajveermalviya/go-webgpu/examples/triangle;
+          go build github.com/rajveermalviya/go-webgpu/examples/triangle-msaa;
+          go build github.com/rajveermalviya/go-webgpu/examples/cube;
+          go build github.com/rajveermalviya/go-webgpu/examples/boids;
         shell: bash
       - name: Run examples
         if: ${{ matrix.run_examples }}
