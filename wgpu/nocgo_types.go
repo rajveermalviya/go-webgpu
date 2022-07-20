@@ -175,7 +175,7 @@ type wgpuRequiredLimits struct {
 type wgpuRequiredLimitsExtras struct {
 	chain               wgpuChainedStruct
 	maxPushConstantSize uint32
-	_                   [4]byte
+	maxBufferSize       uint64
 }
 
 type wgpuDeviceDescriptor struct {
@@ -640,4 +640,10 @@ type wgpuShaderModuleGLSLDescriptor struct {
 	code        *byte
 	defineCount uint32
 	defines     *wgpuShaderDefine
+}
+
+type wgpuSupportedLimitsExtras struct {
+	chain               wgpuChainedStructOut
+	maxPushConstantSize uint32
+	maxBufferSize       uint64
 }

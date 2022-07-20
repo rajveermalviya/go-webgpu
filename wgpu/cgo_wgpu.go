@@ -353,6 +353,10 @@ func (p *Adapter) HasFeature(feature FeatureName) bool {
 func (p *Adapter) GetLimits() SupportedLimits {
 	var supportedLimits C.WGPUSupportedLimits
 
+	extras := (*C.WGPUSupportedLimitsExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSupportedLimitsExtras{}))))
+	defer C.free(unsafe.Pointer(extras))
+	supportedLimits.nextInChain = (*C.WGPUChainedStructOut)(unsafe.Pointer(extras))
+
 	C.wgpuAdapterGetLimits(p.ref, &supportedLimits)
 	runtime.KeepAlive(p)
 
@@ -385,6 +389,8 @@ func (p *Adapter) GetLimits() SupportedLimits {
 			MaxComputeWorkgroupSizeY:                  uint32(limits.maxComputeWorkgroupSizeY),
 			MaxComputeWorkgroupSizeZ:                  uint32(limits.maxComputeWorkgroupSizeZ),
 			MaxComputeWorkgroupsPerDimension:          uint32(limits.maxComputeWorkgroupsPerDimension),
+			MaxPushConstantSize:                       uint32(extras.maxPushConstantSize),
+			MaxBufferSize:                             uint64(extras.maxBufferSize),
 		},
 	}
 }
@@ -443,18 +449,15 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 				maxComputeWorkgroupsPerDimension:          C.uint32_t(l.MaxComputeWorkgroupsPerDimension),
 			}
 
-			if descriptor.RequiredLimits.RequiredLimitsExtras != nil {
-				requiredLimitsExtras := (*C.WGPURequiredLimitsExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimitsExtras{}))))
-				defer C.free(unsafe.Pointer(requiredLimitsExtras))
+			requiredLimitsExtras := (*C.WGPURequiredLimitsExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimitsExtras{}))))
+			defer C.free(unsafe.Pointer(requiredLimitsExtras))
 
-				requiredLimitsExtras.chain.next = nil
-				requiredLimitsExtras.chain.sType = C.WGPUSType_RequiredLimitsExtras
-				requiredLimitsExtras.maxPushConstantSize = C.uint32_t(descriptor.RequiredLimits.RequiredLimitsExtras.MaxPushConstantSize)
+			requiredLimitsExtras.chain.next = nil
+			requiredLimitsExtras.chain.sType = C.WGPUSType_RequiredLimitsExtras
+			requiredLimitsExtras.maxPushConstantSize = C.uint32_t(l.MaxPushConstantSize)
+			requiredLimitsExtras.maxBufferSize = C.uint64_t(l.MaxBufferSize)
 
-				desc.requiredLimits.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(requiredLimitsExtras))
-			} else {
-				desc.requiredLimits.nextInChain = nil
-			}
+			desc.requiredLimits.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(requiredLimitsExtras))
 		} else {
 			desc.requiredLimits.limits = C.WGPULimits{}
 			desc.requiredLimits.nextInChain = nil
@@ -1322,6 +1325,10 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 func (p *Device) GetLimits() SupportedLimits {
 	var supportedLimits C.WGPUSupportedLimits
 
+	extras := (*C.WGPUSupportedLimitsExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUSupportedLimitsExtras{}))))
+	defer C.free(unsafe.Pointer(extras))
+	supportedLimits.nextInChain = (*C.WGPUChainedStructOut)(unsafe.Pointer(extras))
+
 	C.wgpuDeviceGetLimits(p.ref, &supportedLimits)
 	runtime.KeepAlive(p)
 
@@ -1354,6 +1361,8 @@ func (p *Device) GetLimits() SupportedLimits {
 			MaxComputeWorkgroupSizeY:                  uint32(limits.maxComputeWorkgroupSizeY),
 			MaxComputeWorkgroupSizeZ:                  uint32(limits.maxComputeWorkgroupSizeZ),
 			MaxComputeWorkgroupsPerDimension:          uint32(limits.maxComputeWorkgroupsPerDimension),
+			MaxPushConstantSize:                       uint32(extras.maxPushConstantSize),
+			MaxBufferSize:                             uint64(extras.maxBufferSize),
 		},
 	}
 }
@@ -2070,6 +2079,19 @@ func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 	formats := make([]TextureFormat, size)
 	copy(formats, formatsSlice)
 	return formats
+}
+
+func (p *Surface) GetSupportedPresentModes(adapter *Adapter) []PresentMode {
+	var size C.size_t
+	modesPtr := C.wgpuSurfaceGetSupportedPresentModes(p.ref, adapter.ref, &size)
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(adapter)
+	defer free[C.WGPUPresentMode](unsafe.Pointer(modesPtr), size)
+
+	modesSlice := unsafe.Slice((*PresentMode)(modesPtr), size)
+	modes := make([]PresentMode, size)
+	copy(modes, modesSlice)
+	return modes
 }
 
 func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
