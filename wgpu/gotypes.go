@@ -108,7 +108,7 @@ type AdapterProperties struct {
 }
 
 type DeviceExtras struct {
-	NativeFeatures NativeFeature
+	NativeFeatures FeatureName
 	Label          string
 	TracePath      string
 }
@@ -426,6 +426,12 @@ type ShaderModuleWGSLDescriptor struct {
 	Code string
 }
 
+type ShaderModuleGLSLDescriptor struct {
+	Code        string
+	Defines     map[string]string
+	ShaderStage ShaderStage
+}
+
 type ShaderModuleDescriptor struct {
 	Label string
 
@@ -434,6 +440,9 @@ type ShaderModuleDescriptor struct {
 
 	// ChainedStruct -> WGPUShaderModuleWGSLDescriptor
 	WGSLDescriptor *ShaderModuleWGSLDescriptor
+
+	// ChainedStruct -> WGPUShaderModuleGLSLDescriptor
+	GLSLDescriptor *ShaderModuleGLSLDescriptor
 }
 
 type SwapChainDescriptor struct {

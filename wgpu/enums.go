@@ -506,16 +506,18 @@ func (v ErrorType) String() string {
 type FeatureName uint32
 
 const (
-	FeatureName_Undefined               FeatureName = 0x00000000
-	FeatureName_DepthClipControl        FeatureName = 0x00000001
-	FeatureName_Depth24UnormStencil8    FeatureName = 0x00000002
-	FeatureName_Depth32FloatStencil8    FeatureName = 0x00000003
-	FeatureName_TimestampQuery          FeatureName = 0x00000004
-	FeatureName_PipelineStatisticsQuery FeatureName = 0x00000005
-	FeatureName_TextureCompressionBC    FeatureName = 0x00000006
-	FeatureName_TextureCompressionETC2  FeatureName = 0x00000007
-	FeatureName_TextureCompressionASTC  FeatureName = 0x00000008
-	FeatureName_IndirectFirstInstance   FeatureName = 0x00000009
+	FeatureName_Undefined                                  FeatureName = 0x00000000
+	FeatureName_DepthClipControl                           FeatureName = 0x00000001
+	FeatureName_Depth24UnormStencil8                       FeatureName = 0x00000002
+	FeatureName_Depth32FloatStencil8                       FeatureName = 0x00000003
+	FeatureName_TimestampQuery                             FeatureName = 0x00000004
+	FeatureName_PipelineStatisticsQuery                    FeatureName = 0x00000005
+	FeatureName_TextureCompressionBC                       FeatureName = 0x00000006
+	FeatureName_TextureCompressionETC2                     FeatureName = 0x00000007
+	FeatureName_TextureCompressionASTC                     FeatureName = 0x00000008
+	FeatureName_IndirectFirstInstance                      FeatureName = 0x00000009
+	NativeFeature_PUSH_CONSTANTS                           FeatureName = 0x04000000
+	NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES FeatureName = 0x10000000
 )
 
 func (v FeatureName) String() string {
@@ -540,6 +542,10 @@ func (v FeatureName) String() string {
 		return "TextureCompressionASTC"
 	case FeatureName_IndirectFirstInstance:
 		return "IndirectFirstInstance"
+	case NativeFeature_PUSH_CONSTANTS:
+		return "NativeFeature_PUSH_CONSTANTS"
+	case NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES:
+		return "NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES"
 	default:
 		return ""
 	}
@@ -687,24 +693,6 @@ func (v MipmapFilterMode) String() string {
 		return "Nearest"
 	case MipmapFilterMode_Linear:
 		return "Linear"
-	default:
-		return ""
-	}
-}
-
-type NativeFeature uint32
-
-const (
-	NativeFeature_PUSH_CONSTANTS                           NativeFeature = 0x04000000
-	NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES NativeFeature = 0x10000000
-)
-
-func (v NativeFeature) String() string {
-	switch v {
-	case NativeFeature_PUSH_CONSTANTS:
-		return "PUSH_CONSTANTS"
-	case NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES:
-		return "TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES"
 	default:
 		return ""
 	}
