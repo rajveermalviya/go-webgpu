@@ -92,6 +92,8 @@ type Limits struct {
 	MaxComputeWorkgroupSizeY                  uint32
 	MaxComputeWorkgroupSizeZ                  uint32
 	MaxComputeWorkgroupsPerDimension          uint32
+	MaxPushConstantSize                       uint32
+	MaxBufferSize                             uint64
 }
 
 type SupportedLimits struct {
@@ -115,13 +117,6 @@ type DeviceExtras struct {
 
 type RequiredLimits struct {
 	Limits Limits
-
-	// WGPUChainedStruct -> WGPURequiredLimitsExtras
-	RequiredLimitsExtras *RequiredLimitsExtras
-}
-
-type RequiredLimitsExtras struct {
-	MaxPushConstantSize uint32
 }
 
 type DeviceDescriptor struct {

@@ -167,6 +167,7 @@ var (
 	wgpuRenderPipelineGetBindGroupLayout             = lib.NewProc("wgpuRenderPipelineGetBindGroupLayout")
 	wgpuSurfaceGetPreferredFormat                    = lib.NewProc("wgpuSurfaceGetPreferredFormat")
 	wgpuSurfaceGetSupportedFormats                   = lib.NewProc("wgpuSurfaceGetSupportedFormats")
+	wgpuSurfaceGetSupportedPresentModes              = lib.NewProc("wgpuSurfaceGetSupportedPresentModes")
 	wgpuSwapChainGetCurrentTextureView               = lib.NewProc("wgpuSwapChainGetCurrentTextureView")
 	wgpuSwapChainPresent                             = lib.NewProc("wgpuSwapChainPresent")
 	wgpuTextureCreateView                            = lib.NewProc("wgpuTextureCreateView")
@@ -415,6 +416,9 @@ func (p *Adapter) HasFeature(feature FeatureName) bool {
 func (p *Adapter) GetLimits() SupportedLimits {
 	var supportedLimits wgpuSupportedLimits
 
+	var extras wgpuSupportedLimitsExtras
+	supportedLimits.nextInChain = (*wgpuChainedStructOut)(unsafe.Pointer(&extras))
+
 	wgpuAdapterGetLimits.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&supportedLimits)))
 	runtime.KeepAlive(p)
 	runtime.KeepAlive(supportedLimits)
@@ -448,6 +452,8 @@ func (p *Adapter) GetLimits() SupportedLimits {
 			MaxComputeWorkgroupSizeY:                  uint32(limits.maxComputeWorkgroupSizeY),
 			MaxComputeWorkgroupSizeZ:                  uint32(limits.maxComputeWorkgroupSizeZ),
 			MaxComputeWorkgroupsPerDimension:          uint32(limits.maxComputeWorkgroupsPerDimension),
+			MaxPushConstantSize:                       uint32(extras.maxPushConstantSize),
+			MaxBufferSize:                             uint64(extras.maxBufferSize),
 		},
 	}
 }
@@ -504,17 +510,14 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 				maxComputeWorkgroupsPerDimension:          l.MaxComputeWorkgroupsPerDimension,
 			}
 
-			if descriptor.RequiredLimits.RequiredLimitsExtras != nil {
-				var requiredLimitsExtras wgpuRequiredLimitsExtras
+			var requiredLimitsExtras wgpuRequiredLimitsExtras
 
-				requiredLimitsExtras.chain.next = nil
-				requiredLimitsExtras.chain.sType = sType_RequiredLimitsExtras
-				requiredLimitsExtras.maxPushConstantSize = descriptor.RequiredLimits.RequiredLimitsExtras.MaxPushConstantSize
+			requiredLimitsExtras.chain.next = nil
+			requiredLimitsExtras.chain.sType = sType_RequiredLimitsExtras
+			requiredLimitsExtras.maxPushConstantSize = l.MaxPushConstantSize
+			requiredLimitsExtras.maxBufferSize = l.MaxBufferSize
 
-				desc.requiredLimits.nextInChain = (*wgpuChainedStruct)(unsafe.Pointer(&requiredLimitsExtras))
-			} else {
-				desc.requiredLimits.nextInChain = nil
-			}
+			desc.requiredLimits.nextInChain = (*wgpuChainedStruct)(unsafe.Pointer(&requiredLimitsExtras))
 		} else {
 			desc.requiredLimits.limits = wgpuLimits{}
 			desc.requiredLimits.nextInChain = nil
@@ -1283,6 +1286,9 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 func (p *Device) GetLimits() SupportedLimits {
 	var supportedLimits wgpuSupportedLimits
 
+	var extras wgpuSupportedLimitsExtras
+	supportedLimits.nextInChain = (*wgpuChainedStructOut)(unsafe.Pointer(&extras))
+
 	wgpuDeviceGetLimits.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&supportedLimits)))
 	runtime.KeepAlive(p)
 
@@ -1315,6 +1321,8 @@ func (p *Device) GetLimits() SupportedLimits {
 			MaxComputeWorkgroupSizeY:                  uint32(limits.maxComputeWorkgroupSizeY),
 			MaxComputeWorkgroupSizeZ:                  uint32(limits.maxComputeWorkgroupSizeZ),
 			MaxComputeWorkgroupsPerDimension:          uint32(limits.maxComputeWorkgroupsPerDimension),
+			MaxPushConstantSize:                       uint32(extras.maxPushConstantSize),
+			MaxBufferSize:                             uint64(extras.maxBufferSize),
 		},
 	}
 }
@@ -2086,6 +2094,19 @@ func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 	formats := make([]TextureFormat, count)
 	copy(formats, formatsSlice)
 	return formats
+}
+
+func (p *Surface) GetSupportedPresentModes(adapter *Adapter) []PresentMode {
+	var size uintptr
+	modesPtr, _, _ := wgpuSurfaceGetSupportedPresentModes.Call(uintptr(p.ref), uintptr(adapter.ref), uintptr(unsafe.Pointer(&size)))
+	runtime.KeepAlive(p)
+	runtime.KeepAlive(adapter)
+	defer free[PresentMode](modesPtr, size)
+
+	modesSlice := unsafe.Slice((*PresentMode)(unsafe.Pointer(modesPtr)), size)
+	modes := make([]PresentMode, size)
+	copy(modes, modesSlice)
+	return modes
 }
 
 func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
