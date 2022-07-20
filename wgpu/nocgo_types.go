@@ -74,10 +74,11 @@ const (
 
 // wgpu.h
 const (
-	sType_DeviceExtras         = 0x60000001
-	sType_AdapterExtras        = 0x60000002
-	sType_RequiredLimitsExtras = 0x60000003
-	sType_PipelineLayoutExtras = 0x60000004
+	sType_DeviceExtras               = 0x60000001
+	sType_AdapterExtras              = 0x60000002
+	sType_RequiredLimitsExtras       = 0x60000003
+	sType_PipelineLayoutExtras       = 0x60000004
+	sType_ShaderModuleGLSLDescriptor = 0x60000005
 )
 
 type wgpuChainedStruct struct {
@@ -188,7 +189,7 @@ type wgpuDeviceDescriptor struct {
 
 type wgpuDeviceExtras struct {
 	chain          wgpuChainedStruct
-	nativeFeatures NativeFeature
+	nativeFeatures FeatureName
 	label          *byte
 	tracePath      *byte
 }
@@ -626,4 +627,17 @@ type wgpuGlobalReport struct {
 	dx12        wgpuHubReport
 	dx11        wgpuHubReport
 	gl          wgpuHubReport
+}
+
+type wgpuShaderDefine struct {
+	name  *byte
+	value *byte
+}
+
+type wgpuShaderModuleGLSLDescriptor struct {
+	chain       wgpuChainedStruct
+	stage       ShaderStage
+	code        *byte
+	defineCount uint32
+	defines     *wgpuShaderDefine
 }

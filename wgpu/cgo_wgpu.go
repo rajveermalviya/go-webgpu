@@ -329,6 +329,27 @@ func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 	return &Surface{ref}
 }
 
+func (p *Adapter) EnumerateFeatures() []FeatureName {
+	size := C.wgpuAdapterEnumerateFeatures(p.ref, nil)
+	runtime.KeepAlive(p)
+
+	if size == 0 {
+		return nil
+	}
+
+	features := make([]FeatureName, size)
+	C.wgpuAdapterEnumerateFeatures(p.ref, (*C.WGPUFeatureName)(unsafe.Pointer(&features[0])))
+	runtime.KeepAlive(p)
+
+	return features
+}
+
+func (p *Adapter) HasFeature(feature FeatureName) bool {
+	hasFeature := C.wgpuAdapterHasFeature(p.ref, C.WGPUFeatureName(feature))
+	runtime.KeepAlive(p)
+	return bool(hasFeature)
+}
+
 func (p *Adapter) GetLimits() SupportedLimits {
 	var supportedLimits C.WGPUSupportedLimits
 
@@ -507,6 +528,27 @@ loop:
 
 	p.handle.Delete()
 	close(p.errChan)
+}
+
+func (p *Device) EnumerateFeatures() []FeatureName {
+	size := C.wgpuDeviceEnumerateFeatures(p.ref, nil)
+	runtime.KeepAlive(p)
+
+	if size == 0 {
+		return nil
+	}
+
+	features := make([]FeatureName, size)
+	C.wgpuDeviceEnumerateFeatures(p.ref, (*C.WGPUFeatureName)(unsafe.Pointer(&features[0])))
+	runtime.KeepAlive(p)
+
+	return features
+}
+
+func (p *Device) HasFeature(feature FeatureName) bool {
+	hasFeature := C.wgpuDeviceHasFeature(p.ref, C.WGPUFeatureName(feature))
+	runtime.KeepAlive(p)
+	return bool(hasFeature)
 }
 
 func (p *Device) Poll(wait bool, wrappedSubmissionIndex *WrappedSubmissionIndex) (queueEmpty bool) {
@@ -1103,7 +1145,8 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 			desc.label = label
 		}
 
-		if descriptor.SPIRVDescriptor != nil {
+		switch {
+		case descriptor.SPIRVDescriptor != nil:
 			spirv := (*C.WGPUShaderModuleSPIRVDescriptor)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderModuleSPIRVDescriptor{}))))
 			defer C.free(unsafe.Pointer(spirv))
 
@@ -1114,14 +1157,17 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 
 				spirv.codeSize = C.uint32_t(codeSize)
 				spirv.code = (*C.uint32_t)(code)
+			} else {
+				spirv.code = nil
+				spirv.codeSize = 0
 			}
+
 			spirv.chain.next = nil
 			spirv.chain.sType = C.WGPUSType_ShaderModuleSPIRVDescriptor
 
 			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(spirv))
-		}
 
-		if descriptor.WGSLDescriptor != nil {
+		case descriptor.WGSLDescriptor != nil:
 			wgsl := (*C.WGPUShaderModuleWGSLDescriptor)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderModuleWGSLDescriptor{}))))
 			defer C.free(unsafe.Pointer(wgsl))
 
@@ -1130,11 +1176,61 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 				defer C.free(unsafe.Pointer(code))
 
 				wgsl.code = code
+			} else {
+				wgsl.code = nil
 			}
+
 			wgsl.chain.next = nil
 			wgsl.chain.sType = C.WGPUSType_ShaderModuleWGSLDescriptor
 
 			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(wgsl))
+
+		case descriptor.GLSLDescriptor != nil:
+			glsl := (*C.WGPUShaderModuleGLSLDescriptor)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderModuleGLSLDescriptor{}))))
+			defer C.free(unsafe.Pointer(glsl))
+
+			if descriptor.GLSLDescriptor.Code != "" {
+				code := C.CString(descriptor.GLSLDescriptor.Code)
+				defer C.free(unsafe.Pointer(code))
+
+				glsl.code = code
+			} else {
+				glsl.code = nil
+			}
+
+			defineCount := len(descriptor.GLSLDescriptor.Defines)
+			if defineCount > 0 {
+				shaderDefines := C.malloc(C.size_t(unsafe.Sizeof(C.WGPUShaderDefine{})) * C.size_t(defineCount))
+				defer C.free(shaderDefines)
+
+				shaderDefinesSlice := unsafe.Slice((*C.WGPUShaderDefine)(shaderDefines), defineCount)
+				index := 0
+
+				for name, value := range descriptor.GLSLDescriptor.Defines {
+					namePtr := C.CString(name)
+					defer C.free(unsafe.Pointer(namePtr))
+					valuePtr := C.CString(value)
+					defer C.free(unsafe.Pointer(valuePtr))
+
+					shaderDefinesSlice[index] = C.WGPUShaderDefine{
+						name:  namePtr,
+						value: valuePtr,
+					}
+					index++
+				}
+
+				glsl.defineCount = C.uint32_t(defineCount)
+				glsl.defines = (*C.WGPUShaderDefine)(shaderDefines)
+			} else {
+				glsl.defineCount = 0
+				glsl.defines = nil
+			}
+
+			glsl.stage = C.WGPUShaderStage(descriptor.GLSLDescriptor.ShaderStage)
+			glsl.chain.next = nil
+			glsl.chain.sType = C.WGPUSType_ShaderModuleGLSLDescriptor
+
+			desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(glsl))
 		}
 	}
 
