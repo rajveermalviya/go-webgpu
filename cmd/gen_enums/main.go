@@ -102,6 +102,10 @@ func main() {
 		"NativeSType",
 	}
 
+	mergeTypes := map[string]string{
+		"NativeFeature": "FeatureName",
+	}
+
 loop:
 	for k, v := range ast.Enums {
 		key := strings.TrimPrefix(k.String(), "WGPU")
@@ -115,7 +119,14 @@ loop:
 			}
 		}
 
-		if !strings.HasSuffix(key, "_Force32") {
+		if strings.HasSuffix(key, "_Force32") {
+			continue
+		}
+
+		inTyp, ok := mergeTypes[typ]
+		if ok {
+			enums = enums.Add(inTyp, key, value)
+		} else {
 			enums = enums.Add(typ, key, value)
 		}
 	}
