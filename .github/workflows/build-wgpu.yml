@@ -3,8 +3,8 @@ name: Build wgpu-native
 on: [workflow_dispatch]
 
 env:
-  WGPU_COMMIT: 1b0900009f8f39ff722bf1115e7d46e32b2a79ed
-  ANDROID_NDK_VERSION: "23.2.8568313"
+  WGPU_COMMIT: 3ba9913bbe0f5a636400457e5d76581e70505d7e
+  ANDROID_NDK_VERSION: "25.0.8775105"
   ANDROID_API_LEVEL: "21"
 
 jobs:
@@ -117,7 +117,7 @@ jobs:
             setup_env: |
               set -x
 
-              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.12git" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
               echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
               echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
               echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
@@ -138,7 +138,7 @@ jobs:
             setup_env: |
               set -x
 
-              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.12git" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
               echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
               echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
               echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/$CARGO_BUILD_TARGET$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
@@ -159,7 +159,7 @@ jobs:
             setup_env: |
               set -x
 
-              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.12git" >> $GITHUB_ENV
+              echo "LIBCLANG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
               echo "LLVM_CONFIG_PATH=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-config" >> $GITHUB_ENV
               echo "BINDGEN_EXTRA_CLANG_ARGS='-isysroot $ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/'" >> $GITHUB_ENV
               echo "CC=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_API_LEVEL-clang" >> $GITHUB_ENV
@@ -174,17 +174,27 @@ jobs:
     steps:
       # Checkout
       - uses: actions/checkout@v2
-      # Install rust
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
           default: true
-      # Setup Environment
       - name: Setup Environment
         run: ${{ matrix.setup_env }}
         shell: bash
+
+      - if: ${{ matrix.goos == 'android' }}
+        name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - if: ${{ matrix.goos == 'android' }}
+        name: Setup Android NDK
+        run: |
+          set -ex
+          sdkmanager "ndk;$ANDROID_NDK_VERSION"
+        shell: bash
+
       - name: Build
         run: |
           set -ex
