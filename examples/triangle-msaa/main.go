@@ -73,6 +73,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer device.Drop()
+	queue := device.GetQueue()
 
 	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label:          "shader.wgsl",
@@ -81,11 +83,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer shader.Drop()
 
 	pipelineLayout, err := device.CreatePipelineLayout(nil)
 	if err != nil {
 		panic(err)
 	}
+	defer pipelineLayout.Drop()
 
 	swapChainFormat := surface.GetPreferredFormat(adapter)
 
@@ -122,6 +126,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer pipeline.Drop()
 
 	width, height := window.GetSize()
 	config := &wgpu.SwapChainDescriptor{
@@ -136,22 +141,7 @@ func main() {
 		panic(err)
 	}
 
-	texture, err := device.CreateTexture(&wgpu.TextureDescriptor{
-		Usage:     wgpu.TextureUsage_RenderAttachment,
-		Dimension: wgpu.TextureDimension_2D,
-		Size: wgpu.Extent3D{
-			Width:              config.Width,
-			Height:             config.Height,
-			DepthOrArrayLayers: 1,
-		},
-		Format:        swapChainFormat,
-		MipLevelCount: 1,
-		SampleCount:   4,
-	})
-	if err != nil {
-		panic(err)
-	}
-	view := texture.CreateView(nil)
+	view := getMultisampledFramebuffer(device, config.Width, config.Height, swapChainFormat)
 
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		// Print resource usage on pressing 'R'
@@ -162,83 +152,93 @@ func main() {
 	})
 
 	for !window.ShouldClose() {
-		var nextTexture *wgpu.TextureView
+		func() {
+			var nextTexture *wgpu.TextureView
 
-		for attempt := 0; attempt < 2; attempt++ {
-			width, height := window.GetSize()
+			for attempt := 0; attempt < 2; attempt++ {
+				width, height := window.GetSize()
 
-			if width != int(config.Width) || height != int(config.Height) {
-				config.Width = uint32(width)
-				config.Height = uint32(height)
+				if width != int(config.Width) || height != int(config.Height) {
+					config.Width = uint32(width)
+					config.Height = uint32(height)
 
-				swapChain, err = device.CreateSwapChain(surface, config)
-				if err != nil {
-					panic(err)
+					swapChain, err = device.CreateSwapChain(surface, config)
+					if err != nil {
+						panic(err)
+					}
+
+					// first drop the previous view
+					view.Drop()
+					view = getMultisampledFramebuffer(device, config.Width, config.Height, swapChainFormat)
 				}
 
-				texture, err := device.CreateTexture(&wgpu.TextureDescriptor{
-					Usage:     wgpu.TextureUsage_RenderAttachment,
-					Dimension: wgpu.TextureDimension_2D,
-					Size: wgpu.Extent3D{
-						Width:              config.Width,
-						Height:             config.Height,
-						DepthOrArrayLayers: 1,
-					},
-					Format:        swapChainFormat,
-					MipLevelCount: 1,
-					SampleCount:   4,
-				})
+				nextTexture, err = swapChain.GetCurrentTextureView()
 				if err != nil {
-					panic(err)
+					fmt.Printf("err: %v\n", err)
 				}
-				view = texture.CreateView(nil)
+				if attempt == 0 && nextTexture == nil {
+					fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
+					config.Width = 0
+					config.Height = 0
+					continue
+				}
+
+				break
 			}
 
-			nextTexture, err = swapChain.GetCurrentTextureView()
+			if nextTexture == nil {
+				panic("Cannot acquire next swap chain texture")
+			}
+			defer nextTexture.Drop()
+
+			encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
+				Label: "Command Encoder",
+			})
 			if err != nil {
-				fmt.Printf("err: %v\n", err)
-			}
-			if attempt == 0 && nextTexture == nil {
-				fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
-				config.Width = 0
-				config.Height = 0
-				continue
+				panic(err)
 			}
 
-			break
-		}
-
-		if nextTexture == nil {
-			panic("Cannot acquire next swap chain texture")
-		}
-
-		encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
-			Label: "Command Encoder",
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
-			ColorAttachments: []wgpu.RenderPassColorAttachment{
-				{
-					View:          view,
-					ResolveTarget: nextTexture,
-					LoadOp:        wgpu.LoadOp_Clear,
-					StoreOp:       wgpu.StoreOp_Discard,
-					ClearValue:    wgpu.Color_Green,
+			renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
+				ColorAttachments: []wgpu.RenderPassColorAttachment{
+					{
+						View:          view,
+						ResolveTarget: nextTexture,
+						LoadOp:        wgpu.LoadOp_Clear,
+						StoreOp:       wgpu.StoreOp_Discard,
+						ClearValue:    wgpu.Color_Green,
+					},
 				},
-			},
-		})
+			})
 
-		renderPass.SetPipeline(pipeline)
-		renderPass.Draw(3, 1, 0, 0)
-		renderPass.End()
+			renderPass.SetPipeline(pipeline)
+			renderPass.Draw(3, 1, 0, 0)
+			renderPass.End()
 
-		queue := device.GetQueue()
-		queue.Submit(encoder.Finish(nil))
-		swapChain.Present()
+			queue.Submit(encoder.Finish(nil))
+			swapChain.Present()
 
-		glfw.PollEvents()
+			glfw.PollEvents()
+		}()
 	}
+}
+
+func getMultisampledFramebuffer(device *wgpu.Device, width, height uint32, format wgpu.TextureFormat) *wgpu.TextureView {
+	texture, err := device.CreateTexture(&wgpu.TextureDescriptor{
+		Usage:     wgpu.TextureUsage_RenderAttachment,
+		Dimension: wgpu.TextureDimension_2D,
+		Size: wgpu.Extent3D{
+			Width:              width,
+			Height:             height,
+			DepthOrArrayLayers: 1,
+		},
+		Format:        format,
+		MipLevelCount: 1,
+		SampleCount:   4,
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer texture.Drop()
+
+	return texture.CreateView(nil)
 }

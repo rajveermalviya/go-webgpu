@@ -83,6 +83,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer device.Drop()
 	queue := device.GetQueue()
 
 	width, height := window.GetSize()
@@ -108,6 +109,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer computeShader.Drop()
 
 	drawShader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "draw.wgsl",
@@ -118,6 +120,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer drawShader.Drop()
 
 	simParamData := []float32{
 		0.04,  // deltaT
@@ -137,6 +140,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer simParamBuffer.Drop()
 
 	computeBindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Entries: []wgpu.BindGroupLayoutEntry{
@@ -172,6 +176,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer computeBindGroupLayout.Drop()
 
 	computePipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		Label:            "compute",
@@ -180,6 +185,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer computePipelineLayout.Drop()
 
 	renderPipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		Label: "render",
@@ -187,6 +193,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer renderPipelineLayout.Drop()
 
 	renderPipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Layout: renderPipelineLayout,
@@ -247,6 +254,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer renderPipeline.Drop()
 
 	computePipeline, err := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
 		Label:  "Compute pipeline",
@@ -259,6 +267,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer computePipeline.Drop()
 
 	vertexBufferData := []float32{-0.01, -0.02, 0.01, -0.02, 0.00, 0.02}
 	verticesBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
@@ -269,6 +278,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer verticesBuffer.Drop()
 
 	var initialParticleData [4 * NumParticles]float32
 	rng := rand.NewSource(42)
@@ -294,6 +304,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		defer particleBuffer.Drop()
 
 		particleBuffers = append(particleBuffers, particleBuffer)
 	}
@@ -319,6 +330,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		defer particleBindGroup.Drop()
 
 		particleBindGroups = append(particleBindGroups, particleBindGroup)
 	}
@@ -327,70 +339,73 @@ func main() {
 	frameNum := uint64(0)
 
 	for !window.ShouldClose() {
-		var nextTexture *wgpu.TextureView
+		func() {
+			var nextTexture *wgpu.TextureView
 
-		for attempt := 0; attempt < 2; attempt++ {
-			width, height := window.GetSize()
+			for attempt := 0; attempt < 2; attempt++ {
+				width, height := window.GetSize()
 
-			if uint32(width) != config.Width || uint32(height) != config.Height {
-				config.Width = uint32(width)
-				config.Height = uint32(height)
+				if uint32(width) != config.Width || uint32(height) != config.Height {
+					config.Width = uint32(width)
+					config.Height = uint32(height)
 
-				swapChain, err = device.CreateSwapChain(surface, config)
-				if err != nil {
-					panic(err)
+					swapChain, err = device.CreateSwapChain(surface, config)
+					if err != nil {
+						panic(err)
+					}
 				}
+
+				nextTexture, err = swapChain.GetCurrentTextureView()
+				if err != nil {
+					fmt.Printf("err: %v\n", err)
+				}
+				if attempt == 0 && nextTexture == nil {
+					fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
+					config.Width = 0
+					config.Height = 0
+					continue
+				}
+
+				break
 			}
 
-			nextTexture, err = swapChain.GetCurrentTextureView()
+			if nextTexture == nil {
+				panic("Cannot acquire next swap chain texture")
+			}
+			defer nextTexture.Drop()
+
+			commandEncoder, err := device.CreateCommandEncoder(nil)
 			if err != nil {
-				fmt.Printf("err: %v\n", err)
-			}
-			if attempt == 0 && nextTexture == nil {
-				fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
-				config.Width = 0
-				config.Height = 0
-				continue
+				panic(err)
 			}
 
-			break
-		}
+			computePass := commandEncoder.BeginComputePass(nil)
+			computePass.SetPipeline(computePipeline)
+			computePass.SetBindGroup(0, particleBindGroups[frameNum%2], nil)
+			computePass.DispatchWorkgroups(workGroupCount, 1, 1)
+			computePass.End()
 
-		if nextTexture == nil {
-			panic("Cannot acquire next swap chain texture")
-		}
-
-		commandEncoder, err := device.CreateCommandEncoder(nil)
-		if err != nil {
-			panic(err)
-		}
-
-		computePass := commandEncoder.BeginComputePass(nil)
-		computePass.SetPipeline(computePipeline)
-		computePass.SetBindGroup(0, particleBindGroups[frameNum%2], nil)
-		computePass.DispatchWorkgroups(workGroupCount, 1, 1)
-		computePass.End()
-
-		renderPass := commandEncoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
-			ColorAttachments: []wgpu.RenderPassColorAttachment{
-				{
-					View:    nextTexture,
-					LoadOp:  wgpu.LoadOp_Load,
-					StoreOp: wgpu.StoreOp_Store,
+			renderPass := commandEncoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
+				ColorAttachments: []wgpu.RenderPassColorAttachment{
+					{
+						View:    nextTexture,
+						LoadOp:  wgpu.LoadOp_Load,
+						StoreOp: wgpu.StoreOp_Store,
+					},
 				},
-			},
-		})
-		renderPass.SetPipeline(renderPipeline)
-		renderPass.SetVertexBuffer(0, particleBuffers[(frameNum+1)%2], 0, 0)
-		renderPass.SetVertexBuffer(1, verticesBuffer, 0, 0)
-		renderPass.Draw(3, NumParticles, 0, 0)
-		renderPass.End()
+			})
+			renderPass.SetPipeline(renderPipeline)
+			renderPass.SetVertexBuffer(0, particleBuffers[(frameNum+1)%2], 0, 0)
+			renderPass.SetVertexBuffer(1, verticesBuffer, 0, 0)
+			renderPass.Draw(3, NumParticles, 0, 0)
+			renderPass.End()
 
-		frameNum += 1
+			frameNum += 1
 
-		queue.Submit(commandEncoder.Finish(nil))
-		swapChain.Present()
+			queue.Submit(commandEncoder.Finish(nil))
+			swapChain.Present()
 
-		glfw.PollEvents()
+			glfw.PollEvents()
+		}()
 	}
 }

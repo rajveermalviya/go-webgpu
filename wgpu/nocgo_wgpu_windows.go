@@ -13,7 +13,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -135,6 +134,7 @@ var (
 	wgpuCommandEncoderInsertDebugMarker              = lib.NewProc("wgpuCommandEncoderInsertDebugMarker")
 	wgpuCommandEncoderPopDebugGroup                  = lib.NewProc("wgpuCommandEncoderPopDebugGroup")
 	wgpuCommandEncoderPushDebugGroup                 = lib.NewProc("wgpuCommandEncoderPushDebugGroup")
+	wgpuCommandEncoderDrop                           = lib.NewProc("wgpuCommandEncoderDrop")
 	wgpuComputePassEncoderDispatchWorkgroups         = lib.NewProc("wgpuComputePassEncoderDispatchWorkgroups")
 	wgpuComputePassEncoderDispatchWorkgroupsIndirect = lib.NewProc("wgpuComputePassEncoderDispatchWorkgroupsIndirect")
 	wgpuComputePassEncoderEnd                        = lib.NewProc("wgpuComputePassEncoderEnd")
@@ -172,6 +172,9 @@ var (
 	wgpuSwapChainPresent                             = lib.NewProc("wgpuSwapChainPresent")
 	wgpuTextureCreateView                            = lib.NewProc("wgpuTextureCreateView")
 	wgpuTextureDestroy                               = lib.NewProc("wgpuTextureDestroy")
+	wgpuQuerySetDrop                                 = lib.NewProc("wgpuQuerySetDrop")
+	wgpuPipelineLayoutDrop                           = lib.NewProc("wgpuPipelineLayoutDrop")
+	wgpuCommandBufferDrop                            = lib.NewProc("wgpuCommandBufferDrop")
 )
 
 var logCallback = windows.NewCallbackCDecl(func(level LogLevel, msg *byte) (_ uintptr) {
@@ -302,41 +305,6 @@ type (
 	}
 )
 
-func bindGroupLayoutFinalizer(p *BindGroupLayout) {
-	wgpuBindGroupLayoutDrop.Call(uintptr(p.ref))
-}
-
-func bindGroupFinalizer(p *BindGroup) {
-	wgpuBindGroupDrop.Call(uintptr(p.ref))
-}
-
-func bufferFinalizer(p *Buffer) {
-	wgpuBufferDrop.Call(uintptr(p.ref))
-}
-
-func computePipelineFinalizer(p *ComputePipeline) {
-	wgpuComputePipelineDrop.Call(uintptr(p.ref))
-}
-
-func renderPipelineFinalizer(p *RenderPipeline) {
-	wgpuRenderPipelineDrop.Call(uintptr(p.ref))
-}
-
-func samplerFinalizer(p *Sampler) {
-	wgpuSamplerDrop.Call(uintptr(p.ref))
-}
-
-func shaderModuleFinalizer(p *ShaderModule) {
-	wgpuShaderModuleDrop.Call(uintptr(p.ref))
-}
-func textureViewFinalizer(p *TextureView) {
-	wgpuTextureViewDrop.Call(uintptr(p.ref))
-}
-
-func textureFinalizer(p *Texture) {
-	wgpuTextureDrop.Call(uintptr(p.ref))
-}
-
 func RequestAdapter(options *RequestAdapterOptions) (*Adapter, error) {
 	var opts wgpuRequestAdapterOptions
 
@@ -403,22 +371,17 @@ func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 
 func (p *Adapter) EnumerateFeatures() []FeatureName {
 	size, _, _ := wgpuAdapterEnumerateFeatures.Call(uintptr(p.ref), 0)
-	runtime.KeepAlive(p)
-
 	if size == 0 {
 		return nil
 	}
 
 	features := make([]FeatureName, size)
 	wgpuAdapterEnumerateFeatures.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&features[0])))
-	runtime.KeepAlive(p)
-
 	return features
 }
 
 func (p *Adapter) HasFeature(feature FeatureName) bool {
 	hasFeature, _, _ := wgpuAdapterHasFeature.Call(uintptr(p.ref), uintptr(feature))
-	runtime.KeepAlive(p)
 	return gobool(hasFeature)
 }
 
@@ -429,8 +392,6 @@ func (p *Adapter) GetLimits() SupportedLimits {
 	supportedLimits.nextInChain = (*wgpuChainedStructOut)(unsafe.Pointer(&extras))
 
 	wgpuAdapterGetLimits.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&supportedLimits)))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(supportedLimits)
 
 	limits := supportedLimits.limits
 	return SupportedLimits{
@@ -471,7 +432,6 @@ func (p *Adapter) GetProperties() AdapterProperties {
 	var props wgpuAdapterProperties
 
 	wgpuAdapterGetProperties.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&props)))
-	runtime.KeepAlive(p)
 
 	return AdapterProperties{
 		VendorID:          uint32(props.vendorID),
@@ -565,8 +525,6 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	})
 
 	wgpuAdapterRequestDevice.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)), cb, 0)
-	runtime.KeepAlive(p)
-
 	if status != RequestDeviceStatus_Success {
 		return nil, errors.New("failed to request device")
 	}
@@ -577,12 +535,11 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 		return
 	})
 	wgpuDeviceSetUncapturedErrorCallback.Call(uintptr(device.ref), errCb)
-	runtime.SetFinalizer(device, deviceFinalizer)
 
 	return device, nil
 }
 
-func deviceFinalizer(p *Device) {
+func (p *Device) Drop() {
 	wgpuDeviceDrop.Call(uintptr(p.ref))
 
 loop:
@@ -600,22 +557,17 @@ loop:
 
 func (p *Device) EnumerateFeatures() []FeatureName {
 	size, _, _ := wgpuDeviceEnumerateFeatures.Call(uintptr(p.ref), 0)
-	runtime.KeepAlive(p)
-
 	if size == 0 {
 		return nil
 	}
 
 	features := make([]FeatureName, size)
 	wgpuDeviceEnumerateFeatures.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&features[0])))
-	runtime.KeepAlive(p)
-
 	return features
 }
 
 func (p *Device) HasFeature(feature FeatureName) bool {
 	hasFeature, _, _ := wgpuDeviceHasFeature.Call(uintptr(p.ref), uintptr(feature))
-	runtime.KeepAlive(p)
 	return gobool(hasFeature)
 }
 
@@ -626,13 +578,10 @@ func (p *Device) Poll(wait bool, wrappedSubmissionIndex *WrappedSubmissionIndex)
 		index.submissionIndex = wgpuSubmissionIndex(wrappedSubmissionIndex.SubmissionIndex)
 
 		r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool[uintptr](wait), uintptr(unsafe.Pointer(&index)))
-		runtime.KeepAlive(p)
-		runtime.KeepAlive(wrappedSubmissionIndex.Queue)
 		return gobool(r)
 	}
 
 	r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool[uintptr](wait), 0)
-	runtime.KeepAlive(p)
 	return gobool(r)
 }
 
@@ -684,8 +633,6 @@ func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*
 	}
 
 	ref, _, _ := wgpuDeviceCreateBindGroupLayout.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -694,9 +641,7 @@ func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*
 		panic("Failed to acquire BindGroupLayout")
 	}
 
-	layout := &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}
-	runtime.SetFinalizer(layout, bindGroupLayoutFinalizer)
-	return layout, nil
+	return &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}, nil
 }
 
 func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, error) {
@@ -740,17 +685,6 @@ func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, e
 	}
 
 	ref, _, _ := wgpuDeviceCreateBindGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		runtime.KeepAlive(descriptor.Layout)
-
-		for _, v := range descriptor.Entries {
-			runtime.KeepAlive(v.Buffer)
-			runtime.KeepAlive(v.Sampler)
-			runtime.KeepAlive(v.TextureView)
-		}
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -759,9 +693,7 @@ func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, e
 		panic("Failed to acquire BindGroup")
 	}
 
-	bindGroup := &BindGroup{ref: wgpuBindGroup(ref)}
-	runtime.SetFinalizer(bindGroup, bindGroupFinalizer)
-	return bindGroup, nil
+	return &BindGroup{ref: wgpuBindGroup(ref)}, nil
 }
 
 func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
@@ -778,8 +710,6 @@ func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
 	}
 
 	ref, _, _ := wgpuDeviceCreateBuffer.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -788,9 +718,7 @@ func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
 		panic("Failed to acquire Buffer")
 	}
 
-	buffer := &Buffer{ref: wgpuBuffer(ref)}
-	runtime.SetFinalizer(buffer, bufferFinalizer)
-	return buffer, nil
+	return &Buffer{ref: wgpuBuffer(ref)}, nil
 }
 
 func (p *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) (*CommandEncoder, error) {
@@ -801,8 +729,6 @@ func (p *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) (*Co
 	}
 
 	ref, _, _ := wgpuDeviceCreateCommandEncoder.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -837,12 +763,6 @@ func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) (*
 	}
 
 	ref, _, _ := wgpuDeviceCreateComputePipeline.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		runtime.KeepAlive(descriptor.Layout)
-		runtime.KeepAlive(descriptor.Compute.Module)
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -851,9 +771,7 @@ func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) (*
 		panic("Failed to acquire ComputePipeline")
 	}
 
-	pipeline := &ComputePipeline{ref: wgpuComputePipeline(ref)}
-	runtime.SetFinalizer(pipeline, computePipelineFinalizer)
-	return pipeline, nil
+	return &ComputePipeline{ref: wgpuComputePipeline(ref)}, nil
 }
 
 func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*PipelineLayout, error) {
@@ -905,13 +823,6 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 	}
 
 	ref, _, _ := wgpuDeviceCreatePipelineLayout.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		for _, v := range descriptor.BindGroupLayouts {
-			runtime.KeepAlive(v)
-		}
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -919,6 +830,7 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 	if ref == 0 {
 		panic("Failed to acquire PipelineLayout")
 	}
+
 	return &PipelineLayout{ref: wgpuPipelineLayout(ref)}, nil
 }
 
@@ -1083,15 +995,6 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 	}
 
 	ref, _, _ := wgpuDeviceCreateRenderPipeline.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		runtime.KeepAlive(descriptor.Layout)
-		runtime.KeepAlive(descriptor.Vertex.Module)
-		if descriptor.Fragment != nil {
-			runtime.KeepAlive(descriptor.Fragment.Module)
-		}
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1100,9 +1003,7 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 		panic("Failed to acquire RenderPipeline")
 	}
 
-	renderPipeline := &RenderPipeline{ref: wgpuRenderPipeline(ref)}
-	runtime.SetFinalizer(renderPipeline, renderPipelineFinalizer)
-	return renderPipeline, nil
+	return &RenderPipeline{ref: wgpuRenderPipeline(ref)}, nil
 }
 
 func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) {
@@ -1128,8 +1029,6 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 	}
 
 	ref, _, _ := wgpuDeviceCreateSampler.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1138,9 +1037,7 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 		panic("Failed to acquire Sampler")
 	}
 
-	sampler := &Sampler{ref: wgpuSampler(ref)}
-	runtime.SetFinalizer(sampler, samplerFinalizer)
-	return sampler, nil
+	return &Sampler{ref: wgpuSampler(ref)}, nil
 }
 
 func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*ShaderModule, error) {
@@ -1211,8 +1108,6 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 	}
 
 	ref, _, _ := wgpuDeviceCreateShaderModule.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1221,9 +1116,7 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 		panic("Failed to acquire ShaderModule")
 	}
 
-	shaderModule := &ShaderModule{ref: wgpuShaderModule(ref)}
-	runtime.SetFinalizer(shaderModule, shaderModuleFinalizer)
-	return shaderModule, nil
+	return &ShaderModule{ref: wgpuShaderModule(ref)}, nil
 }
 
 func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescriptor) (*SwapChain, error) {
@@ -1240,9 +1133,6 @@ func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescript
 	}
 
 	ref, _, _ := wgpuDeviceCreateSwapChain.Call(uintptr(p.ref), uintptr(surface.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(surface)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1277,8 +1167,6 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 	}
 
 	ref, _, _ := wgpuDeviceCreateTexture.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1287,9 +1175,7 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 		panic("Failed to acquire Texture")
 	}
 
-	texture := &Texture{ref: wgpuTexture(ref)}
-	runtime.SetFinalizer(texture, textureFinalizer)
-	return texture, nil
+	return &Texture{ref: wgpuTexture(ref)}, nil
 }
 
 func (p *Device) GetLimits() SupportedLimits {
@@ -1299,7 +1185,6 @@ func (p *Device) GetLimits() SupportedLimits {
 	supportedLimits.nextInChain = (*wgpuChainedStructOut)(unsafe.Pointer(&extras))
 
 	wgpuDeviceGetLimits.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&supportedLimits)))
-	runtime.KeepAlive(p)
 
 	limits := supportedLimits.limits
 	return SupportedLimits{
@@ -1338,29 +1223,20 @@ func (p *Device) GetLimits() SupportedLimits {
 
 func (p *Device) GetQueue() *Queue {
 	ref, _, _ := wgpuDeviceGetQueue.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
-
 	if ref == 0 {
 		panic("Failed to acquire Queue")
 	}
+
 	return &Queue{ref: wgpuQueue(ref)}
 }
 
 func (p *Buffer) GetMappedRange(offset uint64, size uint64) []byte {
 	buf, _, _ := wgpuBufferGetMappedRange.Call(uintptr(p.ref), uintptr(offset), uintptr(size))
-	runtime.KeepAlive(p)
 	return unsafe.Slice((*byte)(unsafe.Pointer(buf)), size)
 }
 
-func (p *Buffer) Unmap() {
-	wgpuBufferUnmap.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
-}
-
-func (p *Buffer) Destroy() {
-	wgpuBufferDestroy.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
-}
+func (p *Buffer) Unmap()   { wgpuBufferUnmap.Call(uintptr(p.ref)) }
+func (p *Buffer) Destroy() { wgpuBufferDestroy.Call(uintptr(p.ref)) }
 
 type BufferMapCallback func(BufferMapAsyncStatus)
 
@@ -1399,7 +1275,6 @@ func (p *Buffer) MapAsync(mode MapMode, offset uint64, size uint64, callback Buf
 		bufferMapCallback,
 		uintptr(handle),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *ComputePassEncoder {
@@ -1410,7 +1285,6 @@ func (p *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *Co
 	}
 
 	ref, _, _ := wgpuCommandEncoderBeginComputePass.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
 	if ref == 0 {
 		panic("Failed to acquire ComputePassEncoder")
 	}
@@ -1475,18 +1349,6 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	}
 
 	ref, _, _ := wgpuCommandEncoderBeginRenderPass.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		for _, v := range descriptor.ColorAttachments {
-			runtime.KeepAlive(v.View)
-			runtime.KeepAlive(v.ResolveTarget)
-		}
-
-		if descriptor.DepthStencilAttachment != nil {
-			runtime.KeepAlive(descriptor.DepthStencilAttachment.View)
-		}
-	}
-
 	if ref == 0 {
 		panic("Failed to acquire RenderPassEncoder")
 	}
@@ -1501,8 +1363,6 @@ func (p *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64)
 		uintptr(offset),
 		uintptr(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinatonOffset uint64, size uint64) {
@@ -1514,9 +1374,6 @@ func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64,
 		uintptr(destinatonOffset),
 		uintptr(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(source)
-	runtime.KeepAlive(destination)
 }
 
 func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destination *ImageCopyTexture, copySize *Extent3D) {
@@ -1563,14 +1420,6 @@ func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destinatio
 		uintptr(unsafe.Pointer(&dst)),
 		uintptr(unsafe.Pointer(&cpySize)),
 	)
-
-	runtime.KeepAlive(p)
-	if source != nil {
-		runtime.KeepAlive(source.Buffer)
-	}
-	if destination != nil {
-		runtime.KeepAlive(destination.Texture)
-	}
 }
 
 func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destination *ImageCopyBuffer, copySize *Extent3D) {
@@ -1617,14 +1466,6 @@ func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destinati
 		uintptr(unsafe.Pointer(&dst)),
 		uintptr(unsafe.Pointer(&cpySize)),
 	)
-
-	runtime.KeepAlive(p)
-	if source != nil {
-		runtime.KeepAlive(source.Texture)
-	}
-	if destination != nil {
-		runtime.KeepAlive(destination.Buffer)
-	}
 }
 
 func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destination *ImageCopyTexture, copySize *Extent3D) {
@@ -1675,13 +1516,6 @@ func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destinat
 		uintptr(unsafe.Pointer(&dst)),
 		uintptr(unsafe.Pointer(&cpySize)),
 	)
-	runtime.KeepAlive(p)
-	if source != nil {
-		runtime.KeepAlive(source.Texture)
-	}
-	if destination != nil {
-		runtime.KeepAlive(destination.Texture)
-	}
 }
 
 func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuffer {
@@ -1692,8 +1526,6 @@ func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 	}
 
 	ref, _, _ := wgpuCommandEncoderFinish.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	if ref == 0 {
 		panic("Failed to acquire CommandBuffer")
 	}
@@ -1703,17 +1535,14 @@ func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 
 func (p *CommandEncoder) InsertDebugMarker(markerLabel string) {
 	wgpuCommandEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(markerLabel))))
-	runtime.KeepAlive(p)
 }
 
 func (p *CommandEncoder) PopDebugGroup() {
 	wgpuCommandEncoderPopDebugGroup.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
 }
 
 func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
 	wgpuCommandEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(groupLabel))))
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) DispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
@@ -1723,7 +1552,6 @@ func (p *ComputePassEncoder) DispatchWorkgroups(workgroupCountX, workgroupCountY
 		uintptr(workgroupCountY),
 		uintptr(workgroupCountZ),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
@@ -1732,13 +1560,10 @@ func (p *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, 
 		uintptr(indirectBuffer.ref),
 		uintptr(indirectOffset),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(indirectBuffer)
 }
 
 func (p *ComputePassEncoder) End() {
 	wgpuComputePassEncoderEnd.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
@@ -1751,50 +1576,37 @@ func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, d
 			uintptr(dynamicOffsetCount), uintptr((unsafe.Pointer(&dynamicOffsets[0]))),
 		)
 	}
-
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(group)
 }
 
 func (p *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
 	wgpuComputePassEncoderSetPipeline.Call(uintptr(p.ref), uintptr(pipeline.ref))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(pipeline)
 }
 
 func (p *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
 	wgpuComputePassEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(markerLabel))))
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) PopDebugGroup() {
 	wgpuComputePassEncoderPopDebugGroup.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	wgpuComputePassEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(groupLabel))))
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
 	ref, _, _ := wgpuComputePipelineGetBindGroupLayout.Call(uintptr(p.ref), uintptr(groupIndex))
-	runtime.KeepAlive(p)
-
 	if ref == 0 {
 		panic("Failed to accquire BindGroupLayout")
 	}
 
-	bindGroupLayout := &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}
-	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
-	return bindGroupLayout
+	return &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}
 }
 
 func (p *Queue) Submit(commands ...*CommandBuffer) (submissionIndex SubmissionIndex) {
 	commandCount := len(commands)
 	if commandCount == 0 {
 		r, _, _ := wgpuQueueSubmitForIndex.Call(uintptr(p.ref), 0, 0)
-		runtime.KeepAlive(p)
 		return SubmissionIndex(r)
 	}
 
@@ -1808,11 +1620,6 @@ func (p *Queue) Submit(commands ...*CommandBuffer) (submissionIndex SubmissionIn
 		uintptr(commandCount),
 		uintptr(unsafe.Pointer(&commandRefs[0])),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(commands)
-	for _, v := range commands {
-		runtime.KeepAlive(v)
-	}
 	return SubmissionIndex(r)
 }
 
@@ -1835,9 +1642,6 @@ func (p *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data []byte) {
 			uintptr(size),
 		)
 	}
-
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *Queue) WriteTexture(destination *ImageCopyTexture, data []byte, dataLayout *TextureDataLayout, writeSize *Extent3D) {
@@ -1896,11 +1700,6 @@ func (p *Queue) WriteTexture(destination *ImageCopyTexture, data []byte, dataLay
 			uintptr(unsafe.Pointer(&writeExtent)),
 		)
 	}
-
-	runtime.KeepAlive(p)
-	if destination != nil {
-		runtime.KeepAlive(destination.Texture)
-	}
 }
 
 func (p *RenderPassEncoder) SetPushConstants(stages ShaderStage, offset uint32, data []byte) {
@@ -1913,7 +1712,6 @@ func (p *RenderPassEncoder) SetPushConstants(stages ShaderStage, offset uint32, 
 		uintptr(size),
 		uintptr(unsafe.Pointer(&data[0])),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) Draw(vertexCount, instanceCount, firstVertex, firstInstance uint32) {
@@ -1924,7 +1722,6 @@ func (p *RenderPassEncoder) Draw(vertexCount, instanceCount, firstVertex, firstI
 		uintptr(firstVertex),
 		uintptr(firstInstance),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
@@ -1936,24 +1733,18 @@ func (p *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32,
 		uintptr(baseVertex),
 		uintptr(firstInstance),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	wgpuRenderPassEncoderDrawIndexedIndirect.Call(uintptr(p.ref), uintptr(indirectBuffer.ref), uintptr(indirectOffset))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(indirectBuffer)
 }
 
 func (p *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	wgpuRenderPassEncoderDrawIndirect.Call(uintptr(p.ref), uintptr(indirectBuffer.ref), uintptr(indirectOffset))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(indirectBuffer)
 }
 
 func (p *RenderPassEncoder) End() {
 	wgpuRenderPassEncoderEnd.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
@@ -1975,8 +1766,6 @@ func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dy
 			uintptr(unsafe.Pointer(&dynamicOffsets[0])),
 		)
 	}
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(group)
 }
 
 func (p *RenderPassEncoder) SetBlendConstant(color *Color) {
@@ -1989,7 +1778,6 @@ func (p *RenderPassEncoder) SetBlendConstant(color *Color) {
 			a: color.A,
 		})),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
@@ -2000,14 +1788,10 @@ func (p *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, o
 		uintptr(offset),
 		uintptr(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *RenderPassEncoder) SetPipeline(pipeline *RenderPipeline) {
 	wgpuRenderPassEncoderSetPipeline.Call(uintptr(p.ref), uintptr(pipeline.ref))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(pipeline)
 }
 
 func (p *RenderPassEncoder) SetScissorRect(x, y, width, height uint32) {
@@ -2018,12 +1802,10 @@ func (p *RenderPassEncoder) SetScissorRect(x, y, width, height uint32) {
 		uintptr(width),
 		uintptr(height),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetStencilReference(reference uint32) {
 	wgpuRenderPassEncoderSetStencilReference.Call(uintptr(p.ref), uintptr(reference))
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
@@ -2034,12 +1816,9 @@ func (p *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset 
 		uintptr(offset),
 		uintptr(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth float32) {
-
 	wgpuRenderPassEncoderSetViewport.Call(
 		uintptr(p.ref),
 		uintptr(math.Float32bits(x)),
@@ -2049,41 +1828,31 @@ func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth 
 		uintptr(math.Float32bits(minDepth)),
 		uintptr(math.Float32bits(maxDepth)),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
 	wgpuRenderPassEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(markerLabel))))
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) PopDebugGroup() {
 	wgpuRenderPassEncoderPopDebugGroup.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) PushDebugGroup(groupLabel string) {
 	wgpuRenderPassEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(groupLabel))))
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
 	ref, _, _ := wgpuRenderPipelineGetBindGroupLayout.Call(uintptr(p.ref), uintptr(groupIndex))
-	runtime.KeepAlive(p)
-
 	if ref == 0 {
 		panic("Failed to accquire BindGroupLayout")
 	}
 
-	bindGroupLayout := &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}
-	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
-	return bindGroupLayout
+	return &BindGroupLayout{ref: wgpuBindGroupLayout(ref)}
 }
 
 func (p *Surface) GetPreferredFormat(adapter *Adapter) TextureFormat {
 	format, _, _ := wgpuSurfaceGetPreferredFormat.Call(uintptr(p.ref), uintptr(adapter.ref))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(adapter)
 	return TextureFormat(format)
 }
 
@@ -2095,8 +1864,6 @@ func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 		uintptr(adapter.ref),
 		uintptr(unsafe.Pointer(&count)),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(adapter)
 	defer free[TextureFormat](formatsPtr, count)
 
 	formatsSlice := unsafe.Slice((*TextureFormat)(unsafe.Pointer(formatsPtr)), count)
@@ -2108,8 +1875,6 @@ func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 func (p *Surface) GetSupportedPresentModes(adapter *Adapter) []PresentMode {
 	var size uintptr
 	modesPtr, _, _ := wgpuSurfaceGetSupportedPresentModes.Call(uintptr(p.ref), uintptr(adapter.ref), uintptr(unsafe.Pointer(&size)))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(adapter)
 	defer free[PresentMode](modesPtr, size)
 
 	modesSlice := unsafe.Slice((*PresentMode)(unsafe.Pointer(modesPtr)), size)
@@ -2120,8 +1885,6 @@ func (p *Surface) GetSupportedPresentModes(adapter *Adapter) []PresentMode {
 
 func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
 	ref, _, _ := wgpuSwapChainGetCurrentTextureView.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
-
 	err := p.device.getErr()
 	if err != nil {
 		return nil, err
@@ -2130,14 +1893,11 @@ func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
 		panic("Failed to acquire TextureView")
 	}
 
-	textureView := &TextureView{ref: wgpuTextureView(ref)}
-	runtime.SetFinalizer(textureView, textureViewFinalizer)
-	return textureView, nil
+	return &TextureView{ref: wgpuTextureView(ref)}, nil
 }
 
 func (p *SwapChain) Present() {
 	wgpuSwapChainPresent.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
 }
 
 func (p *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
@@ -2160,18 +1920,27 @@ func (p *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
 	}
 
 	ref, _, _ := wgpuTextureCreateView.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
-	runtime.KeepAlive(p)
-
 	if ref == 0 {
 		panic("Failed to acquire TextureView")
 	}
 
-	textureView := &TextureView{ref: wgpuTextureView(ref)}
-	runtime.SetFinalizer(textureView, textureViewFinalizer)
-	return textureView
+	return &TextureView{ref: wgpuTextureView(ref)}
 }
 
 func (p *Texture) Destroy() {
 	wgpuTextureDestroy.Call(uintptr(p.ref))
-	runtime.KeepAlive(p)
 }
+
+func (p *Buffer) Drop()          { wgpuBufferDrop.Call(uintptr(p.ref)) }
+func (p *CommandEncoder) Drop()  { wgpuCommandEncoderDrop.Call(uintptr(p.ref)) }
+func (p *QuerySet) Drop()        { wgpuQuerySetDrop.Call(uintptr(p.ref)) }
+func (p *RenderPipeline) Drop()  { wgpuRenderPipelineDrop.Call(uintptr(p.ref)) }
+func (p *Texture) Drop()         { wgpuTextureDrop.Call(uintptr(p.ref)) }
+func (p *TextureView) Drop()     { wgpuTextureViewDrop.Call(uintptr(p.ref)) }
+func (p *Sampler) Drop()         { wgpuSamplerDrop.Call(uintptr(p.ref)) }
+func (p *BindGroupLayout) Drop() { wgpuBindGroupLayoutDrop.Call(uintptr(p.ref)) }
+func (p *PipelineLayout) Drop()  { wgpuPipelineLayoutDrop.Call(uintptr(p.ref)) }
+func (p *BindGroup) Drop()       { wgpuBindGroupDrop.Call(uintptr(p.ref)) }
+func (p *ShaderModule) Drop()    { wgpuShaderModuleDrop.Call(uintptr(p.ref)) }
+func (p *CommandBuffer) Drop()   { wgpuCommandBufferDrop.Call(uintptr(p.ref)) }
+func (p *ComputePipeline) Drop() { wgpuComputePipelineDrop.Call(uintptr(p.ref)) }

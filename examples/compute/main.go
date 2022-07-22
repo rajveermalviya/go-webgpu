@@ -56,6 +56,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer device.Drop()
+	queue := device.GetQueue()
 
 	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
@@ -66,6 +68,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer shader.Drop()
 
 	stagingBuffer, err := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Label: "StagingBuffer",
@@ -75,6 +78,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer stagingBuffer.Drop()
 
 	storageBuffer, err := device.CreateBuffer(&wgpu.BufferDescriptor{
 		Label: "StorageBuffer",
@@ -84,6 +88,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer storageBuffer.Drop()
 
 	bindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Label: "Bind Group Layout",
@@ -107,6 +112,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer bindGroupLayout.Drop()
 
 	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Label:  "Bind Group",
@@ -121,6 +127,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer bindGroup.Drop()
 
 	pipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		BindGroupLayouts: []*wgpu.BindGroupLayout{bindGroupLayout},
@@ -128,6 +135,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer pipelineLayout.Drop()
 
 	computePipeline, err := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
 		Layout: pipelineLayout,
@@ -139,6 +147,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer computePipeline.Drop()
 
 	encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
 		Label: "Command Encoder",
@@ -158,7 +167,6 @@ func main() {
 
 	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, uint64(numbersSize))
 
-	queue := device.GetQueue()
 	cmdBuffer := encoder.Finish(nil)
 	queue.WriteBuffer(storageBuffer, 0, wgpu.ToBytes(numbers))
 	index := queue.Submit(cmdBuffer)
@@ -166,6 +174,8 @@ func main() {
 	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, uint64(numbersSize), func(status wgpu.BufferMapAsyncStatus) {
 		fmt.Println("MapAsync status:", status)
 	})
+	defer stagingBuffer.Unmap()
+
 	device.Poll(true, &wgpu.WrappedSubmissionIndex{
 		Queue:           queue,
 		SubmissionIndex: wgpu.SubmissionIndex(index),
@@ -173,6 +183,4 @@ func main() {
 
 	times := stagingBuffer.GetMappedRange(0, uint64(numbersSize))
 	fmt.Println(wgpu.FromBytes[uint32](times))
-
-	stagingBuffer.Unmap()
 }
