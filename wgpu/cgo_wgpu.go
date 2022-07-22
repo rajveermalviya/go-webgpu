@@ -9,7 +9,7 @@ package wgpu
 #cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64 -lwgpu_native
 #cgo android,arm LDFLAGS: -L${SRCDIR}/lib/android/arm -lwgpu_native
 
-#cgo android LDFLAGS: -landroid -lm
+#cgo android LDFLAGS: -landroid -lm -llog
 
 // Linux
 #cgo linux,!android,amd64 LDFLAGS: -L${SRCDIR}/lib/linux/amd64 -lwgpu_native
@@ -24,9 +24,49 @@ package wgpu
 #cgo darwin LDFLAGS: -framework QuartzCore -framework Metal
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "./lib/wgpu.h"
 
-extern void logCallback_cgo(WGPULogLevel level, char const *msg);
+#ifdef __ANDROID__
+#include <android/log.h>
+void logCallback_cgo(WGPULogLevel level, char const *msg) {
+	switch (level) {
+	case WGPULogLevel_Error:
+		__android_log_write(ANDROID_LOG_ERROR, "wgpu", msg);
+		break;
+	case WGPULogLevel_Warn:
+		__android_log_write(ANDROID_LOG_WARN, "wgpu", msg);
+		break;
+	default:
+		__android_log_write(ANDROID_LOG_INFO, "wgpu", msg);
+		break;
+	}
+}
+#else
+void logCallback_cgo(WGPULogLevel level, char const *msg) {
+	char const *level_str;
+	switch (level) {
+	case WGPULogLevel_Error:
+		level_str = "Error";
+		break;
+	case WGPULogLevel_Warn:
+		level_str = "Warn";
+		break;
+	case WGPULogLevel_Info:
+		level_str = "Info";
+		break;
+	case WGPULogLevel_Debug:
+		level_str = "Debug";
+		break;
+	case WGPULogLevel_Trace:
+		level_str = "Trace";
+		break;
+	default:
+		level_str = "Unknown Level";
+	}
+	fprintf(stderr, "[wgpu] [%s] %s\n", level_str, msg);
+}
+#endif
 
 extern void requestAdapterCallback_cgo(WGPURequestAdapterStatus status,
                                 WGPUAdapter adapter, char const *message,
@@ -53,15 +93,8 @@ import (
 	"unsafe"
 )
 
-var logCb LogCallback
-
 func init() {
-	logCb = defaultlogCallback
 	C.wgpuSetLogCallback(C.WGPULogCallback(C.logCallback_cgo))
-}
-
-func SetLogCallback(f LogCallback) {
-	logCb = f
 }
 
 func SetLogLevel(level LogLevel) {

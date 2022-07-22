@@ -6,11 +6,6 @@ package wgpu
 
 #include "./lib/wgpu.h"
 
-void logCallback_cgo(WGPULogLevel level, char const *msg) {
-  extern void logCallback(WGPULogLevel level, char const *msg);
-  logCallback(level, msg);
-}
-
 void bufferMapCallback_cgo(WGPUBufferMapAsyncStatus status, void *userdata) {
   extern void bufferMapCallback(WGPUBufferMapAsyncStatus status,
                                 void *userdata);
