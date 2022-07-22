@@ -159,37 +159,40 @@ func loop(w *app.Window) (err error) {
 				}
 			}
 
-			nextTexture, err := swapChain.GetCurrentTextureView()
-			if err != nil {
-				fmt.Printf("err: %v\n", err)
-			}
-			if nextTexture == nil {
-				panic("Cannot acquire next swap chain texture")
-			}
+			func() {
+				nextTexture, err := swapChain.GetCurrentTextureView()
+				if err != nil {
+					fmt.Printf("err: %v\n", err)
+				}
+				if nextTexture == nil {
+					panic("Cannot acquire next swap chain texture")
+				}
+				defer nextTexture.Drop()
 
-			encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
-				Label: "Command Encoder",
-			})
-			if err != nil {
-				panic(err)
-			}
+				encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
+					Label: "Command Encoder",
+				})
+				if err != nil {
+					panic(err)
+				}
 
-			renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
-				ColorAttachments: []wgpu.RenderPassColorAttachment{
-					{
-						View:       nextTexture,
-						LoadOp:     wgpu.LoadOp_Clear,
-						StoreOp:    wgpu.StoreOp_Store,
-						ClearValue: wgpu.Color_Green,
+				renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
+					ColorAttachments: []wgpu.RenderPassColorAttachment{
+						{
+							View:       nextTexture,
+							LoadOp:     wgpu.LoadOp_Clear,
+							StoreOp:    wgpu.StoreOp_Store,
+							ClearValue: wgpu.Color_Green,
+						},
 					},
-				},
-			})
-			renderPass.SetPipeline(pipeline)
-			renderPass.Draw(3, 1, 0, 0)
-			renderPass.End()
+				})
+				renderPass.SetPipeline(pipeline)
+				renderPass.Draw(3, 1, 0, 0)
+				renderPass.End()
 
-			queue.Submit(encoder.Finish(nil))
-			swapChain.Present()
+				queue.Submit(encoder.Finish(nil))
+				swapChain.Present()
+			}()
 
 			gtx := layout.NewContext(&ops, e)
 			e.Frame(gtx.Ops)

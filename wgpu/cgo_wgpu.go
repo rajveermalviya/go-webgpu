@@ -88,7 +88,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -199,41 +198,6 @@ type (
 		handle  cgo.Handle
 	}
 )
-
-func bindGroupLayoutFinalizer(p *BindGroupLayout) {
-	C.wgpuBindGroupLayoutDrop(p.ref)
-}
-
-func bindGroupFinalizer(p *BindGroup) {
-	C.wgpuBindGroupDrop(p.ref)
-}
-
-func bufferFinalizer(p *Buffer) {
-	C.wgpuBufferDrop(p.ref)
-}
-
-func computePipelineFinalizer(p *ComputePipeline) {
-	C.wgpuComputePipelineDrop(p.ref)
-}
-
-func renderPipelineFinalizer(p *RenderPipeline) {
-	C.wgpuRenderPipelineDrop(p.ref)
-}
-
-func samplerFinalizer(p *Sampler) {
-	C.wgpuSamplerDrop(p.ref)
-}
-
-func shaderModuleFinalizer(p *ShaderModule) {
-	C.wgpuShaderModuleDrop(p.ref)
-}
-func textureViewFinalizer(p *TextureView) {
-	C.wgpuTextureViewDrop(p.ref)
-}
-
-func textureFinalizer(p *Texture) {
-	C.wgpuTextureDrop(p.ref)
-}
 
 func RequestAdapter(options *RequestAdapterOptions) (*Adapter, error) {
 	var opts C.WGPURequestAdapterOptions
@@ -364,22 +328,17 @@ func CreateSurface(descriptor *SurfaceDescriptor) *Surface {
 
 func (p *Adapter) EnumerateFeatures() []FeatureName {
 	size := C.wgpuAdapterEnumerateFeatures(p.ref, nil)
-	runtime.KeepAlive(p)
-
 	if size == 0 {
 		return nil
 	}
 
 	features := make([]FeatureName, size)
 	C.wgpuAdapterEnumerateFeatures(p.ref, (*C.WGPUFeatureName)(unsafe.Pointer(&features[0])))
-	runtime.KeepAlive(p)
-
 	return features
 }
 
 func (p *Adapter) HasFeature(feature FeatureName) bool {
 	hasFeature := C.wgpuAdapterHasFeature(p.ref, C.WGPUFeatureName(feature))
-	runtime.KeepAlive(p)
 	return bool(hasFeature)
 }
 
@@ -391,7 +350,6 @@ func (p *Adapter) GetLimits() SupportedLimits {
 	supportedLimits.nextInChain = (*C.WGPUChainedStructOut)(unsafe.Pointer(extras))
 
 	C.wgpuAdapterGetLimits(p.ref, &supportedLimits)
-	runtime.KeepAlive(p)
 
 	limits := supportedLimits.limits
 	return SupportedLimits{
@@ -432,7 +390,6 @@ func (p *Adapter) GetProperties() AdapterProperties {
 	var props C.WGPUAdapterProperties
 
 	C.wgpuAdapterGetProperties(p.ref, &props)
-	runtime.KeepAlive(p)
 
 	return AdapterProperties{
 		VendorID:          uint32(props.vendorID),
@@ -535,7 +492,6 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	}
 	handle := cgo.NewHandle(cb)
 	C.wgpuAdapterRequestDevice(p.ref, &desc, C.WGPURequestDeviceCallback(C.requestDeviceCallback_cgo), unsafe.Pointer(&handle))
-	runtime.KeepAlive(p)
 
 	if status != RequestDeviceStatus_Success {
 		return nil, errors.New("failed to request device")
@@ -544,12 +500,11 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	device.errChan = make(chan *Error, 1)
 	device.handle = cgo.NewHandle(device)
 	C.wgpuDeviceSetUncapturedErrorCallback(device.ref, C.WGPUErrorCallback(C.deviceUncapturedErrorCallback_cgo), unsafe.Pointer(&device.handle))
-	runtime.SetFinalizer(device, deviceFinalizer)
 
 	return device, nil
 }
 
-func deviceFinalizer(p *Device) {
+func (p *Device) Drop() {
 	C.wgpuDeviceDrop(p.ref)
 
 loop:
@@ -568,22 +523,17 @@ loop:
 
 func (p *Device) EnumerateFeatures() []FeatureName {
 	size := C.wgpuDeviceEnumerateFeatures(p.ref, nil)
-	runtime.KeepAlive(p)
-
 	if size == 0 {
 		return nil
 	}
 
 	features := make([]FeatureName, size)
 	C.wgpuDeviceEnumerateFeatures(p.ref, (*C.WGPUFeatureName)(unsafe.Pointer(&features[0])))
-	runtime.KeepAlive(p)
-
 	return features
 }
 
 func (p *Device) HasFeature(feature FeatureName) bool {
 	hasFeature := C.wgpuDeviceHasFeature(p.ref, C.WGPUFeatureName(feature))
-	runtime.KeepAlive(p)
 	return bool(hasFeature)
 }
 
@@ -593,15 +543,10 @@ func (p *Device) Poll(wait bool, wrappedSubmissionIndex *WrappedSubmissionIndex)
 		index.queue = wrappedSubmissionIndex.Queue.ref
 		index.submissionIndex = C.WGPUSubmissionIndex(wrappedSubmissionIndex.SubmissionIndex)
 
-		queueEmpty = bool(C.wgpuDevicePoll(p.ref, C.bool(wait), &index))
-		runtime.KeepAlive(p)
-		runtime.KeepAlive(wrappedSubmissionIndex.Queue)
-		return
+		return bool(C.wgpuDevicePoll(p.ref, C.bool(wait), &index))
 	}
 
-	queueEmpty = bool(C.wgpuDevicePoll(p.ref, C.bool(wait), nil))
-	runtime.KeepAlive(p)
-	return
+	return bool(C.wgpuDevicePoll(p.ref, C.bool(wait), nil))
 }
 
 func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*BindGroupLayout, error) {
@@ -658,8 +603,6 @@ func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*
 	}
 
 	ref := C.wgpuDeviceCreateBindGroupLayout(p.ref, &desc)
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -668,9 +611,7 @@ func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*
 		panic("Failed to acquire BindGroupLayout")
 	}
 
-	layout := &BindGroupLayout{ref}
-	runtime.SetFinalizer(layout, bindGroupLayoutFinalizer)
-	return layout, nil
+	return &BindGroupLayout{ref}, nil
 }
 
 func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, error) {
@@ -721,17 +662,6 @@ func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, e
 	}
 
 	ref := C.wgpuDeviceCreateBindGroup(p.ref, &desc)
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		runtime.KeepAlive(descriptor.Layout)
-
-		for _, v := range descriptor.Entries {
-			runtime.KeepAlive(v.Buffer)
-			runtime.KeepAlive(v.Sampler)
-			runtime.KeepAlive(v.TextureView)
-		}
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -740,9 +670,7 @@ func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, e
 		panic("Failed to acquire BindGroup")
 	}
 
-	bindGroup := &BindGroup{ref}
-	runtime.SetFinalizer(bindGroup, bindGroupFinalizer)
-	return bindGroup, nil
+	return &BindGroup{ref}, nil
 }
 
 func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
@@ -762,7 +690,6 @@ func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
 	}
 
 	ref := C.wgpuDeviceCreateBuffer(p.ref, &desc)
-	runtime.KeepAlive(p)
 
 	err := p.getErr()
 	if err != nil {
@@ -772,9 +699,7 @@ func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
 		panic("Failed to acquire Buffer")
 	}
 
-	buffer := &Buffer{ref}
-	runtime.SetFinalizer(buffer, bufferFinalizer)
-	return buffer, nil
+	return &Buffer{ref}, nil
 }
 
 func (p *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) (*CommandEncoder, error) {
@@ -788,8 +713,6 @@ func (p *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) (*Co
 	}
 
 	ref := C.wgpuDeviceCreateCommandEncoder(p.ref, &desc)
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -830,12 +753,6 @@ func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) (*
 	}
 
 	ref := C.wgpuDeviceCreateComputePipeline(p.ref, &desc)
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		runtime.KeepAlive(descriptor.Layout)
-		runtime.KeepAlive(descriptor.Compute.Module)
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -844,9 +761,7 @@ func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) (*
 		panic("Failed to acquire ComputePipeline")
 	}
 
-	pipeline := &ComputePipeline{ref}
-	runtime.SetFinalizer(pipeline, computePipelineFinalizer)
-	return pipeline, nil
+	return &ComputePipeline{ref}, nil
 }
 
 func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*PipelineLayout, error) {
@@ -908,13 +823,6 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 	}
 
 	ref := C.wgpuDeviceCreatePipelineLayout(p.ref, &desc)
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		for _, v := range descriptor.BindGroupLayouts {
-			runtime.KeepAlive(v)
-		}
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -922,6 +830,7 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 	if ref == nil {
 		panic("Failed to acquire PipelineLayout")
 	}
+
 	return &PipelineLayout{ref}, nil
 }
 
@@ -1107,15 +1016,6 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 	}
 
 	ref := C.wgpuDeviceCreateRenderPipeline(p.ref, &desc)
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		runtime.KeepAlive(descriptor.Layout)
-		runtime.KeepAlive(descriptor.Vertex.Module)
-		if descriptor.Fragment != nil {
-			runtime.KeepAlive(descriptor.Fragment.Module)
-		}
-	}
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1124,9 +1024,7 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 		panic("Failed to acquire RenderPipeline")
 	}
 
-	renderPipeline := &RenderPipeline{ref}
-	runtime.SetFinalizer(renderPipeline, renderPipelineFinalizer)
-	return renderPipeline, nil
+	return &RenderPipeline{ref}, nil
 }
 
 func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) {
@@ -1155,8 +1053,6 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 	}
 
 	ref := C.wgpuDeviceCreateSampler(p.ref, &desc)
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1165,9 +1061,7 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 		panic("Failed to acquire Sampler")
 	}
 
-	sampler := &Sampler{ref}
-	runtime.SetFinalizer(sampler, samplerFinalizer)
-	return sampler, nil
+	return &Sampler{ref}, nil
 }
 
 func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*ShaderModule, error) {
@@ -1271,8 +1165,6 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 	}
 
 	ref := C.wgpuDeviceCreateShaderModule(p.ref, &desc)
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1281,9 +1173,7 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 		panic("Failed to acquire ShaderModule")
 	}
 
-	shaderModule := &ShaderModule{ref}
-	runtime.SetFinalizer(shaderModule, shaderModuleFinalizer)
-	return shaderModule, nil
+	return &ShaderModule{ref}, nil
 }
 
 func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescriptor) (*SwapChain, error) {
@@ -1300,9 +1190,6 @@ func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescript
 	}
 
 	ref := C.wgpuDeviceCreateSwapChain(p.ref, surface.ref, &desc)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(surface)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1340,8 +1227,6 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 	}
 
 	ref := C.wgpuDeviceCreateTexture(p.ref, &desc)
-	runtime.KeepAlive(p)
-
 	err := p.getErr()
 	if err != nil {
 		return nil, err
@@ -1351,7 +1236,6 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 	}
 
 	texture := &Texture{ref}
-	runtime.SetFinalizer(texture, textureFinalizer)
 	return texture, nil
 }
 
@@ -1363,7 +1247,6 @@ func (p *Device) GetLimits() SupportedLimits {
 	supportedLimits.nextInChain = (*C.WGPUChainedStructOut)(unsafe.Pointer(extras))
 
 	C.wgpuDeviceGetLimits(p.ref, &supportedLimits)
-	runtime.KeepAlive(p)
 
 	limits := supportedLimits.limits
 	return SupportedLimits{
@@ -1402,8 +1285,6 @@ func (p *Device) GetLimits() SupportedLimits {
 
 func (p *Device) GetQueue() *Queue {
 	ref := C.wgpuDeviceGetQueue(p.ref)
-	runtime.KeepAlive(p)
-
 	if ref == nil {
 		panic("Failed to acquire Queue")
 	}
@@ -1412,19 +1293,11 @@ func (p *Device) GetQueue() *Queue {
 
 func (p *Buffer) GetMappedRange(offset uint64, size uint64) []byte {
 	buf := C.wgpuBufferGetMappedRange(p.ref, C.size_t(offset), C.size_t(size))
-	runtime.KeepAlive(p)
 	return unsafe.Slice((*byte)(buf), size)
 }
 
-func (p *Buffer) Unmap() {
-	C.wgpuBufferUnmap(p.ref)
-	runtime.KeepAlive(p)
-}
-
-func (p *Buffer) Destroy() {
-	C.wgpuBufferDestroy(p.ref)
-	runtime.KeepAlive(p)
-}
+func (p *Buffer) Unmap()   { C.wgpuBufferUnmap(p.ref) }
+func (p *Buffer) Destroy() { C.wgpuBufferDestroy(p.ref) }
 
 type BufferMapCallback func(BufferMapAsyncStatus)
 
@@ -1439,7 +1312,6 @@ func (p *Buffer) MapAsync(mode MapMode, offset uint64, size uint64, callback Buf
 		(C.WGPUBufferMapCallback)(C.bufferMapCallback_cgo),
 		unsafe.Pointer(&handle),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *ComputePassEncoder {
@@ -1453,7 +1325,6 @@ func (p *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *Co
 	}
 
 	ref := C.wgpuCommandEncoderBeginComputePass(p.ref, &desc)
-	runtime.KeepAlive(p)
 	if ref == nil {
 		panic("Failed to acquire ComputePassEncoder")
 	}
@@ -1525,18 +1396,6 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	}
 
 	ref := C.wgpuCommandEncoderBeginRenderPass(p.ref, &desc)
-	runtime.KeepAlive(p)
-	if descriptor != nil {
-		for _, v := range descriptor.ColorAttachments {
-			runtime.KeepAlive(v.View)
-			runtime.KeepAlive(v.ResolveTarget)
-		}
-
-		if descriptor.DepthStencilAttachment != nil {
-			runtime.KeepAlive(descriptor.DepthStencilAttachment.View)
-		}
-	}
-
 	if ref == nil {
 		panic("Failed to acquire RenderPassEncoder")
 	}
@@ -1551,8 +1410,6 @@ func (p *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64)
 		C.uint64_t(offset),
 		C.uint64_t(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinatonOffset uint64, size uint64) {
@@ -1564,9 +1421,6 @@ func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64,
 		C.uint64_t(destinatonOffset),
 		C.uint64_t(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(source)
-	runtime.KeepAlive(destination)
 }
 
 func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destination *ImageCopyTexture, copySize *Extent3D) {
@@ -1608,13 +1462,6 @@ func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destinatio
 	}
 
 	C.wgpuCommandEncoderCopyBufferToTexture(p.ref, &src, &dst, &cpySize)
-	runtime.KeepAlive(p)
-	if source != nil {
-		runtime.KeepAlive(source.Buffer)
-	}
-	if destination != nil {
-		runtime.KeepAlive(destination.Texture)
-	}
 }
 
 func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destination *ImageCopyBuffer, copySize *Extent3D) {
@@ -1656,13 +1503,6 @@ func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destinati
 	}
 
 	C.wgpuCommandEncoderCopyTextureToBuffer(p.ref, &src, &dst, &cpySize)
-	runtime.KeepAlive(p)
-	if source != nil {
-		runtime.KeepAlive(source.Texture)
-	}
-	if destination != nil {
-		runtime.KeepAlive(destination.Buffer)
-	}
 }
 
 func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destination *ImageCopyTexture, copySize *Extent3D) {
@@ -1708,13 +1548,6 @@ func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destinat
 	}
 
 	C.wgpuCommandEncoderCopyTextureToTexture(p.ref, &src, &dst, &cpySize)
-	runtime.KeepAlive(p)
-	if source != nil {
-		runtime.KeepAlive(source.Texture)
-	}
-	if destination != nil {
-		runtime.KeepAlive(destination.Texture)
-	}
 }
 
 func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuffer {
@@ -1728,8 +1561,6 @@ func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 	}
 
 	ref := C.wgpuCommandEncoderFinish(p.ref, &desc)
-	runtime.KeepAlive(p)
-
 	if ref == nil {
 		panic("Failed to acquire CommandBuffer")
 	}
@@ -1742,12 +1573,10 @@ func (p *CommandEncoder) InsertDebugMarker(markerLabel string) {
 	defer C.free(unsafe.Pointer(markerLabelStr))
 
 	C.wgpuCommandEncoderInsertDebugMarker(p.ref, markerLabelStr)
-	runtime.KeepAlive(p)
 }
 
 func (p *CommandEncoder) PopDebugGroup() {
 	C.wgpuCommandEncoderPopDebugGroup(p.ref)
-	runtime.KeepAlive(p)
 }
 
 func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
@@ -1755,23 +1584,18 @@ func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
 	defer C.free(unsafe.Pointer(groupLabelStr))
 
 	C.wgpuCommandEncoderPushDebugGroup(p.ref, groupLabelStr)
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) DispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ uint32) {
 	C.wgpuComputePassEncoderDispatchWorkgroups(p.ref, C.uint32_t(workgroupCountX), C.uint32_t(workgroupCountY), C.uint32_t(workgroupCountZ))
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) DispatchWorkgroupsIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	C.wgpuComputePassEncoderDispatchWorkgroupsIndirect(p.ref, indirectBuffer.ref, C.uint64_t(indirectOffset))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(indirectBuffer)
 }
 
 func (p *ComputePassEncoder) End() {
 	C.wgpuComputePassEncoderEnd(p.ref)
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
@@ -1784,15 +1608,10 @@ func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, d
 			C.uint32_t(dynamicOffsetCount), (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0])),
 		)
 	}
-
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(group)
 }
 
 func (p *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
 	C.wgpuComputePassEncoderSetPipeline(p.ref, pipeline.ref)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(pipeline)
 }
 
 func (p *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
@@ -1800,12 +1619,10 @@ func (p *ComputePassEncoder) InsertDebugMarker(markerLabel string) {
 	defer C.free(unsafe.Pointer(markerLabelStr))
 
 	C.wgpuComputePassEncoderInsertDebugMarker(p.ref, markerLabelStr)
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) PopDebugGroup() {
 	C.wgpuComputePassEncoderPopDebugGroup(p.ref)
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePassEncoder) PushDebugGroup(groupLabel string) {
@@ -1813,27 +1630,21 @@ func (p *ComputePassEncoder) PushDebugGroup(groupLabel string) {
 	defer C.free(unsafe.Pointer(groupLabelStr))
 
 	C.wgpuComputePassEncoderPushDebugGroup(p.ref, groupLabelStr)
-	runtime.KeepAlive(p)
 }
 
 func (p *ComputePipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
 	ref := C.wgpuComputePipelineGetBindGroupLayout(p.ref, C.uint32_t(groupIndex))
-	runtime.KeepAlive(p)
-
 	if ref == nil {
 		panic("Failed to accquire BindGroupLayout")
 	}
 
-	bindGroupLayout := &BindGroupLayout{ref}
-	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
-	return bindGroupLayout
+	return &BindGroupLayout{ref}
 }
 
 func (p *Queue) Submit(commands ...*CommandBuffer) (submissionIndex SubmissionIndex) {
 	commandCount := len(commands)
 	if commandCount == 0 {
 		r := C.wgpuQueueSubmitForIndex(p.ref, 0, nil)
-		runtime.KeepAlive(p)
 		return SubmissionIndex(r)
 	}
 
@@ -1841,7 +1652,6 @@ func (p *Queue) Submit(commands ...*CommandBuffer) (submissionIndex SubmissionIn
 	defer C.free(commandRefs)
 
 	commandRefsSlice := unsafe.Slice((*C.WGPUCommandBuffer)(commandRefs), commandCount)
-
 	for i, v := range commands {
 		commandRefsSlice[i] = v.ref
 	}
@@ -1851,11 +1661,6 @@ func (p *Queue) Submit(commands ...*CommandBuffer) (submissionIndex SubmissionIn
 		C.uint32_t(commandCount),
 		(*C.WGPUCommandBuffer)(commandRefs),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(commands)
-	for _, v := range commands {
-		runtime.KeepAlive(v)
-	}
 	return SubmissionIndex(r)
 }
 
@@ -1865,8 +1670,6 @@ func (p *Queue) WriteBuffer(buffer *Buffer, bufferOffset uint64, data []byte) {
 	defer C.free(buf)
 
 	C.wgpuQueueWriteBuffer(p.ref, buffer.ref, C.uint64_t(bufferOffset), buf, C.size_t(size))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *Queue) WriteTexture(destination *ImageCopyTexture, data []byte, dataLayout *TextureDataLayout, writeSize *Extent3D) {
@@ -1909,10 +1712,6 @@ func (p *Queue) WriteTexture(destination *ImageCopyTexture, data []byte, dataLay
 	}
 
 	C.wgpuQueueWriteTexture(p.ref, &dst, buf, C.size_t(size), &layout, &writeExtent)
-	runtime.KeepAlive(p)
-	if destination != nil {
-		runtime.KeepAlive(destination.Texture)
-	}
 }
 
 func (p *RenderPassEncoder) SetPushConstants(stages ShaderStage, offset uint32, data []byte) {
@@ -1927,7 +1726,6 @@ func (p *RenderPassEncoder) SetPushConstants(stages ShaderStage, offset uint32, 
 		C.uint32_t(size),
 		buf,
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) Draw(vertexCount, instanceCount, firstVertex, firstInstance uint32) {
@@ -1937,7 +1735,6 @@ func (p *RenderPassEncoder) Draw(vertexCount, instanceCount, firstVertex, firstI
 		C.uint32_t(firstVertex),
 		C.uint32_t(firstInstance),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32, firstIndex uint32, baseVertex int32, firstInstance uint32) {
@@ -1948,24 +1745,18 @@ func (p *RenderPassEncoder) DrawIndexed(indexCount uint32, instanceCount uint32,
 		C.int32_t(baseVertex),
 		C.uint32_t(firstInstance),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	C.wgpuRenderPassEncoderDrawIndexedIndirect(p.ref, indirectBuffer.ref, C.uint64_t(indirectOffset))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(indirectBuffer)
 }
 
 func (p *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	C.wgpuRenderPassEncoderDrawIndirect(p.ref, indirectBuffer.ref, C.uint64_t(indirectOffset))
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(indirectBuffer)
 }
 
 func (p *RenderPassEncoder) End() {
 	C.wgpuRenderPassEncoderEnd(p.ref)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
@@ -1987,8 +1778,6 @@ func (p *RenderPassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dy
 			(*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0])),
 		)
 	}
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(group)
 }
 
 func (p *RenderPassEncoder) SetBlendConstant(color *Color) {
@@ -1998,7 +1787,6 @@ func (p *RenderPassEncoder) SetBlendConstant(color *Color) {
 		b: C.double(color.B),
 		a: C.double(color.A),
 	})
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
@@ -2009,14 +1797,10 @@ func (p *RenderPassEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, o
 		C.uint64_t(offset),
 		C.uint64_t(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *RenderPassEncoder) SetPipeline(pipeline *RenderPipeline) {
 	C.wgpuRenderPassEncoderSetPipeline(p.ref, pipeline.ref)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(pipeline)
 }
 
 func (p *RenderPassEncoder) SetScissorRect(x, y, width, height uint32) {
@@ -2027,12 +1811,10 @@ func (p *RenderPassEncoder) SetScissorRect(x, y, width, height uint32) {
 		C.uint32_t(width),
 		C.uint32_t(height),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetStencilReference(reference uint32) {
 	C.wgpuRenderPassEncoderSetStencilReference(p.ref, C.uint32_t(reference))
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
@@ -2043,8 +1825,6 @@ func (p *RenderPassEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset 
 		C.uint64_t(offset),
 		C.uint64_t(size),
 	)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(buffer)
 }
 
 func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth float32) {
@@ -2057,7 +1837,6 @@ func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth 
 		C.float(minDepth),
 		C.float(maxDepth),
 	)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
@@ -2065,12 +1844,10 @@ func (p *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
 	defer C.free(unsafe.Pointer(markerLabelStr))
 
 	C.wgpuRenderPassEncoderInsertDebugMarker(p.ref, markerLabelStr)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) PopDebugGroup() {
 	C.wgpuRenderPassEncoderPopDebugGroup(p.ref)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPassEncoder) PushDebugGroup(groupLabel string) {
@@ -2078,34 +1855,25 @@ func (p *RenderPassEncoder) PushDebugGroup(groupLabel string) {
 	defer C.free(unsafe.Pointer(groupLabelStr))
 
 	C.wgpuRenderPassEncoderPushDebugGroup(p.ref, groupLabelStr)
-	runtime.KeepAlive(p)
 }
 
 func (p *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout {
 	ref := C.wgpuRenderPipelineGetBindGroupLayout(p.ref, C.uint32_t(groupIndex))
-	runtime.KeepAlive(p)
-
 	if ref == nil {
 		panic("Failed to accquire BindGroupLayout")
 	}
 
-	bindGroupLayout := &BindGroupLayout{ref}
-	runtime.SetFinalizer(bindGroupLayout, bindGroupLayoutFinalizer)
-	return bindGroupLayout
+	return &BindGroupLayout{ref}
 }
 
 func (p *Surface) GetPreferredFormat(adapter *Adapter) TextureFormat {
 	format := C.wgpuSurfaceGetPreferredFormat(p.ref, adapter.ref)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(adapter)
 	return TextureFormat(format)
 }
 
 func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 	var size C.size_t
 	formatsPtr := C.wgpuSurfaceGetSupportedFormats(p.ref, adapter.ref, &size)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(adapter)
 	defer free[C.WGPUTextureFormat](unsafe.Pointer(formatsPtr), size)
 
 	formatsSlice := unsafe.Slice((*TextureFormat)(formatsPtr), size)
@@ -2117,8 +1885,6 @@ func (p *Surface) GetSupportedFormats(adapter *Adapter) []TextureFormat {
 func (p *Surface) GetSupportedPresentModes(adapter *Adapter) []PresentMode {
 	var size C.size_t
 	modesPtr := C.wgpuSurfaceGetSupportedPresentModes(p.ref, adapter.ref, &size)
-	runtime.KeepAlive(p)
-	runtime.KeepAlive(adapter)
 	defer free[C.WGPUPresentMode](unsafe.Pointer(modesPtr), size)
 
 	modesSlice := unsafe.Slice((*PresentMode)(modesPtr), size)
@@ -2129,8 +1895,6 @@ func (p *Surface) GetSupportedPresentModes(adapter *Adapter) []PresentMode {
 
 func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
 	ref := C.wgpuSwapChainGetCurrentTextureView(p.ref)
-	runtime.KeepAlive(p)
-
 	err := p.device.getErr()
 	if err != nil {
 		return nil, err
@@ -2140,13 +1904,11 @@ func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
 	}
 
 	textureView := &TextureView{ref}
-	runtime.SetFinalizer(textureView, textureViewFinalizer)
 	return textureView, nil
 }
 
 func (p *SwapChain) Present() {
 	C.wgpuSwapChainPresent(p.ref)
-	runtime.KeepAlive(p)
 }
 
 func (p *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
@@ -2172,18 +1934,27 @@ func (p *Texture) CreateView(descriptor *TextureViewDescriptor) *TextureView {
 	}
 
 	ref := C.wgpuTextureCreateView(p.ref, &desc)
-	runtime.KeepAlive(p)
-
 	if ref == nil {
 		panic("Failed to acquire TextureView")
 	}
 
-	textureView := &TextureView{ref}
-	runtime.SetFinalizer(textureView, textureViewFinalizer)
-	return textureView
+	return &TextureView{ref}
 }
 
 func (p *Texture) Destroy() {
 	C.wgpuTextureDestroy(p.ref)
-	runtime.KeepAlive(p)
 }
+
+func (p *Buffer) Drop()          { C.wgpuBufferDrop(p.ref) }
+func (p *CommandEncoder) Drop()  { C.wgpuCommandEncoderDrop(p.ref) }
+func (p *QuerySet) Drop()        { C.wgpuQuerySetDrop(p.ref) }
+func (p *RenderPipeline) Drop()  { C.wgpuRenderPipelineDrop(p.ref) }
+func (p *Texture) Drop()         { C.wgpuTextureDrop(p.ref) }
+func (p *TextureView) Drop()     { C.wgpuTextureViewDrop(p.ref) }
+func (p *Sampler) Drop()         { C.wgpuSamplerDrop(p.ref) }
+func (p *BindGroupLayout) Drop() { C.wgpuBindGroupLayoutDrop(p.ref) }
+func (p *PipelineLayout) Drop()  { C.wgpuPipelineLayoutDrop(p.ref) }
+func (p *BindGroup) Drop()       { C.wgpuBindGroupDrop(p.ref) }
+func (p *ShaderModule) Drop()    { C.wgpuShaderModuleDrop(p.ref) }
+func (p *CommandBuffer) Drop()   { C.wgpuCommandBufferDrop(p.ref) }
+func (p *ComputePipeline) Drop() { C.wgpuComputePipelineDrop(p.ref) }

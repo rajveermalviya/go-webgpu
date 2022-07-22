@@ -71,6 +71,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer device.Drop()
+	queue := device.GetQueue()
 
 	bufferDimensions := newBufferDimensions(uint64(width), uint64(height))
 
@@ -83,6 +85,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer outputBuffer.Drop()
 
 	textureExtent := wgpu.Extent3D{
 		Width:              uint32(bufferDimensions.width),
@@ -102,6 +105,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer texture.Drop()
 
 	// Set the background to be red
 	encoder, err := device.CreateCommandEncoder(nil)
@@ -132,7 +136,6 @@ func main() {
 		&textureExtent,
 	)
 
-	queue := device.GetQueue()
 	index := queue.Submit(encoder.Finish(nil))
 
 	outputBuffer.MapAsync(wgpu.MapMode_Read, 0, bufferSize, func(status wgpu.BufferMapAsyncStatus) {
@@ -140,11 +143,12 @@ func main() {
 			panic("failed to map buffer")
 		}
 	})
+	defer outputBuffer.Unmap()
+
 	device.Poll(true, &wgpu.WrappedSubmissionIndex{
 		Queue:           queue,
 		SubmissionIndex: index,
 	})
-	defer outputBuffer.Unmap()
 
 	data := outputBuffer.GetMappedRange(0, bufferSize)
 
