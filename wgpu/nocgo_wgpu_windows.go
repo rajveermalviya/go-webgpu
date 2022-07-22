@@ -174,20 +174,29 @@ var (
 	wgpuTextureDestroy                               = lib.NewProc("wgpuTextureDestroy")
 )
 
-func init() {
-	logCb = defaultlogCallback
-	wgpuSetLogCallback.Call(logCallback)
-}
-
-var logCb LogCallback
-
 var logCallback = windows.NewCallbackCDecl(func(level LogLevel, msg *byte) (_ uintptr) {
-	logCb(level, gostring(msg))
+	var l string
+	switch level {
+	case LogLevel_Error:
+		l = "Error"
+	case LogLevel_Warn:
+		l = "Warn"
+	case LogLevel_Info:
+		l = "Info"
+	case LogLevel_Debug:
+		l = "Debug"
+	case LogLevel_Trace:
+		l = "Trace"
+	default:
+		l = "Unknown Level"
+	}
+
+	fmt.Fprintf(os.Stderr, "[wgpu] [%s] %s\n", l, gostring(msg))
 	return
 })
 
-func SetLogCallback(f LogCallback) {
-	logCb = f
+func init() {
+	wgpuSetLogCallback.Call(logCallback)
 }
 
 func SetLogLevel(level LogLevel) {

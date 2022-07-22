@@ -5,28 +5,6 @@ import (
 	"strconv"
 )
 
-type LogCallback func(level LogLevel, msg string)
-
-func defaultlogCallback(level LogLevel, msg string) {
-	var l string
-	switch level {
-	case LogLevel_Error:
-		l = "Error"
-	case LogLevel_Warn:
-		l = "Warn"
-	case LogLevel_Info:
-		l = "Info"
-	case LogLevel_Debug:
-		l = "Debug"
-	case LogLevel_Trace:
-		l = "Trace"
-	default:
-		l = "Unknown Level"
-	}
-
-	fmt.Printf("[go-webgpu] [%s] %s\n", l, msg)
-}
-
 type Version uint32
 
 func (v Version) String() string {
