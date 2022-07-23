@@ -44,6 +44,7 @@ type (
 	wgpuPipelineLayout      uintptr
 	wgpuQuerySet            uintptr
 	wgpuQueue               uintptr
+	wgpuRenderBundle        uintptr
 	wgpuRenderBundleEncoder uintptr
 	wgpuRenderPassEncoder   uintptr
 	wgpuRenderPipeline      uintptr
@@ -646,4 +647,21 @@ type wgpuSupportedLimitsExtras struct {
 	chain               wgpuChainedStructOut
 	maxPushConstantSize uint32
 	maxBufferSize       uint64
+}
+
+type wgpuRenderBundleEncoderDescriptor struct {
+	nextInChain        *wgpuChainedStruct
+	label              *byte
+	colorFormatsCount  uint32
+	colorFormats       *TextureFormat
+	depthStencilFormat TextureFormat
+	sampleCount        uint32
+	depthReadOnly      bool
+	stencilReadOnly    bool
+	_                  [6]byte
+}
+
+type wgpuRenderBundleDescriptor struct {
+	nextInChain *wgpuChainedStruct
+	label       *byte
 }

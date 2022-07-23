@@ -485,6 +485,19 @@ type WrappedSubmissionIndex struct {
 	SubmissionIndex SubmissionIndex
 }
 
+type RenderBundleEncoderDescriptor struct {
+	Label              string
+	ColorFormats       []TextureFormat
+	DepthStencilFormat TextureFormat
+	SampleCount        uint32
+	DepthReadOnly      bool
+	StencilReadOnly    bool
+}
+
+type RenderBundleDescriptor struct {
+	Label string
+}
+
 type StorageReport struct {
 	NumOccupied uint64
 	NumVacant   uint64
