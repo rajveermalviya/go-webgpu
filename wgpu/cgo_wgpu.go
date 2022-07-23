@@ -178,6 +178,7 @@ type (
 	PipelineLayout      struct{ ref C.WGPUPipelineLayout }
 	QuerySet            struct{ ref C.WGPUQuerySet }
 	Queue               struct{ ref C.WGPUQueue }
+	RenderBundle        struct{ ref C.WGPURenderBundle }
 	RenderBundleEncoder struct{ ref C.WGPURenderBundleEncoder }
 	RenderPassEncoder   struct{ ref C.WGPURenderPassEncoder }
 	RenderPipeline      struct{ ref C.WGPURenderPipeline }
@@ -1027,6 +1028,46 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 	return &RenderPipeline{ref}, nil
 }
 
+func (p *Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescriptor) (*RenderBundleEncoder, error) {
+	var desc C.WGPURenderBundleEncoderDescriptor
+
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
+			desc.label = label
+		}
+
+		colorFormatsCount := len(descriptor.ColorFormats)
+		if colorFormatsCount > 0 {
+			colorFormats := C.malloc(C.size_t(colorFormatsCount) * C.size_t(unsafe.Sizeof(TextureFormat(0))))
+			defer C.free(colorFormats)
+
+			colorFormatsSlice := unsafe.Slice((*TextureFormat)(colorFormats), colorFormatsCount)
+			copy(colorFormatsSlice, descriptor.ColorFormats)
+
+			desc.colorFormatsCount = C.uint32_t(colorFormatsCount)
+			desc.colorFormats = (*C.WGPUTextureFormat)(colorFormats)
+		}
+
+		desc.depthStencilFormat = C.WGPUTextureFormat(descriptor.DepthStencilFormat)
+		desc.sampleCount = C.uint32_t(descriptor.SampleCount)
+		desc.depthReadOnly = C.bool(descriptor.DepthReadOnly)
+		desc.stencilReadOnly = C.bool(descriptor.StencilReadOnly)
+	}
+
+	ref := C.wgpuDeviceCreateRenderBundleEncoder(p.ref, &desc)
+	err := p.getErr()
+	if err != nil {
+		return nil, err
+	}
+	if ref == nil {
+		panic("Failed to acquire RenderPipeline")
+	}
+
+	return &RenderBundleEncoder{ref}, nil
+}
+
 func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) {
 	var desc C.WGPUSamplerDescriptor
 
@@ -1839,6 +1880,24 @@ func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth 
 	)
 }
 
+func (p *RenderPassEncoder) ExecuteBundles(bundles ...*RenderBundle) {
+	bundlesCount := len(bundles)
+	if bundlesCount == 0 {
+		C.wgpuRenderPassEncoderExecuteBundles(p.ref, 0, nil)
+		return
+	}
+
+	bundlesPtr := C.malloc(C.size_t(bundlesCount) * C.size_t(unsafe.Sizeof(C.WGPURenderBundle(nil))))
+	defer C.free(bundlesPtr)
+
+	bundlesSlice := unsafe.Slice((*C.WGPURenderBundle)(bundlesPtr), bundlesCount)
+	for i, v := range bundles {
+		bundlesSlice[i] = v.ref
+	}
+
+	C.wgpuRenderPassEncoderExecuteBundles(p.ref, C.uint32_t(bundlesCount), (*C.WGPURenderBundle)(bundlesPtr))
+}
+
 func (p *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
 	markerLabelStr := C.CString(markerLabel)
 	defer C.free(unsafe.Pointer(markerLabelStr))
@@ -1945,6 +2004,112 @@ func (p *Texture) Destroy() {
 	C.wgpuTextureDestroy(p.ref)
 }
 
+func (p *RenderBundleEncoder) Draw(vertexCount, instanceCount, firstVertex, firstInstance uint32) {
+	C.wgpuRenderBundleEncoderDraw(
+		p.ref,
+		C.uint32_t(vertexCount),
+		C.uint32_t(instanceCount),
+		C.uint32_t(firstVertex),
+		C.uint32_t(firstInstance),
+	)
+}
+func (p *RenderBundleEncoder) DrawIndexed(indexCount, instanceCount, firstIndex, baseVertex, firstInstance uint32) {
+	C.wgpuRenderBundleEncoderDrawIndexed(
+		p.ref,
+		C.uint32_t(indexCount),
+		C.uint32_t(instanceCount),
+		C.uint32_t(firstIndex),
+		C.int32_t(baseVertex),
+		C.uint32_t(firstInstance),
+	)
+}
+
+func (p *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	C.wgpuRenderBundleEncoderDrawIndexedIndirect(
+		p.ref,
+		indirectBuffer.ref,
+		C.uint64_t(indirectOffset),
+	)
+}
+
+func (p *RenderBundleEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	C.wgpuRenderBundleEncoderDrawIndirect(
+		p.ref,
+		indirectBuffer.ref,
+		C.uint64_t(indirectOffset),
+	)
+}
+
+func (p *RenderBundleEncoder) Finish(descriptor *RenderBundleDescriptor) *RenderBundle {
+	var desc C.WGPURenderBundleDescriptor
+
+	if descriptor != nil {
+		label := C.CString(descriptor.Label)
+		defer C.free(unsafe.Pointer(label))
+		desc.label = label
+	}
+
+	ref := C.wgpuRenderBundleEncoderFinish(p.ref, &desc)
+	if ref == nil {
+		panic("Failed to accquire RenderBundle")
+	}
+	return &RenderBundle{ref}
+}
+
+func (p *RenderBundleEncoder) InsertDebugMarker(markerLabel string) {
+	markerLabelStr := C.CString(markerLabel)
+	defer C.free(unsafe.Pointer(markerLabelStr))
+
+	C.wgpuRenderBundleEncoderInsertDebugMarker(p.ref, markerLabelStr)
+}
+
+func (p *RenderBundleEncoder) PopDebugGroup() {
+	C.wgpuRenderBundleEncoderPopDebugGroup(p.ref)
+}
+
+func (p *RenderBundleEncoder) PushDebugGroup(groupLabel string) {
+	groupLabelStr := C.CString(groupLabel)
+	defer C.free(unsafe.Pointer(groupLabelStr))
+
+	C.wgpuRenderBundleEncoderPushDebugGroup(p.ref, groupLabelStr)
+}
+
+func (p *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+	dynamicOffsetCount := len(dynamicOffsets)
+	if dynamicOffsetCount == 0 {
+		C.wgpuRenderBundleEncoderSetBindGroup(p.ref, C.uint32_t(groupIndex), group.ref, 0, nil)
+	} else {
+		C.wgpuRenderBundleEncoderSetBindGroup(
+			p.ref, C.uint32_t(groupIndex), group.ref,
+			C.uint32_t(dynamicOffsetCount), (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0])),
+		)
+	}
+}
+
+func (p *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
+	C.wgpuRenderBundleEncoderSetIndexBuffer(
+		p.ref,
+		buffer.ref,
+		C.WGPUIndexFormat(format),
+		C.uint64_t(offset),
+		C.uint64_t(size),
+	)
+}
+
+func (p *RenderBundleEncoder) SetPipeline(pipeline *RenderPipeline) {
+	C.wgpuRenderBundleEncoderSetPipeline(p.ref, pipeline.ref)
+}
+
+func (p *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
+	C.wgpuRenderBundleEncoderSetVertexBuffer(
+		p.ref,
+		C.uint32_t(slot),
+		buffer.ref,
+		C.uint64_t(offset),
+		C.uint64_t(size),
+	)
+}
+
 func (p *Buffer) Drop()          { C.wgpuBufferDrop(p.ref) }
 func (p *CommandEncoder) Drop()  { C.wgpuCommandEncoderDrop(p.ref) }
 func (p *QuerySet) Drop()        { C.wgpuQuerySetDrop(p.ref) }
@@ -1958,3 +2123,4 @@ func (p *BindGroup) Drop()       { C.wgpuBindGroupDrop(p.ref) }
 func (p *ShaderModule) Drop()    { C.wgpuShaderModuleDrop(p.ref) }
 func (p *CommandBuffer) Drop()   { C.wgpuCommandBufferDrop(p.ref) }
 func (p *ComputePipeline) Drop() { C.wgpuComputePipelineDrop(p.ref) }
+func (p *RenderBundle) Drop()    { C.wgpuRenderBundleDrop(p.ref) }

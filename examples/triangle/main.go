@@ -139,6 +139,19 @@ func main() {
 	}
 	defer pipeline.Drop()
 
+	renderBundleEncoder, err := device.CreateRenderBundleEncoder(&wgpu.RenderBundleEncoderDescriptor{
+		ColorFormats: []wgpu.TextureFormat{config.Format},
+		SampleCount:  1,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	renderBundleEncoder.SetPipeline(pipeline)
+	renderBundleEncoder.Draw(3, 1, 0, 0)
+	renderBundle := renderBundleEncoder.Finish(nil)
+	defer renderBundle.Drop()
+
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		// Print resource usage on pressing 'R'
 		if key == glfw.KeyR && (action == glfw.Press || action == glfw.Repeat) {
@@ -201,8 +214,7 @@ func main() {
 				},
 			})
 
-			renderPass.SetPipeline(pipeline)
-			renderPass.Draw(3, 1, 0, 0)
+			renderPass.ExecuteBundles(renderBundle)
 			renderPass.End()
 
 			queue.Submit(encoder.Finish(nil))

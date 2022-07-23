@@ -112,6 +112,7 @@ var (
 	wgpuDeviceCreateCommandEncoder                   = lib.NewProc("wgpuDeviceCreateCommandEncoder")
 	wgpuDeviceCreateComputePipeline                  = lib.NewProc("wgpuDeviceCreateComputePipeline")
 	wgpuDeviceCreatePipelineLayout                   = lib.NewProc("wgpuDeviceCreatePipelineLayout")
+	wgpuDeviceCreateRenderBundleEncoder              = lib.NewProc("wgpuDeviceCreateRenderBundleEncoder")
 	wgpuDeviceCreateRenderPipeline                   = lib.NewProc("wgpuDeviceCreateRenderPipeline")
 	wgpuDeviceCreateSampler                          = lib.NewProc("wgpuDeviceCreateSampler")
 	wgpuDeviceCreateShaderModule                     = lib.NewProc("wgpuDeviceCreateShaderModule")
@@ -161,6 +162,7 @@ var (
 	wgpuRenderPassEncoderSetStencilReference         = lib.NewProc("wgpuRenderPassEncoderSetStencilReference")
 	wgpuRenderPassEncoderSetVertexBuffer             = lib.NewProc("wgpuRenderPassEncoderSetVertexBuffer")
 	wgpuRenderPassEncoderSetViewport                 = lib.NewProc("wgpuRenderPassEncoderSetViewport")
+	wgpuRenderPassEncoderExecuteBundles              = lib.NewProc("wgpuRenderPassEncoderExecuteBundles")
 	wgpuRenderPassEncoderInsertDebugMarker           = lib.NewProc("wgpuRenderPassEncoderInsertDebugMarker")
 	wgpuRenderPassEncoderPopDebugGroup               = lib.NewProc("wgpuRenderPassEncoderPopDebugGroup")
 	wgpuRenderPassEncoderPushDebugGroup              = lib.NewProc("wgpuRenderPassEncoderPushDebugGroup")
@@ -172,9 +174,22 @@ var (
 	wgpuSwapChainPresent                             = lib.NewProc("wgpuSwapChainPresent")
 	wgpuTextureCreateView                            = lib.NewProc("wgpuTextureCreateView")
 	wgpuTextureDestroy                               = lib.NewProc("wgpuTextureDestroy")
+	wgpuRenderBundleEncoderDraw                      = lib.NewProc("wgpuRenderBundleEncoderDraw")
+	wgpuRenderBundleEncoderDrawIndexed               = lib.NewProc("wgpuRenderBundleEncoderDrawIndexed")
+	wgpuRenderBundleEncoderDrawIndexedIndirect       = lib.NewProc("wgpuRenderBundleEncoderDrawIndexedIndirect")
+	wgpuRenderBundleEncoderDrawIndirect              = lib.NewProc("wgpuRenderBundleEncoderDrawIndirect")
+	wgpuRenderBundleEncoderFinish                    = lib.NewProc("wgpuRenderBundleEncoderFinish")
+	wgpuRenderBundleEncoderInsertDebugMarker         = lib.NewProc("wgpuRenderBundleEncoderInsertDebugMarker")
+	wgpuRenderBundleEncoderPopDebugGroup             = lib.NewProc("wgpuRenderBundleEncoderPopDebugGroup")
+	wgpuRenderBundleEncoderPushDebugGroup            = lib.NewProc("wgpuRenderBundleEncoderPushDebugGroup")
+	wgpuRenderBundleEncoderSetBindGroup              = lib.NewProc("wgpuRenderBundleEncoderSetBindGroup")
+	wgpuRenderBundleEncoderSetIndexBuffer            = lib.NewProc("wgpuRenderBundleEncoderSetIndexBuffer")
+	wgpuRenderBundleEncoderSetPipeline               = lib.NewProc("wgpuRenderBundleEncoderSetPipeline")
+	wgpuRenderBundleEncoderSetVertexBuffer           = lib.NewProc("wgpuRenderBundleEncoderSetVertexBuffer")
 	wgpuQuerySetDrop                                 = lib.NewProc("wgpuQuerySetDrop")
 	wgpuPipelineLayoutDrop                           = lib.NewProc("wgpuPipelineLayoutDrop")
 	wgpuCommandBufferDrop                            = lib.NewProc("wgpuCommandBufferDrop")
+	wgpuRenderBundleDrop                             = lib.NewProc("wgpuRenderBundleDrop")
 )
 
 var logCallback = windows.NewCallbackCDecl(func(level LogLevel, msg *byte) (_ uintptr) {
@@ -285,6 +300,7 @@ type (
 	PipelineLayout      struct{ ref wgpuPipelineLayout }
 	QuerySet            struct{ ref wgpuQuerySet }
 	Queue               struct{ ref wgpuQueue }
+	RenderBundle        struct{ ref wgpuRenderBundle }
 	RenderBundleEncoder struct{ ref wgpuRenderBundleEncoder }
 	RenderPassEncoder   struct{ ref wgpuRenderPassEncoder }
 	RenderPipeline      struct{ ref wgpuRenderPipeline }
@@ -1004,6 +1020,38 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 	}
 
 	return &RenderPipeline{ref: wgpuRenderPipeline(ref)}, nil
+}
+
+func (p *Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescriptor) (*RenderBundleEncoder, error) {
+	var desc wgpuRenderBundleEncoderDescriptor
+
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			desc.label = cstring(descriptor.Label)
+		}
+
+		colorFormatsCount := len(descriptor.ColorFormats)
+		if colorFormatsCount > 0 {
+			desc.colorFormatsCount = uint32(colorFormatsCount)
+			desc.colorFormats = (*TextureFormat)(unsafe.Pointer(&descriptor.ColorFormats[0]))
+		}
+
+		desc.depthStencilFormat = descriptor.DepthStencilFormat
+		desc.sampleCount = descriptor.SampleCount
+		desc.depthReadOnly = descriptor.DepthReadOnly
+		desc.stencilReadOnly = descriptor.StencilReadOnly
+	}
+
+	ref, _, _ := wgpuDeviceCreateRenderBundleEncoder.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
+	err := p.getErr()
+	if err != nil {
+		return nil, err
+	}
+	if ref == 0 {
+		panic("Failed to acquire RenderPipeline")
+	}
+
+	return &RenderBundleEncoder{wgpuRenderBundleEncoder(ref)}, nil
 }
 
 func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) {
@@ -1830,6 +1878,21 @@ func (p *RenderPassEncoder) SetViewport(x, y, width, height, minDepth, maxDepth 
 	)
 }
 
+func (p *RenderPassEncoder) ExecuteBundles(bundles ...*RenderBundle) {
+	bundlesCount := len(bundles)
+	if bundlesCount == 0 {
+		wgpuRenderPassEncoderExecuteBundles.Call(uintptr(p.ref), 0, 0)
+		return
+	}
+
+	bundlesSlice := make([]wgpuRenderBundle, bundlesCount)
+	for i, v := range bundles {
+		bundlesSlice[i] = v.ref
+	}
+
+	wgpuRenderPassEncoderExecuteBundles.Call(uintptr(p.ref), uintptr(bundlesCount), uintptr(unsafe.Pointer(&bundlesSlice[0])))
+}
+
 func (p *RenderPassEncoder) InsertDebugMarker(markerLabel string) {
 	wgpuRenderPassEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(cstring(markerLabel))))
 }
@@ -1931,6 +1994,109 @@ func (p *Texture) Destroy() {
 	wgpuTextureDestroy.Call(uintptr(p.ref))
 }
 
+func (p *RenderBundleEncoder) Draw(vertexCount, instanceCount, firstVertex, firstInstance uint32) {
+	wgpuRenderBundleEncoderDraw.Call(
+		uintptr(p.ref),
+		uintptr(vertexCount),
+		uintptr(instanceCount),
+		uintptr(firstVertex),
+		uintptr(firstInstance),
+	)
+}
+
+func (p *RenderBundleEncoder) DrawIndexed(indexCount, instanceCount, firstIndex, baseVertex, firstInstance uint32) {
+	wgpuRenderBundleEncoderDrawIndexed.Call(
+		uintptr(p.ref),
+		uintptr(indexCount),
+		uintptr(instanceCount),
+		uintptr(firstIndex),
+		uintptr(baseVertex),
+		uintptr(firstInstance),
+	)
+}
+
+func (p *RenderBundleEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	wgpuRenderBundleEncoderDrawIndexedIndirect.Call(
+		uintptr(p.ref),
+		uintptr(indirectBuffer.ref),
+		uintptr(indirectOffset),
+	)
+}
+
+func (p *RenderBundleEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
+	wgpuRenderBundleEncoderDrawIndirect.Call(
+		uintptr(p.ref),
+		uintptr(indirectBuffer.ref),
+		uintptr(indirectOffset),
+	)
+}
+
+func (p *RenderBundleEncoder) Finish(descriptor *RenderBundleDescriptor) *RenderBundle {
+	var desc wgpuRenderBundleDescriptor
+
+	if descriptor != nil {
+		desc.label = cstring(descriptor.Label)
+	}
+
+	ref, _, _ := wgpuRenderBundleEncoderFinish.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&desc)))
+	if ref == 0 {
+		panic("Failed to accquire RenderBundle")
+	}
+	return &RenderBundle{ref: wgpuRenderBundle(ref)}
+}
+
+func (p *RenderBundleEncoder) InsertDebugMarker(markerLabel string) {
+	markerLabelStr := cstring(markerLabel)
+
+	wgpuRenderBundleEncoderInsertDebugMarker.Call(uintptr(p.ref), uintptr(unsafe.Pointer(&markerLabelStr)))
+}
+
+func (p *RenderBundleEncoder) PopDebugGroup() {
+	wgpuRenderBundleEncoderPopDebugGroup.Call(uintptr(p.ref))
+}
+
+func (p *RenderBundleEncoder) PushDebugGroup(groupLabel string) {
+	groupLabelStr := cstring(groupLabel)
+
+	wgpuRenderBundleEncoderPushDebugGroup.Call(uintptr(p.ref), uintptr(unsafe.Pointer(groupLabelStr)))
+}
+
+func (p *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, dynamicOffsets []uint32) {
+	dynamicOffsetCount := len(dynamicOffsets)
+	if dynamicOffsetCount == 0 {
+		wgpuRenderBundleEncoderSetBindGroup.Call(uintptr(p.ref), uintptr(groupIndex), uintptr(group.ref), 0, 0)
+	} else {
+		wgpuRenderBundleEncoderSetBindGroup.Call(
+			uintptr(p.ref), uintptr(groupIndex), uintptr(group.ref),
+			uintptr(dynamicOffsetCount), uintptr(unsafe.Pointer(&dynamicOffsets[0])),
+		)
+	}
+}
+
+func (p *RenderBundleEncoder) SetIndexBuffer(buffer *Buffer, format IndexFormat, offset uint64, size uint64) {
+	wgpuRenderBundleEncoderSetIndexBuffer.Call(
+		uintptr(p.ref),
+		uintptr(buffer.ref),
+		uintptr(format),
+		uintptr(offset),
+		uintptr(size),
+	)
+}
+
+func (p *RenderBundleEncoder) SetPipeline(pipeline *RenderPipeline) {
+	wgpuRenderBundleEncoderSetPipeline.Call(uintptr(p.ref), uintptr(pipeline.ref))
+}
+
+func (p *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offset uint64, size uint64) {
+	wgpuRenderBundleEncoderSetVertexBuffer.Call(
+		uintptr(p.ref),
+		uintptr(slot),
+		uintptr(buffer.ref),
+		uintptr(offset),
+		uintptr(size),
+	)
+}
+
 func (p *Buffer) Drop()          { wgpuBufferDrop.Call(uintptr(p.ref)) }
 func (p *CommandEncoder) Drop()  { wgpuCommandEncoderDrop.Call(uintptr(p.ref)) }
 func (p *QuerySet) Drop()        { wgpuQuerySetDrop.Call(uintptr(p.ref)) }
@@ -1944,3 +2110,4 @@ func (p *BindGroup) Drop()       { wgpuBindGroupDrop.Call(uintptr(p.ref)) }
 func (p *ShaderModule) Drop()    { wgpuShaderModuleDrop.Call(uintptr(p.ref)) }
 func (p *CommandBuffer) Drop()   { wgpuCommandBufferDrop.Call(uintptr(p.ref)) }
 func (p *ComputePipeline) Drop() { wgpuComputePipelineDrop.Call(uintptr(p.ref)) }
+func (p *RenderBundle) Drop()    { wgpuRenderBundleDrop.Call(uintptr(p.ref)) }
