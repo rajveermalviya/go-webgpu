@@ -84,16 +84,23 @@ var (
 	wgpuGenerateReport         = lib.NewProc("wgpuGenerateReport")
 	wgpuFree                   = lib.NewProc("wgpuFree")
 
-	wgpuDeviceDrop          = lib.NewProc("wgpuDeviceDrop")
-	wgpuBindGroupLayoutDrop = lib.NewProc("wgpuBindGroupLayoutDrop")
+	wgpuAdapterDrop         = lib.NewProc("wgpuAdapterDrop")
 	wgpuBindGroupDrop       = lib.NewProc("wgpuBindGroupDrop")
+	wgpuBindGroupLayoutDrop = lib.NewProc("wgpuBindGroupLayoutDrop")
 	wgpuBufferDrop          = lib.NewProc("wgpuBufferDrop")
+	wgpuCommandBufferDrop   = lib.NewProc("wgpuCommandBufferDrop")
+	wgpuCommandEncoderDrop  = lib.NewProc("wgpuCommandEncoderDrop")
 	wgpuComputePipelineDrop = lib.NewProc("wgpuComputePipelineDrop")
+	wgpuDeviceDrop          = lib.NewProc("wgpuDeviceDrop")
+	wgpuPipelineLayoutDrop  = lib.NewProc("wgpuPipelineLayoutDrop")
+	wgpuQuerySetDrop        = lib.NewProc("wgpuQuerySetDrop")
+	wgpuRenderBundleDrop    = lib.NewProc("wgpuRenderBundleDrop")
 	wgpuRenderPipelineDrop  = lib.NewProc("wgpuRenderPipelineDrop")
 	wgpuSamplerDrop         = lib.NewProc("wgpuSamplerDrop")
 	wgpuShaderModuleDrop    = lib.NewProc("wgpuShaderModuleDrop")
-	wgpuTextureViewDrop     = lib.NewProc("wgpuTextureViewDrop")
+	wgpuSurfaceDrop         = lib.NewProc("wgpuSurfaceDrop")
 	wgpuTextureDrop         = lib.NewProc("wgpuTextureDrop")
+	wgpuTextureViewDrop     = lib.NewProc("wgpuTextureViewDrop")
 
 	wgpuInstanceRequestAdapter                       = lib.NewProc("wgpuInstanceRequestAdapter")
 	wgpuInstanceCreateSurface                        = lib.NewProc("wgpuInstanceCreateSurface")
@@ -135,7 +142,6 @@ var (
 	wgpuCommandEncoderInsertDebugMarker              = lib.NewProc("wgpuCommandEncoderInsertDebugMarker")
 	wgpuCommandEncoderPopDebugGroup                  = lib.NewProc("wgpuCommandEncoderPopDebugGroup")
 	wgpuCommandEncoderPushDebugGroup                 = lib.NewProc("wgpuCommandEncoderPushDebugGroup")
-	wgpuCommandEncoderDrop                           = lib.NewProc("wgpuCommandEncoderDrop")
 	wgpuComputePassEncoderDispatchWorkgroups         = lib.NewProc("wgpuComputePassEncoderDispatchWorkgroups")
 	wgpuComputePassEncoderDispatchWorkgroupsIndirect = lib.NewProc("wgpuComputePassEncoderDispatchWorkgroupsIndirect")
 	wgpuComputePassEncoderEnd                        = lib.NewProc("wgpuComputePassEncoderEnd")
@@ -186,10 +192,6 @@ var (
 	wgpuRenderBundleEncoderSetIndexBuffer            = lib.NewProc("wgpuRenderBundleEncoderSetIndexBuffer")
 	wgpuRenderBundleEncoderSetPipeline               = lib.NewProc("wgpuRenderBundleEncoderSetPipeline")
 	wgpuRenderBundleEncoderSetVertexBuffer           = lib.NewProc("wgpuRenderBundleEncoderSetVertexBuffer")
-	wgpuQuerySetDrop                                 = lib.NewProc("wgpuQuerySetDrop")
-	wgpuPipelineLayoutDrop                           = lib.NewProc("wgpuPipelineLayoutDrop")
-	wgpuCommandBufferDrop                            = lib.NewProc("wgpuCommandBufferDrop")
-	wgpuRenderBundleDrop                             = lib.NewProc("wgpuRenderBundleDrop")
 )
 
 var logCallback = windows.NewCallbackCDecl(func(level LogLevel, msg *byte) (_ uintptr) {
@@ -593,11 +595,11 @@ func (p *Device) Poll(wait bool, wrappedSubmissionIndex *WrappedSubmissionIndex)
 		index.queue = wrappedSubmissionIndex.Queue.ref
 		index.submissionIndex = wgpuSubmissionIndex(wrappedSubmissionIndex.SubmissionIndex)
 
-		r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool[uintptr](wait), uintptr(unsafe.Pointer(&index)))
+		r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool(wait), uintptr(unsafe.Pointer(&index)))
 		return gobool(r)
 	}
 
-	r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool[uintptr](wait), 0)
+	r, _, _ := wgpuDevicePoll.Call(uintptr(p.ref), cbool(wait), 0)
 	return gobool(r)
 }
 
@@ -2097,17 +2099,19 @@ func (p *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offse
 	)
 }
 
+func (p *Adapter) Drop()         { wgpuAdapterDrop.Call(uintptr(p.ref)) }
+func (p *BindGroup) Drop()       { wgpuBindGroupDrop.Call(uintptr(p.ref)) }
+func (p *BindGroupLayout) Drop() { wgpuBindGroupLayoutDrop.Call(uintptr(p.ref)) }
 func (p *Buffer) Drop()          { wgpuBufferDrop.Call(uintptr(p.ref)) }
+func (p *CommandBuffer) Drop()   { wgpuCommandBufferDrop.Call(uintptr(p.ref)) }
 func (p *CommandEncoder) Drop()  { wgpuCommandEncoderDrop.Call(uintptr(p.ref)) }
+func (p *ComputePipeline) Drop() { wgpuComputePipelineDrop.Call(uintptr(p.ref)) }
+func (p *PipelineLayout) Drop()  { wgpuPipelineLayoutDrop.Call(uintptr(p.ref)) }
 func (p *QuerySet) Drop()        { wgpuQuerySetDrop.Call(uintptr(p.ref)) }
+func (p *RenderBundle) Drop()    { wgpuRenderBundleDrop.Call(uintptr(p.ref)) }
 func (p *RenderPipeline) Drop()  { wgpuRenderPipelineDrop.Call(uintptr(p.ref)) }
+func (p *Sampler) Drop()         { wgpuSamplerDrop.Call(uintptr(p.ref)) }
+func (p *ShaderModule) Drop()    { wgpuShaderModuleDrop.Call(uintptr(p.ref)) }
+func (p *Surface) Drop()         { wgpuSurfaceDrop.Call(uintptr(p.ref)) }
 func (p *Texture) Drop()         { wgpuTextureDrop.Call(uintptr(p.ref)) }
 func (p *TextureView) Drop()     { wgpuTextureViewDrop.Call(uintptr(p.ref)) }
-func (p *Sampler) Drop()         { wgpuSamplerDrop.Call(uintptr(p.ref)) }
-func (p *BindGroupLayout) Drop() { wgpuBindGroupLayoutDrop.Call(uintptr(p.ref)) }
-func (p *PipelineLayout) Drop()  { wgpuPipelineLayoutDrop.Call(uintptr(p.ref)) }
-func (p *BindGroup) Drop()       { wgpuBindGroupDrop.Call(uintptr(p.ref)) }
-func (p *ShaderModule) Drop()    { wgpuShaderModuleDrop.Call(uintptr(p.ref)) }
-func (p *CommandBuffer) Drop()   { wgpuCommandBufferDrop.Call(uintptr(p.ref)) }
-func (p *ComputePipeline) Drop() { wgpuComputePipelineDrop.Call(uintptr(p.ref)) }
-func (p *RenderBundle) Drop()    { wgpuRenderBundleDrop.Call(uintptr(p.ref)) }

@@ -2110,17 +2110,19 @@ func (p *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offse
 	)
 }
 
+func (p *Adapter) Drop()         { C.wgpuAdapterDrop(p.ref) }
+func (p *BindGroup) Drop()       { C.wgpuBindGroupDrop(p.ref) }
+func (p *BindGroupLayout) Drop() { C.wgpuBindGroupLayoutDrop(p.ref) }
 func (p *Buffer) Drop()          { C.wgpuBufferDrop(p.ref) }
+func (p *CommandBuffer) Drop()   { C.wgpuCommandBufferDrop(p.ref) }
 func (p *CommandEncoder) Drop()  { C.wgpuCommandEncoderDrop(p.ref) }
+func (p *ComputePipeline) Drop() { C.wgpuComputePipelineDrop(p.ref) }
+func (p *PipelineLayout) Drop()  { C.wgpuPipelineLayoutDrop(p.ref) }
 func (p *QuerySet) Drop()        { C.wgpuQuerySetDrop(p.ref) }
+func (p *RenderBundle) Drop()    { C.wgpuRenderBundleDrop(p.ref) }
 func (p *RenderPipeline) Drop()  { C.wgpuRenderPipelineDrop(p.ref) }
+func (p *Sampler) Drop()         { C.wgpuSamplerDrop(p.ref) }
+func (p *ShaderModule) Drop()    { C.wgpuShaderModuleDrop(p.ref) }
+func (p *Surface) Drop()         { C.wgpuSurfaceDrop(p.ref) }
 func (p *Texture) Drop()         { C.wgpuTextureDrop(p.ref) }
 func (p *TextureView) Drop()     { C.wgpuTextureViewDrop(p.ref) }
-func (p *Sampler) Drop()         { C.wgpuSamplerDrop(p.ref) }
-func (p *BindGroupLayout) Drop() { C.wgpuBindGroupLayoutDrop(p.ref) }
-func (p *PipelineLayout) Drop()  { C.wgpuPipelineLayoutDrop(p.ref) }
-func (p *BindGroup) Drop()       { C.wgpuBindGroupDrop(p.ref) }
-func (p *ShaderModule) Drop()    { C.wgpuShaderModuleDrop(p.ref) }
-func (p *CommandBuffer) Drop()   { C.wgpuCommandBufferDrop(p.ref) }
-func (p *ComputePipeline) Drop() { C.wgpuComputePipelineDrop(p.ref) }
-func (p *RenderBundle) Drop()    { C.wgpuRenderBundleDrop(p.ref) }
