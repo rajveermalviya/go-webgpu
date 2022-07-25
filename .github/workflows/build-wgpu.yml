@@ -214,7 +214,7 @@ jobs:
             export RUSTFLAGS="-L $PWD/tmp-lib"
           fi
 
-          export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+          export CARGO_PROFILE_RELEASE_OPT_LEVEL=2
           cargo build --release
           ls -al target/$CARGO_BUILD_TARGET/release/
           mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
