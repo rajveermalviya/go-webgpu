@@ -4,8 +4,6 @@ package wgpu
 
 import (
 	"unsafe"
-
-	"golang.org/x/exp/constraints"
 )
 
 //go:linkname gostring runtime.gostring
@@ -17,14 +15,14 @@ func cstring(v string) *byte {
 	return (*byte)(unsafe.Pointer(&s[0]))
 }
 
-func cbool[T constraints.Integer](v bool) T {
+func cbool(v bool) uintptr {
 	if v {
 		return 1
 	}
 	return 0
 }
 
-func gobool[T constraints.Integer](v T) bool {
+func gobool(v uintptr) bool {
 	if v == 0 {
 		return false
 	}
