@@ -13,8 +13,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CARGO_BUILD_TARGET: ${{ matrix.target }}
-      GOOS: ${{ matrix.goos }}
-      GOARCH: ${{ matrix.goarch }}
     strategy:
       fail-fast: false
       matrix:
@@ -99,6 +97,21 @@ jobs:
               echo "CLANG_PATH=$CC" >> $GITHUB_ENV
               echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
 
+          - name: build - android/386
+            os: ubuntu-22.04
+            toolchain: stable
+            target: i686-linux-android
+            goos: android
+            goarch: '386'
+            setup_env: |
+              set -x
+              export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android$ANDROID_MIN_SDK-clang
+
+              echo "CC=$CC" >> $GITHUB_ENV
+              echo "CXX=$CC++" >> $GITHUB_ENV
+              echo "CLANG_PATH=$CC" >> $GITHUB_ENV
+              echo "CARGO_TARGET_I686_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
+
           - name: build - android/arm64
             os: ubuntu-22.04
             toolchain: stable
@@ -181,21 +194,20 @@ jobs:
 
           export CARGO_PROFILE_RELEASE_OPT_LEVEL=2
           cargo build --release
-          ls -al target/$CARGO_BUILD_TARGET/release/
-          mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
+          ls -al target/${{ matrix.target }}/release/
 
           if [ ${{ matrix.goos }} == "windows" ]; then
-            mv target/$CARGO_BUILD_TARGET/release/wgpu_native.dll target/$CARGO_BUILD_TARGET/release/"$GOOS"_"$GOARCH"_wgpu_native.dll
+            mv target/${{ matrix.target }}/release/wgpu_native.dll target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_wgpu_native.dll
           else
-            mv target/$CARGO_BUILD_TARGET/release/libwgpu_native.a target/$CARGO_BUILD_TARGET/release/"$GOOS"_"$GOARCH"_libwgpu_native.a
+            mv target/${{ matrix.target }}/release/libwgpu_native.a target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_libwgpu_native.a
           fi
 
       - uses: actions/upload-artifact@v3
         with:
           name: wgpu-artifacts
           path: |
-            ${{ github.workspace }}/tmp/target/${{ env.CARGO_BUILD_TARGET }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_wgpu_native.dll
-            ${{ github.workspace }}/tmp/target/${{ env.CARGO_BUILD_TARGET }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_libwgpu_native.a
+            ${{ github.workspace }}/tmp/target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_wgpu_native.dll
+            ${{ github.workspace }}/tmp/target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_libwgpu_native.a
 
   send-pr:
     needs: build-wgpu
