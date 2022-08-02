@@ -3,10 +3,10 @@ module github.com/rajveermalviya/go-webgpu/examples
 go 1.18
 
 require (
-	gioui.org v0.0.0-20220405111203-69f982e26f21
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220622232848-a6c407ee30a0
-	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-20220703043251-f9a0e53173ae
-	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664
+	gioui.org v0.0.0-20220801181544-dbbae0519e24
+	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220712193148-63cf1f4ef61f
+	github.com/rajveermalviya/go-webgpu/wgpu v0.1.1
+	golang.org/x/sys v0.0.0-20220731174439-a90be440212d
 )
 
 require (
@@ -15,8 +15,7 @@ require (
 	github.com/benoitkugler/textlayout v0.1.1 // indirect
 	github.com/gioui/uax v0.2.1-0.20220325163150-e3d987515a12 // indirect
 	github.com/go-text/typesetting v0.0.0-20220411150340-35994bc27a7b // indirect
-	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb // indirect
-	golang.org/x/exp/shiny v0.0.0-20220328175248-053ad81199eb // indirect
+	golang.org/x/exp/shiny v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
