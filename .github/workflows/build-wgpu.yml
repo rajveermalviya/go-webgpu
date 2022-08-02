@@ -227,6 +227,7 @@ jobs:
 
           declare -a arr=(
               "android_amd64"
+              "android_386"
               "android_arm"
               "android_arm64"
               "darwin_amd64"
