@@ -1,6 +1,7 @@
 package lib
 
 import (
+	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/android/386"
 	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/android/amd64"
 	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/android/arm"
 	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/android/arm64"
