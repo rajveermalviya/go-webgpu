@@ -2,8 +2,6 @@ module github.com/rajveermalviya/go-webgpu/examples/gio-windowing
 
 go 1.18
 
-replace gioui.org => github.com/rajveermalviya/gio v0.0.0-20220614040930-5982d10dbfcc
-
 require (
 	gioui.org v0.0.0-00010101000000-000000000000
 	github.com/rajveermalviya/go-webgpu/wgpu v0.1.1

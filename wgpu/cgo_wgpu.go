@@ -6,6 +6,7 @@ package wgpu
 
 // Android
 #cgo android,amd64 LDFLAGS: -L${SRCDIR}/lib/android/amd64 -lwgpu_native
+#cgo android,386 LDFLAGS: -L${SRCDIR}/lib/android/386 -lwgpu_native
 #cgo android,arm64 LDFLAGS: -L${SRCDIR}/lib/android/arm64 -lwgpu_native
 #cgo android,arm LDFLAGS: -L${SRCDIR}/lib/android/arm -lwgpu_native
 
