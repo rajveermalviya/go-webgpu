@@ -65,24 +65,23 @@ go run github.com/rajveermalviya/go-webgpu/examples/boids@latest
 
 ![](./examples/boids/image-msaa.png)
 
-### [gio-windowing](./examples/gio-windowing/main.go)
+### [gamen-windowing](./examples/gamen-windowing/main.go)
 
-This example uses [gio](https://gioui.org) toolkit for windowing, it **doesn't** use cgo on windows.
+This example uses [gamen](https://github.com/rajveermalviya/gamen) for windowing, it **doesn't** use cgo on windows.
 
 ```shell
-go run github.com/rajveermalviya/go-webgpu/examples/gio-windowing@latest
+go run github.com/rajveermalviya/go-webgpu/examples/gamen-windowing@latest
 ```
 
-This example also supports [running on android](https://gioui.org/doc/install/android).
+This example also supports running on android.
 
 ```shell
-# install android sdk with ndk bundle
-sdkmanager ndk-bundle
+# install android sdk
+# connect your device and setup adb / run android emulator
 
-# install gogio to build apk
-go install gioui.org/cmd/gogio@latest
+# install tsukuru to build apk
+go install github.com/rajveermalviya/tsukuru@latest
 
-cd examples/gio-windowing
-gogio -arch arm64,arm,amd64 -target android .
-adb install gio-windowing.apk
+cd examples/gamen-windowing
+tsukuru run apk .
 ```

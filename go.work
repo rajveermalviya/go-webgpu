@@ -3,6 +3,6 @@ go 1.18
 use (
 	./cmd/gen_enums
 	./examples
-	./examples/gio-windowing
+	./examples/gamen-windowing
 	./wgpu
 )
