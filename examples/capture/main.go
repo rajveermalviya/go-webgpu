@@ -64,9 +64,7 @@ func main() {
 	}
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
-		RequiredLimits: &wgpu.RequiredLimits{
-			Limits: wgpu.Limits{MaxBindGroups: 1},
-		},
+		Label: "Device",
 	})
 	if err != nil {
 		panic(err)

@@ -151,9 +151,7 @@ func main() {
 	}
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
-		DeviceExtras: &wgpu.DeviceExtras{
-			Label: "Device",
-		},
+		Label: "Device",
 	})
 	if err != nil {
 		panic(err)

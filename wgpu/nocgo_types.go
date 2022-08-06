@@ -187,10 +187,8 @@ type wgpuDeviceDescriptor struct {
 }
 
 type wgpuDeviceExtras struct {
-	chain          wgpuChainedStruct
-	nativeFeatures FeatureName
-	label          *byte
-	tracePath      *byte
+	chain     wgpuChainedStruct
+	tracePath *byte
 }
 
 type wgpuBufferBindingLayout struct {

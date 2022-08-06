@@ -110,9 +110,7 @@ type AdapterProperties struct {
 }
 
 type DeviceExtras struct {
-	NativeFeatures FeatureName
-	Label          string
-	TracePath      string
+	TracePath string
 }
 
 type RequiredLimits struct {
@@ -120,12 +118,9 @@ type RequiredLimits struct {
 }
 
 type DeviceDescriptor struct {
-	// unused in wgpu
-	// Label     string
-	// RequiredFeatures      []FeatureName
-	// RequiredFeaturesCount uint32
-
-	RequiredLimits *RequiredLimits
+	Label            string
+	RequiredFeatures []FeatureName
+	RequiredLimits   *RequiredLimits
 
 	// WGPUChainedStruct -> WGPUDeviceExtras
 	DeviceExtras *DeviceExtras

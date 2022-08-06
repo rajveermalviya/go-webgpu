@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  WGPU_COMMIT: 2d32686a4a8f17f6b90926dc770b0480a28db942
+  WGPU_COMMIT: 6d149bf3b29c793533cde9ed1dc47c2ba955b324
   ANDROID_MIN_SDK: "21"
 
 jobs:

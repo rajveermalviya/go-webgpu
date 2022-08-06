@@ -3,6 +3,7 @@ github.com/benoitkugler/textlayout v0.1.1/go.mod h1:o+1hFV+JSHBC9qNLIuwVoLedERU7
 github.com/benoitkugler/textlayout-testdata v0.1.1/go.mod h1:i/qZl09BbUOtd7Bu/W1CAubRwTWrEXWq6JwMkw8wYxo=
 github.com/go-text/typesetting v0.0.0-20220411150340-35994bc27a7b h1:WINlj3ANt+CVrO2B4NGDHRlPvEWZPxjhb7z+JKypwXI=
 github.com/go-text/typesetting v0.0.0-20220411150340-35994bc27a7b/go.mod h1:ZNYu5saGoMOqtkVH5T8onTwhzenDUVszI+5WFHJRaxQ=
+github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
 github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/rajveermalviya/gio v0.0.0-20220614040930-5982d10dbfcc h1:gFiHAhItCeJ/KwWoBPxoKQhq9/LHYU5it/SE4+ezw6Q=
 github.com/rajveermalviya/gio v0.0.0-20220614040930-5982d10dbfcc/go.mod h1:WHoHbUjH91BJS2xkfps2AhKxji+9o3xwfsphGsCBfnM=

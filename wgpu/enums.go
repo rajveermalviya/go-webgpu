@@ -516,8 +516,11 @@ const (
 	FeatureName_TextureCompressionETC2                     FeatureName = 0x00000007
 	FeatureName_TextureCompressionASTC                     FeatureName = 0x00000008
 	FeatureName_IndirectFirstInstance                      FeatureName = 0x00000009
-	NativeFeature_PUSH_CONSTANTS                           FeatureName = 0x04000000
-	NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES FeatureName = 0x10000000
+	NativeFeature_PUSH_CONSTANTS                           FeatureName = 0x60000001
+	NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES FeatureName = 0x60000002
+	NativeFeature_MULTI_DRAW_INDIRECT                      FeatureName = 0x60000003
+	NativeFeature_MULTI_DRAW_INDIRECT_COUNT                FeatureName = 0x60000004
+	NativeFeature_VERTEX_WRITABLE_STORAGE                  FeatureName = 0x60000005
 )
 
 func (v FeatureName) String() string {
@@ -546,6 +549,12 @@ func (v FeatureName) String() string {
 		return "NativeFeature_PUSH_CONSTANTS"
 	case NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES:
 		return "NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES"
+	case NativeFeature_MULTI_DRAW_INDIRECT:
+		return "NativeFeature_MULTI_DRAW_INDIRECT"
+	case NativeFeature_MULTI_DRAW_INDIRECT_COUNT:
+		return "NativeFeature_MULTI_DRAW_INDIRECT_COUNT"
+	case NativeFeature_VERTEX_WRITABLE_STORAGE:
+		return "NativeFeature_VERTEX_WRITABLE_STORAGE"
 	default:
 		return ""
 	}

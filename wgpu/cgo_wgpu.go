@@ -406,13 +406,32 @@ func (p *Adapter) GetProperties() AdapterProperties {
 func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 	var desc C.WGPUDeviceDescriptor
 
-	desc.requiredLimits = (*C.WGPURequiredLimits)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimits{}))))
-	defer C.free(unsafe.Pointer(desc.requiredLimits))
-
 	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
+
+			desc.label = label
+		}
+
+		requiredFeaturesCount := len(descriptor.RequiredFeatures)
+		if requiredFeaturesCount != 0 {
+			requiredFeatures := C.malloc(C.size_t(requiredFeaturesCount) * C.size_t(unsafe.Sizeof(C.WGPUFeatureName(0))))
+			defer C.free(requiredFeatures)
+
+			requiredFeaturesSlice := unsafe.Slice((*FeatureName)(requiredFeatures), requiredFeaturesCount)
+			copy(requiredFeaturesSlice, descriptor.RequiredFeatures)
+
+			desc.requiredFeatures = (*C.WGPUFeatureName)(requiredFeatures)
+			desc.requiredFeaturesCount = C.uint32_t(requiredFeaturesCount)
+		}
+
 		if descriptor.RequiredLimits != nil {
+			requiredLimits := (*C.WGPURequiredLimits)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimits{}))))
+			defer C.free(unsafe.Pointer(requiredLimits))
+
 			l := descriptor.RequiredLimits.Limits
-			desc.requiredLimits.limits = C.WGPULimits{
+			requiredLimits.limits = C.WGPULimits{
 				maxTextureDimension1D:                     C.uint32_t(l.MaxTextureDimension1D),
 				maxTextureDimension2D:                     C.uint32_t(l.MaxTextureDimension2D),
 				maxTextureDimension3D:                     C.uint32_t(l.MaxTextureDimension3D),
@@ -440,6 +459,7 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 				maxComputeWorkgroupSizeZ:                  C.uint32_t(l.MaxComputeWorkgroupSizeZ),
 				maxComputeWorkgroupsPerDimension:          C.uint32_t(l.MaxComputeWorkgroupsPerDimension),
 			}
+			desc.requiredLimits = requiredLimits
 
 			requiredLimitsExtras := (*C.WGPURequiredLimitsExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPURequiredLimitsExtras{}))))
 			defer C.free(unsafe.Pointer(requiredLimitsExtras))
@@ -461,16 +481,6 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 
 			deviceExtras.chain.next = nil
 			deviceExtras.chain.sType = C.WGPUSType_DeviceExtras
-			deviceExtras.nativeFeatures = C.WGPUNativeFeature(descriptor.DeviceExtras.NativeFeatures)
-
-			if descriptor.DeviceExtras.Label != "" {
-				label := C.CString(descriptor.DeviceExtras.Label)
-				defer C.free(unsafe.Pointer(label))
-
-				deviceExtras.label = label
-			} else {
-				deviceExtras.label = nil
-			}
 
 			if descriptor.DeviceExtras.TracePath != "" {
 				tracePath := C.CString(descriptor.DeviceExtras.TracePath)
@@ -1795,6 +1805,46 @@ func (p *RenderPassEncoder) DrawIndexedIndirect(indirectBuffer *Buffer, indirect
 
 func (p *RenderPassEncoder) DrawIndirect(indirectBuffer *Buffer, indirectOffset uint64) {
 	C.wgpuRenderPassEncoderDrawIndirect(p.ref, indirectBuffer.ref, C.uint64_t(indirectOffset))
+}
+
+func (p *RenderPassEncoder) MultiDrawIndirect(encoder RenderPassEncoder, buffer Buffer, offset uint64, count uint32) {
+	C.wgpuRenderPassEncoderMultiDrawIndirect(
+		encoder.ref,
+		buffer.ref,
+		C.uint64_t(offset),
+		C.uint32_t(count),
+	)
+}
+
+func (p *RenderPassEncoder) MultiDrawIndexedIndirect(encoder RenderPassEncoder, buffer Buffer, offset uint64, count uint32) {
+	C.wgpuRenderPassEncoderMultiDrawIndexedIndirect(
+		encoder.ref,
+		buffer.ref,
+		C.uint64_t(offset),
+		C.uint32_t(count),
+	)
+}
+
+func (p *RenderPassEncoder) MultiDrawIndirectCount(encoder RenderPassEncoder, buffer Buffer, offset uint64, countBuffer Buffer, countBufferOffset uint64, maxCount uint32) {
+	C.wgpuRenderPassEncoderMultiDrawIndirectCount(
+		encoder.ref,
+		buffer.ref,
+		C.uint64_t(offset),
+		countBuffer.ref,
+		C.uint64_t(countBufferOffset),
+		C.uint32_t(maxCount),
+	)
+}
+
+func (p *RenderPassEncoder) MultiDrawIndexedIndirectCount(encoder RenderPassEncoder, buffer Buffer, offset uint64, countBuffer Buffer, countBufferOffset uint64, maxCount uint32) {
+	C.wgpuRenderPassEncoderMultiDrawIndexedIndirectCount(
+		encoder.ref,
+		buffer.ref,
+		C.uint64_t(offset),
+		countBuffer.ref,
+		C.uint64_t(countBufferOffset),
+		C.uint32_t(maxCount),
+	)
 }
 
 func (p *RenderPassEncoder) End() {
