@@ -193,41 +193,6 @@ func main() {
 	}
 	defer indexBuf.Drop()
 
-	bindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
-		Entries: []wgpu.BindGroupLayoutEntry{
-			{
-				Binding:    0,
-				Visibility: wgpu.ShaderStage_Vertex,
-				Buffer: wgpu.BufferBindingLayout{
-					Type:             wgpu.BufferBindingType_Uniform,
-					HasDynamicOffset: false,
-					MinBindingSize:   64,
-				},
-			},
-			{
-				Binding:    1,
-				Visibility: wgpu.ShaderStage_Fragment,
-				Texture: wgpu.TextureBindingLayout{
-					Multisampled:  false,
-					SampleType:    wgpu.TextureSampleType_Uint,
-					ViewDimension: wgpu.TextureViewDimension_2D,
-				},
-			},
-		},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer bindGroupLayout.Drop()
-
-	pipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
-		BindGroupLayouts: []*wgpu.BindGroupLayout{bindGroupLayout},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer pipelineLayout.Drop()
-
 	size := 256
 	texels := createTexels(size)
 	textureExtent := wgpu.Extent3D{
@@ -273,26 +238,6 @@ func main() {
 	}
 	defer uniformBuf.Drop()
 
-	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
-		Layout: bindGroupLayout,
-		Entries: []wgpu.BindGroupEntry{
-			{
-				Binding: 0,
-				Buffer:  uniformBuf,
-				Offset:  0,
-				Size:    0,
-			},
-			{
-				Binding:     1,
-				TextureView: textureView,
-			},
-		},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer bindGroup.Drop()
-
 	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label:          "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{Code: shader},
@@ -303,7 +248,6 @@ func main() {
 	defer shader.Drop()
 
 	pipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
-		Layout: pipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     shader,
 			EntryPoint: "vs_main",
@@ -351,6 +295,28 @@ func main() {
 		panic(err)
 	}
 	defer pipeline.Drop()
+
+	bindGroupLayout := pipeline.GetBindGroupLayout(0)
+
+	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+		Layout: bindGroupLayout,
+		Entries: []wgpu.BindGroupEntry{
+			{
+				Binding: 0,
+				Buffer:  uniformBuf,
+				Offset:  0,
+				Size:    0,
+			},
+			{
+				Binding:     1,
+				TextureView: textureView,
+			},
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer bindGroup.Drop()
 
 	for !window.ShouldClose() {
 		func() {

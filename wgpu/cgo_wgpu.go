@@ -470,9 +470,6 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 			requiredLimitsExtras.maxBufferSize = C.uint64_t(l.MaxBufferSize)
 
 			desc.requiredLimits.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(requiredLimitsExtras))
-		} else {
-			desc.requiredLimits.limits = C.WGPULimits{}
-			desc.requiredLimits.nextInChain = nil
 		}
 
 		if descriptor.DeviceExtras != nil {

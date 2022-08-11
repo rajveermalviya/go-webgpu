@@ -37,13 +37,10 @@ type BufferDimensions struct {
 
 func newBufferDimensions(width uint64, height uint64) BufferDimensions {
 	const bytesPerPixel = unsafe.Sizeof(uint32(0))
-
 	unpaddedBytesPerRow := width * uint64(bytesPerPixel)
-	align := wgpu.CopyBytesPerRowAlignment
-
-	paddedBytesPerRowPadding := (align - int(unpaddedBytesPerRow)%align) % align
+	align := uint64(wgpu.CopyBytesPerRowAlignment)
+	paddedBytesPerRowPadding := (align - unpaddedBytesPerRow%align) % align
 	paddedBytesPerRow := unpaddedBytesPerRow + uint64(paddedBytesPerRowPadding)
-
 	return BufferDimensions{
 		width,
 		height,

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  WGPU_COMMIT: 6d149bf3b29c793533cde9ed1dc47c2ba955b324
+  WGPU_COMMIT: 210dd1b339f906178c7aa69cc175798ddd02a54a
   ANDROID_MIN_SDK: "21"
 
 jobs:
@@ -181,7 +181,7 @@ jobs:
         run: |
           set -ex
 
-          git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
+          git clone --recursive https://github.com/rajveermalviya/wgpu-native.git tmp
           cd tmp
           git checkout $WGPU_COMMIT
 

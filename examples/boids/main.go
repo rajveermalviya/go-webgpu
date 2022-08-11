@@ -7,7 +7,6 @@ import (
 	"os"
 	"runtime"
 	"strconv"
-	"unsafe"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -140,61 +139,7 @@ func main() {
 	}
 	defer simParamBuffer.Drop()
 
-	computeBindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
-		Entries: []wgpu.BindGroupLayoutEntry{
-			{
-				Binding:    0,
-				Visibility: wgpu.ShaderStage_Compute,
-				Buffer: wgpu.BufferBindingLayout{
-					Type:             wgpu.BufferBindingType_Uniform,
-					HasDynamicOffset: false,
-					MinBindingSize:   uint64(len(simParamData)) * uint64(unsafe.Sizeof(float32(0))),
-				},
-			},
-			{
-				Binding:    1,
-				Visibility: wgpu.ShaderStage_Compute,
-				Buffer: wgpu.BufferBindingLayout{
-					Type:             wgpu.BufferBindingType_ReadOnlyStorage,
-					HasDynamicOffset: false,
-					MinBindingSize:   NumParticles * 16,
-				},
-			},
-			{
-				Binding:    2,
-				Visibility: wgpu.ShaderStage_Compute,
-				Buffer: wgpu.BufferBindingLayout{
-					Type:             wgpu.BufferBindingType_Storage,
-					HasDynamicOffset: false,
-					MinBindingSize:   NumParticles * 16,
-				},
-			},
-		},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer computeBindGroupLayout.Drop()
-
-	computePipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
-		Label:            "compute",
-		BindGroupLayouts: []*wgpu.BindGroupLayout{computeBindGroupLayout},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer computePipelineLayout.Drop()
-
-	renderPipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
-		Label: "render",
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer renderPipelineLayout.Drop()
-
 	renderPipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
-		Layout: renderPipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     drawShader,
 			EntryPoint: "main_vs",
@@ -255,8 +200,7 @@ func main() {
 	defer renderPipeline.Drop()
 
 	computePipeline, err := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
-		Label:  "Compute pipeline",
-		Layout: computePipelineLayout,
+		Label: "Compute pipeline",
 		Compute: wgpu.ProgrammableStageDescriptor{
 			Module:     computeShader,
 			EntryPoint: "main",
@@ -306,6 +250,8 @@ func main() {
 
 		particleBuffers = append(particleBuffers, particleBuffer)
 	}
+
+	computeBindGroupLayout := computePipeline.GetBindGroupLayout(0)
 
 	for i := 0; i < 2; i++ {
 		particleBindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{

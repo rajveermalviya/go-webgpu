@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"unsafe"
 
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -32,9 +34,11 @@ func init() {
 //go:embed shader.wgsl
 var shader string
 
+// Indicates a uint32 overflow in an intermediate Collatz value
+const OVERFLOW = 0xffffffff
+
 func main() {
 	numbers := []uint32{1, 2, 3, 4}
-	numbersSize := len(numbers) * int(unsafe.Sizeof(uint32(0)))
 
 	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
@@ -42,17 +46,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer adapter.Drop()
 
-	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
-		Label: "Device",
-	})
+	device, err := adapter.RequestDevice(nil)
 	if err != nil {
 		panic(err)
 	}
 	defer device.Drop()
 	queue := device.GetQueue()
 
-	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	shaderModule, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: shader,
@@ -61,79 +64,35 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer shader.Drop()
+	defer shaderModule.Drop()
+
+	size := uint64(len(numbers)) * uint64(unsafe.Sizeof(uint32(0)))
 
 	stagingBuffer, err := device.CreateBuffer(&wgpu.BufferDescriptor{
-		Label: "StagingBuffer",
-		Usage: wgpu.BufferUsage_MapRead | wgpu.BufferUsage_CopyDst,
-		Size:  uint64(numbersSize),
+		Size:             size,
+		Usage:            wgpu.BufferUsage_MapRead | wgpu.BufferUsage_CopyDst,
+		MappedAtCreation: false,
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer stagingBuffer.Drop()
 
-	storageBuffer, err := device.CreateBuffer(&wgpu.BufferDescriptor{
-		Label: "StorageBuffer",
-		Usage: wgpu.BufferUsage_Storage | wgpu.BufferUsage_CopyDst | wgpu.BufferUsage_CopySrc,
-		Size:  uint64(numbersSize),
+	storageBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+		Label:    "Storage Buffer",
+		Contents: wgpu.ToBytes(numbers),
+		Usage: wgpu.BufferUsage_Storage |
+			wgpu.BufferUsage_CopyDst |
+			wgpu.BufferUsage_CopySrc,
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer storageBuffer.Drop()
 
-	bindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
-		Label: "Bind Group Layout",
-		Entries: []wgpu.BindGroupLayoutEntry{{
-			Binding:    0,
-			Visibility: wgpu.ShaderStage_Compute,
-			Buffer: wgpu.BufferBindingLayout{
-				Type: wgpu.BufferBindingType_Storage,
-			},
-			Sampler: wgpu.SamplerBindingLayout{
-				Type: wgpu.SamplerBindingType_Undefined,
-			},
-			Texture: wgpu.TextureBindingLayout{
-				SampleType: wgpu.TextureSampleType_Undefined,
-			},
-			StorageTexture: wgpu.StorageTextureBindingLayout{
-				Access: wgpu.StorageTextureAccess_Undefined,
-			},
-		}},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer bindGroupLayout.Drop()
-
-	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
-		Label:  "Bind Group",
-		Layout: bindGroupLayout,
-		Entries: []wgpu.BindGroupEntry{{
-			Binding: 0,
-			Buffer:  storageBuffer,
-			Offset:  0,
-			Size:    uint64(numbersSize),
-		}},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer bindGroup.Drop()
-
-	pipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
-		BindGroupLayouts: []*wgpu.BindGroupLayout{bindGroupLayout},
-	})
-	if err != nil {
-		panic(err)
-	}
-	defer pipelineLayout.Drop()
-
 	computePipeline, err := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
-		Layout: pipelineLayout,
 		Compute: wgpu.ProgrammableStageDescriptor{
-			Module:     shader,
+			Module:     shaderModule,
 			EntryPoint: "main",
 		},
 	})
@@ -142,38 +101,71 @@ func main() {
 	}
 	defer computePipeline.Drop()
 
-	encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
-		Label: "Command Encoder",
+	bindGroupLayout := computePipeline.GetBindGroupLayout(0)
+	defer bindGroupLayout.Drop()
+
+	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+		Layout: bindGroupLayout,
+		Entries: []wgpu.BindGroupEntry{{
+			Binding: 0,
+			Buffer:  storageBuffer,
+		}},
 	})
 	if err != nil {
 		panic(err)
 	}
+	defer bindGroup.Drop()
 
-	computePass := encoder.BeginComputePass(&wgpu.ComputePassDescriptor{
-		Label: "Compute Pass",
-	})
+	encoder, err := device.CreateCommandEncoder(nil)
+	if err != nil {
+		panic(err)
+	}
 
+	computePass := encoder.BeginComputePass(nil)
 	computePass.SetPipeline(computePipeline)
 	computePass.SetBindGroup(0, bindGroup, nil)
 	computePass.DispatchWorkgroups(uint32(len(numbers)), 1, 1)
 	computePass.End()
 
-	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, uint64(numbersSize))
+	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, size)
 
-	cmdBuffer := encoder.Finish(nil)
-	queue.WriteBuffer(storageBuffer, 0, wgpu.ToBytes(numbers))
-	index := queue.Submit(cmdBuffer)
+	queue.Submit(encoder.Finish(nil))
 
-	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, uint64(numbersSize), func(status wgpu.BufferMapAsyncStatus) {
-		fmt.Println("MapAsync status:", status)
-	})
-	defer stagingBuffer.Unmap()
-
-	device.Poll(true, &wgpu.WrappedSubmissionIndex{
-		Queue:           queue,
-		SubmissionIndex: wgpu.SubmissionIndex(index),
+	var status wgpu.BufferMapAsyncStatus
+	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, size, func(s wgpu.BufferMapAsyncStatus) {
+		status = s
 	})
 
-	times := stagingBuffer.GetMappedRange(0, uint64(numbersSize))
-	fmt.Println(wgpu.FromBytes[uint32](times))
+	device.Poll(true, nil)
+
+	if status != wgpu.BufferMapAsyncStatus_Success {
+		panic(status)
+	}
+
+	steps := make([]uint32, len(numbers))
+	{
+		data := stagingBuffer.GetMappedRange(0, size)
+
+		copy(steps, wgpu.FromBytes[uint32](data))
+
+		data = nil
+		stagingBuffer.Unmap()
+	}
+
+	dispSteps := mapSlice(steps, func(e uint32) string {
+		if e == OVERFLOW {
+			return "OVERFLOW"
+		}
+		return strconv.FormatUint(uint64(e), 10)
+	})
+
+	fmt.Printf("Steps: [%s]\n", strings.Join(dispSteps, ", "))
+}
+
+func mapSlice[E1 any, E2 any](s []E1, f func(e E1) E2) []E2 {
+	rs := make([]E2, len(s))
+	for i, e := range s {
+		rs[i] = f(e)
+	}
+	return rs
 }

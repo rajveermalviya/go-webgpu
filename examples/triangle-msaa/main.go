@@ -78,17 +78,10 @@ func main() {
 	}
 	defer shader.Drop()
 
-	pipelineLayout, err := device.CreatePipelineLayout(nil)
-	if err != nil {
-		panic(err)
-	}
-	defer pipelineLayout.Drop()
-
 	swapChainFormat := surface.GetPreferredFormat(adapter)
 
 	pipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
-		Label:  "Render Pipeline",
-		Layout: pipelineLayout,
+		Label: "Render Pipeline",
 		Vertex: wgpu.VertexState{
 			Module:     shader,
 			EntryPoint: "vs_main",

@@ -23,7 +23,6 @@ type app struct {
 	device          *wgpu.Device
 	surface         *wgpu.Surface
 	shader          *wgpu.ShaderModule
-	pipelineLayout  *wgpu.PipelineLayout
 	pipeline        *wgpu.RenderPipeline
 	swapChainFormat wgpu.TextureFormat
 	swapChain       *wgpu.SwapChain
@@ -54,21 +53,12 @@ func (a *app) init() {
 		panic(err)
 	}
 
-	a.pipelineLayout, err = a.device.CreatePipelineLayout(nil)
-	if err != nil {
-		panic(err)
-	}
-
 	a.hasInit = true
 }
 
 func (a *app) deinit() {
 	a.hasInit = false
 
-	if a.pipelineLayout != nil {
-		a.pipelineLayout.Drop()
-		a.pipelineLayout = nil
-	}
 	if a.shader != nil {
 		a.shader.Drop()
 		a.shader = nil
@@ -94,8 +84,7 @@ func (a *app) surfaceInit() {
 	a.swapChainFormat = a.surface.GetPreferredFormat(a.adapter)
 
 	a.pipeline, err = a.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
-		Label:  "Render Pipeline",
-		Layout: a.pipelineLayout,
+		Label: "Render Pipeline",
 		Vertex: wgpu.VertexState{
 			Module:     a.shader,
 			EntryPoint: "vs_main",
