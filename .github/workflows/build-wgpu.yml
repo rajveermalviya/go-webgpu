@@ -19,14 +19,12 @@ jobs:
         include:
           - name: build - linux/amd64
             os: ubuntu-18.04
-            toolchain: stable
             target: x86_64-unknown-linux-gnu
             goos: linux
             goarch: amd64
 
           - name: build - linux/386
             os: ubuntu-18.04
-            toolchain: stable
             target: i686-unknown-linux-gnu
             goos: linux
             goarch: "386"
@@ -36,7 +34,6 @@ jobs:
 
           - name: build - windows/amd64
             os: windows-2019
-            toolchain: stable-msvc
             target: x86_64-pc-windows-msvc
             goos: windows
             goarch: amd64
@@ -44,47 +41,32 @@ jobs:
               choco install -y --force llvm | exit 0
               echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
 
-          - name: build - windows/386
-            os: windows-2019
-            toolchain: stable-i686-pc-windows-msvc
-            target: i686-pc-windows-msvc
-            goos: windows
-            goarch: "386"
-            setup_env: |
-              choco install -y --force --x86 llvm | exit 0
-              echo "LIBCLANG_PATH=C:\Program Files (x86)\LLVM\lib" >> $GITHUB_ENV
-
           - name: build - darwin/amd64
             os: macos-11
-            toolchain: stable
             target: x86_64-apple-darwin
             goos: darwin
             goarch: amd64
 
           - name: build - darwin/arm64
             os: macos-11
-            toolchain: stable
             target: aarch64-apple-darwin
             goos: darwin
             goarch: arm64
 
           - name: build - ios/amd64
             os: macos-11
-            toolchain: stable
             target: x86_64-apple-ios
             goos: ios
             goarch: amd64
 
           - name: build - ios/arm64
             os: macos-11
-            toolchain: stable
             target: aarch64-apple-ios
             goos: ios
             goarch: arm64
 
           - name: build - android/amd64
             os: ubuntu-22.04
-            toolchain: stable
             target: x86_64-linux-android
             goos: android
             goarch: amd64
@@ -99,7 +81,6 @@ jobs:
 
           - name: build - android/386
             os: ubuntu-22.04
-            toolchain: stable
             target: i686-linux-android
             goos: android
             goarch: '386'
@@ -114,7 +95,6 @@ jobs:
 
           - name: build - android/arm64
             os: ubuntu-22.04
-            toolchain: stable
             target: aarch64-linux-android
             goos: android
             goarch: arm64
@@ -129,7 +109,6 @@ jobs:
 
           - name: build - android/arm
             os: ubuntu-22.04
-            toolchain: stable
             target: armv7-linux-androideabi
             goos: android
             goarch: arm
@@ -146,11 +125,9 @@ jobs:
       # Checkout
       - uses: actions/checkout@v2
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@1.63.0
         with:
-          toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
-          default: true
 
       - if: ${{ matrix.goos == 'android' }}
         name: Setup Android NDK
@@ -210,6 +187,7 @@ jobs:
             ${{ github.workspace }}/tmp/target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_libwgpu_native.a
 
   send-pr:
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: build-wgpu
     runs-on: ubuntu-latest
     steps:
@@ -236,7 +214,6 @@ jobs:
               "ios_arm64"
               "linux_386"
               "linux_amd64"
-              "windows_386"
               "windows_amd64")
 
           for i in "${arr[@]}"
@@ -267,7 +244,6 @@ jobs:
           rm -rf $GITHUB_WORKSPACE/tmp
           tree $GITHUB_WORKSPACE/wgpu
 
-      # Send a PR
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
