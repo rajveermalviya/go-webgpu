@@ -11,6 +11,5 @@ import (
 	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/ios/arm64"
 	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/linux/386"
 	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/linux/amd64"
-	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/windows/386"
 	_ "github.com/rajveermalviya/go-webgpu/wgpu/lib/windows/amd64"
 )
