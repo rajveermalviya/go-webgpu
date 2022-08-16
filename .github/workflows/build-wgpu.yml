@@ -34,7 +34,7 @@ jobs:
 
           - name: build - windows/amd64
             os: windows-2019
-            target: x86_64-pc-windows-msvc
+            target: x86_64-pc-windows-gnu
             goos: windows
             goarch: amd64
             setup_env: |
