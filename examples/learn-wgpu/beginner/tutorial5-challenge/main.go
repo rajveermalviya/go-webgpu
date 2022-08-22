@@ -3,7 +3,6 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"math"
 	"strings"
 	"unsafe"
 
@@ -16,9 +15,15 @@ import (
 //go:embed shader.wgsl
 var shaderCode string
 
+//go:embed happy-tree.png
+var happyTreePng []byte
+
+//go:embed happy-tree-cartoon.png
+var happyTreeCartoonPng []byte
+
 type Vertex struct {
-	position [3]float32
-	color    [3]float32
+	position  [3]float32
+	texCoords [2]float32
 }
 
 var VertexBufferLayout = wgpu.VertexBufferLayout{
@@ -33,52 +38,53 @@ var VertexBufferLayout = wgpu.VertexBufferLayout{
 		{
 			Offset:         uint64(unsafe.Sizeof([3]float32{})),
 			ShaderLocation: 1,
-			Format:         wgpu.VertexFormat_Float32x3,
+			Format:         wgpu.VertexFormat_Float32x2,
 		},
 	},
 }
 
 var VERTICES = [...]Vertex{
 	{
-		position: [3]float32{-0.0868241, 0.49240386, 0.0},
-		color:    [3]float32{0.5, 0.0, 0.5},
+		position:  [3]float32{-0.0868241, 0.49240386, 0.0},
+		texCoords: [2]float32{0.4131759, 0.00759614},
 	}, // A
 	{
-		position: [3]float32{-0.49513406, 0.06958647, 0.0},
-		color:    [3]float32{0.5, 0.0, 0.5},
+		position:  [3]float32{-0.49513406, 0.06958647, 0.0},
+		texCoords: [2]float32{0.0048659444, 0.43041354},
 	}, // B
 	{
-		position: [3]float32{-0.21918549, -0.44939706, 0.0},
-		color:    [3]float32{0.5, 0.0, 0.5},
+		position:  [3]float32{-0.21918549, -0.44939706, 0.0},
+		texCoords: [2]float32{0.28081453, 0.949397},
 	}, // C
 	{
-		position: [3]float32{0.35966998, -0.3473291, 0.0},
-		color:    [3]float32{0.5, 0.0, 0.5},
+		position:  [3]float32{0.35966998, -0.3473291, 0.0},
+		texCoords: [2]float32{0.85967, 0.84732914},
 	}, // D
 	{
-		position: [3]float32{0.44147372, 0.2347359, 0.0},
-		color:    [3]float32{0.5, 0.0, 0.5},
+		position:  [3]float32{0.44147372, 0.2347359, 0.0},
+		texCoords: [2]float32{0.9414737, 0.2652641},
 	}, // E
 }
 
 var INDICES = [...]uint16{0, 1, 4, 1, 2, 4, 2, 3, 4}
 
 type State struct {
-	surface        *wgpu.Surface
-	swapChain      *wgpu.SwapChain
-	device         *wgpu.Device
-	queue          *wgpu.Queue
-	config         *wgpu.SwapChainDescriptor
-	size           dpi.PhysicalSize[uint32]
-	renderPipeline *wgpu.RenderPipeline
-	vertexBuffer   *wgpu.Buffer
-	indexBuffer    *wgpu.Buffer
-	numIndices     uint32
+	surface          *wgpu.Surface
+	swapChain        *wgpu.SwapChain
+	device           *wgpu.Device
+	queue            *wgpu.Queue
+	config           *wgpu.SwapChainDescriptor
+	size             dpi.PhysicalSize[uint32]
+	renderPipeline   *wgpu.RenderPipeline
+	vertexBuffer     *wgpu.Buffer
+	indexBuffer      *wgpu.Buffer
+	numIndices       uint32
+	diffuseTexture   *Texture
+	diffuseBindGroup *wgpu.BindGroup
 
-	challengeVertexBuffer *wgpu.Buffer
-	challengeIndexBuffer  *wgpu.Buffer
-	numChallengeIndices   uint32
-	useComplex            bool
+	cartoonTexture   *Texture
+	cartoonBindGroup *wgpu.BindGroup
+	isSpacePressed   bool
 }
 
 func InitState(window display.Window) (*State, error) {
@@ -110,6 +116,77 @@ func InitState(window display.Window) (*State, error) {
 		return nil, err
 	}
 
+	textureBindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
+		Entries: []wgpu.BindGroupLayoutEntry{
+			{
+				Binding:    0,
+				Visibility: wgpu.ShaderStage_Fragment,
+				Texture: wgpu.TextureBindingLayout{
+					Multisampled:  false,
+					ViewDimension: wgpu.TextureViewDimension_2D,
+					SampleType:    wgpu.TextureSampleType_Float,
+				},
+			},
+			{
+				Binding:    1,
+				Visibility: wgpu.ShaderStage_Fragment,
+				Sampler: wgpu.SamplerBindingLayout{
+					Type: wgpu.SamplerBindingType_Filtering,
+				},
+			},
+		},
+		Label: "TextureBindGroupLayout",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	diffuseTexture, err := TextureFromPNGBytes(device, queue, happyTreePng, "happy-tree.png")
+	if err != nil {
+		return nil, err
+	}
+
+	diffuseBindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+		Layout: textureBindGroupLayout,
+		Entries: []wgpu.BindGroupEntry{
+			{
+				Binding:     0,
+				TextureView: diffuseTexture.view,
+			},
+			{
+				Binding: 1,
+				Sampler: diffuseTexture.sampler,
+			},
+		},
+		Label: "DiffuseBindGroup",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cartoonTexture, err := TextureFromPNGBytes(device, queue, happyTreeCartoonPng, "happy-tree-cartoon.png")
+	if err != nil {
+		return nil, err
+	}
+
+	cartoonBindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+		Layout: textureBindGroupLayout,
+		Entries: []wgpu.BindGroupEntry{
+			{
+				Binding:     0,
+				TextureView: cartoonTexture.view,
+			},
+			{
+				Binding: 1,
+				Sampler: cartoonTexture.sampler,
+			},
+		},
+		Label: "CartoonBindGroup",
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
@@ -122,6 +199,9 @@ func InitState(window display.Window) (*State, error) {
 
 	renderPipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		Label: "Render Pipeline Layout",
+		BindGroupLayouts: []*wgpu.BindGroupLayout{
+			textureBindGroupLayout,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -178,73 +258,22 @@ func InitState(window display.Window) (*State, error) {
 	}
 	numIndices := uint32(len(INDICES))
 
-	const numVertices = 16
-	angle := math.Pi * 2.0 / float32(numVertices)
-	var challengeVerts [numVertices]Vertex
-	for i := 0; i < numVertices; i++ {
-		theta := angle * float32(i)
-		thetaSin, thetaCos := math.Sincos(float64(theta))
-
-		challengeVerts[i] = Vertex{
-			position: [3]float32{
-				0.5 * float32(thetaCos),
-				-0.5 * float32(thetaSin),
-				0.0,
-			},
-			color: [3]float32{
-				(1.0 + float32(thetaCos)) / 2.0,
-				(1.0 + float32(thetaSin)) / 2.0,
-				1.0,
-			},
-		}
-	}
-
-	const numTriangles = numVertices - 2
-	var challengeIndices [numTriangles * 3]uint16
-	{
-		index := 0
-		for i := uint16(1); i < numTriangles+1; i++ {
-			challengeIndices[index] = i + 1
-			challengeIndices[index+1] = i
-			challengeIndices[index+2] = 0
-			index += 3
-		}
-	}
-
-	challengeVertexBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
-		Label:    "Challenge Vertex Buffer",
-		Contents: wgpu.ToBytes(challengeVerts[:]),
-		Usage:    wgpu.BufferUsage_Vertex,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	challengeIndexBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
-		Label:    "Challenge Index Buffer",
-		Contents: wgpu.ToBytes(challengeIndices[:]),
-		Usage:    wgpu.BufferUsage_Index,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	return &State{
-		surface:        surface,
-		swapChain:      swapChain,
-		device:         device,
-		queue:          queue,
-		config:         config,
-		size:           size,
-		renderPipeline: renderPipeline,
-		vertexBuffer:   vertexBuffer,
-		indexBuffer:    indexBuffer,
-		numIndices:     numIndices,
-
-		challengeVertexBuffer: challengeVertexBuffer,
-		challengeIndexBuffer:  challengeIndexBuffer,
-		numChallengeIndices:   uint32(len(challengeIndices)),
-		useComplex:            false,
+		surface:          surface,
+		swapChain:        swapChain,
+		device:           device,
+		queue:            queue,
+		config:           config,
+		size:             size,
+		renderPipeline:   renderPipeline,
+		vertexBuffer:     vertexBuffer,
+		indexBuffer:      indexBuffer,
+		numIndices:       numIndices,
+		diffuseTexture:   diffuseTexture,
+		diffuseBindGroup: diffuseBindGroup,
+		cartoonTexture:   cartoonTexture,
+		cartoonBindGroup: cartoonBindGroup,
+		isSpacePressed:   false,
 	}, nil
 }
 
@@ -288,15 +317,14 @@ func (s *State) Render() error {
 		}},
 	})
 	renderPass.SetPipeline(s.renderPipeline)
-	if s.useComplex {
-		renderPass.SetVertexBuffer(0, s.challengeVertexBuffer, 0, 0)
-		renderPass.SetIndexBuffer(s.challengeIndexBuffer, wgpu.IndexFormat_Uint16, 0, 0)
-		renderPass.DrawIndexed(s.numChallengeIndices, 1, 0, 0, 0)
+	if s.isSpacePressed {
+		renderPass.SetBindGroup(0, s.cartoonBindGroup, nil)
 	} else {
-		renderPass.SetVertexBuffer(0, s.vertexBuffer, 0, 0)
-		renderPass.SetIndexBuffer(s.indexBuffer, wgpu.IndexFormat_Uint16, 0, 0)
-		renderPass.DrawIndexed(s.numIndices, 1, 0, 0, 0)
+		renderPass.SetBindGroup(0, s.diffuseBindGroup, nil)
 	}
+	renderPass.SetVertexBuffer(0, s.vertexBuffer, 0, 0)
+	renderPass.SetIndexBuffer(s.indexBuffer, wgpu.IndexFormat_Uint16, 0, 0)
+	renderPass.DrawIndexed(s.numIndices, 1, 0, 0, 0)
 	renderPass.End()
 
 	s.queue.Submit(encoder.Finish(nil))
@@ -324,7 +352,7 @@ func main() {
 
 	w.SetKeyboardInputCallback(func(state events.ButtonState, scanCode events.ScanCode, virtualKeyCode events.VirtualKey) {
 		if virtualKeyCode == events.VirtualKeySpace {
-			s.useComplex = state == events.ButtonStatePressed
+			s.isSpacePressed = state == events.ButtonStatePressed
 			rerender = true
 		}
 	})
@@ -342,10 +370,6 @@ func main() {
 	})
 
 	for {
-		if !d.Wait() {
-			break
-		}
-
 		if rerender {
 			rerender = false
 
@@ -364,6 +388,10 @@ func main() {
 					panic(err)
 				}
 			}
+		}
+
+		if !d.Wait() {
+			break
 		}
 	}
 }
