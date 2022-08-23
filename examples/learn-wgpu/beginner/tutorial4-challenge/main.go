@@ -320,12 +320,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	rerender := true
 
 	w.SetKeyboardInputCallback(func(state events.ButtonState, scanCode events.ScanCode, virtualKeyCode events.VirtualKey) {
 		if virtualKeyCode == events.VirtualKeySpace {
 			s.useComplex = state == events.ButtonStatePressed
-			rerender = true
 		}
 	})
 
@@ -334,7 +332,6 @@ func main() {
 			Width:  physicalWidth,
 			Height: physicalHeight,
 		})
-		rerender = true
 	})
 
 	w.SetCloseRequestedCallback(func() {
@@ -342,27 +339,23 @@ func main() {
 	})
 
 	for {
-		if !d.Wait() {
+		if !d.Poll() {
 			break
 		}
 
-		if rerender {
-			rerender = false
+		err := s.Render()
+		if err != nil {
+			errstr := err.Error()
+			fmt.Println(errstr)
 
-			err := s.Render()
-			if err != nil {
-				errstr := err.Error()
-				fmt.Println(errstr)
-
-				switch {
-				case strings.Contains(errstr, "Lost"):
-					s.Resize(s.size)
-				case strings.Contains(errstr, "Outdated"):
-					s.Resize(s.size)
-				case strings.Contains(errstr, "Timeout"):
-				default:
-					panic(err)
-				}
+			switch {
+			case strings.Contains(errstr, "Lost"):
+				s.Resize(s.size)
+			case strings.Contains(errstr, "Outdated"):
+				s.Resize(s.size)
+			case strings.Contains(errstr, "Timeout"):
+			default:
+				panic(err)
 			}
 		}
 	}

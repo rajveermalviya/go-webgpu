@@ -312,13 +312,11 @@ func main() {
 		panic(err)
 	}
 
-	rerender := true
 	w.SetResizedCallback(func(physicalWidth, physicalHeight uint32, scaleFactor float64) {
 		s.Resize(dpi.PhysicalSize[uint32]{
 			Width:  physicalWidth,
 			Height: physicalHeight,
 		})
-		rerender = true
 	})
 
 	w.SetCloseRequestedCallback(func() {
@@ -326,28 +324,24 @@ func main() {
 	})
 
 	for {
-		if rerender {
-			rerender = false
-
-			err := s.Render()
-			if err != nil {
-				errstr := err.Error()
-				fmt.Println(errstr)
-
-				switch {
-				case strings.Contains(errstr, "Lost"):
-					s.Resize(s.size)
-				case strings.Contains(errstr, "Outdated"):
-					s.Resize(s.size)
-				case strings.Contains(errstr, "Timeout"):
-				default:
-					panic(err)
-				}
-			}
+		if !d.Poll() {
+			break
 		}
 
-		if !d.Wait() {
-			break
+		err := s.Render()
+		if err != nil {
+			errstr := err.Error()
+			fmt.Println(errstr)
+
+			switch {
+			case strings.Contains(errstr, "Lost"):
+				s.Resize(s.size)
+			case strings.Contains(errstr, "Outdated"):
+				s.Resize(s.size)
+			case strings.Contains(errstr, "Timeout"):
+			default:
+				panic(err)
+			}
 		}
 	}
 }
