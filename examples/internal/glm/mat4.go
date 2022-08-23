@@ -1,6 +1,20 @@
 package glm
 
+import "math"
+
 type Mat4[T float] [16]T
+
+func Mat4FromAngleZ[T float](thetaDeg T) Mat4[T] {
+	thetaRad := degToRad(thetaDeg)
+	s, c := math.Sincos(float64(thetaRad))
+
+	return Mat4[T]{
+		T(c), T(s), 0, 0,
+		-T(s), T(c), 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	}
+}
 
 func (m1 Mat4[T]) Mul4(m2 Mat4[T]) Mat4[T] {
 	return Mat4[T]{

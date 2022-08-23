@@ -8,12 +8,8 @@ func (v1 Vec3[T]) Dot(v2 Vec3[T]) T {
 	return (v1[0] * v2[0]) + (v1[1] * v2[1]) + (v1[2] * v2[2])
 }
 
-func (v1 Vec3[T]) Length() T {
+func (v1 Vec3[T]) Magnitude() T {
 	return T(math.Sqrt(float64(v1.Dot(v1))))
-}
-
-func (v1 Vec3[T]) LengthRecip() T {
-	return (1 / v1.Length())
 }
 
 func (v1 Vec3[T]) MulScalar(s T) Vec3[T] {
@@ -25,7 +21,7 @@ func (v1 Vec3[T]) MulScalar(s T) Vec3[T] {
 }
 
 func (v1 Vec3[T]) Normalize() Vec3[T] {
-	return v1.MulScalar(v1.LengthRecip())
+	return v1.MulScalar(1 / v1.Magnitude())
 }
 
 func (v1 Vec3[T]) Cross(v2 Vec3[T]) Vec3[T] {
@@ -33,6 +29,14 @@ func (v1 Vec3[T]) Cross(v2 Vec3[T]) Vec3[T] {
 		v1[1]*v2[2] - v2[1]*v1[2],
 		v1[2]*v2[0] - v2[2]*v1[0],
 		v1[0]*v2[1] - v2[0]*v1[1],
+	}
+}
+
+func (v1 Vec3[T]) Add(v2 Vec3[T]) Vec3[T] {
+	return Vec3[T]{
+		v1[0] + v2[0],
+		v1[1] + v2[1],
+		v1[2] + v2[2],
 	}
 }
 

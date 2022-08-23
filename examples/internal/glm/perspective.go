@@ -16,18 +16,31 @@ func PerspectiveRH[T float](fovYradians, aspectRatio, zNear, zFar T) Mat4[T] {
 	}
 }
 
-func LookToLH[T float](eye, dir, up Vec3[T]) Mat4[T] {
-	f := dir.Normalize()
-	s := up.Cross(f).Normalize()
-	u := f.Cross(s)
+func Perspective[T float](fovyDeg, aspect, near, far T) Mat4[T] {
+	fovyRad := degToRad(fovyDeg)
+	f := T(1 / math.Tan(float64(fovyRad*0.5)))
+
 	return Mat4[T]{
-		s[0], u[0], f[0], 0,
-		s[1], u[1], f[1], 0,
-		s[2], u[2], f[2], 0,
-		-s.Dot(eye), -u.Dot(eye), -f.Dot(eye), 1,
+		f / aspect, 0, 0, 0,
+		0, f, 0, 0,
+		0, 0, (far + near) / (near - far), -1,
+		0, 0, (2 * far * near) / (near - far), 0,
 	}
 }
 
 func LookAtRH[T float](eye, center, up Vec3[T]) Mat4[T] {
-	return LookToLH(eye, eye.Sub(center), up)
+	f := (center.Sub(eye)).Normalize()
+	s := f.Cross(up).Normalize()
+	u := s.Cross(f)
+
+	return Mat4[T]{
+		s[0], u[0], -f[0], 0,
+		s[1], u[1], -f[1], 0,
+		s[2], u[2], -f[2], 0,
+		-eye.Dot(s), -eye.Dot(u), eye.Dot(f), 1,
+	}
+}
+
+func degToRad[T float](deg T) (rad T) {
+	return deg * (math.Pi / 180)
 }
