@@ -211,45 +211,51 @@ type State struct {
 	cameraBuffer     *wgpu.Buffer
 	cameraBindGroup  *wgpu.BindGroup
 
-	instances      [NumInstancesPerRow * NumInstancesPerRow]Instance
+	numInstances   uint32
 	instanceBuffer *wgpu.Buffer
 }
 
 func InitState(window display.Window) (*State, error) {
-	size := window.InnerSize()
+	s := &State{}
 
-	surface := wgpu.CreateSurface(getSurfaceDescriptor(window))
+	s.size = window.InnerSize()
+
+	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
 
 	adaper, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
-		CompatibleSurface: surface,
+		CompatibleSurface: s.surface,
 	})
 	if err != nil {
 		return nil, err
 	}
-	device, err := adaper.RequestDevice(nil)
+	defer adaper.Drop()
+
+	s.device, err = adaper.RequestDevice(nil)
 	if err != nil {
 		return nil, err
 	}
-	queue := device.GetQueue()
+	s.queue = s.device.GetQueue()
 
-	config := &wgpu.SwapChainDescriptor{
+	s.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface.GetPreferredFormat(adaper),
-		Width:       size.Width,
-		Height:      size.Height,
+		Format:      s.surface.GetPreferredFormat(adaper),
+		Width:       s.size.Width,
+		Height:      s.size.Height,
 		PresentMode: wgpu.PresentMode_Fifo,
 	}
-	swapChain, err := device.CreateSwapChain(surface, config)
+	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	diffuseTexture, err := TextureFromPNGBytes(device, queue, happyTreePng, "happy-tree.png")
+	s.diffuseTexture, err = TextureFromPNGBytes(s.device, s.queue, happyTreePng, "happy-tree.png")
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	textureBindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
+	textureBindGroupLayout, err := s.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Entries: []wgpu.BindGroupLayoutEntry{
 			{
 				Binding:    0,
@@ -271,50 +277,55 @@ func InitState(window display.Window) (*State, error) {
 		Label: "TextureBindGroupLayout",
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer textureBindGroupLayout.Drop()
 
-	diffuseBindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+	s.diffuseBindGroup, err = s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Layout: textureBindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{
 			{
 				Binding:     0,
-				TextureView: diffuseTexture.view,
+				TextureView: s.diffuseTexture.view,
 			},
 			{
 				Binding: 1,
-				Sampler: diffuseTexture.sampler,
+				Sampler: s.diffuseTexture.sampler,
 			},
 		},
 		Label: "DiffuseBindGroup",
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	camera := &Camera{
+	s.camera = &Camera{
 		eye:     glm.Vec3[float32]{0, 5, 10},
 		target:  glm.Vec3[float32]{0, 0, 0},
 		up:      glm.Vec3[float32]{0, 1, 0},
-		aspect:  float32(size.Width) / float32(size.Height),
+		aspect:  float32(s.size.Width) / float32(s.size.Height),
 		fovYRad: glm.DegToRad[float32](45),
 		znear:   0.1,
 		zfar:    100.0,
 	}
-	cameraController := NewCameraController(0.2)
-	cameraUniform := NewCameraUnifrom()
-	cameraUniform.UpdateViewProj(camera)
+	s.cameraController = NewCameraController(0.2)
+	s.cameraUniform = NewCameraUnifrom()
+	s.cameraUniform.UpdateViewProj(s.camera)
 
-	cameraBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.cameraBuffer, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Camera Buffer",
-		Contents: wgpu.ToBytes(cameraUniform.viewProj[:]),
+		Contents: wgpu.ToBytes(s.cameraUniform.viewProj[:]),
 		Usage:    wgpu.BufferUsage_Uniform | wgpu.BufferUsage_CopyDst,
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
 	var instances [NumInstancesPerRow * NumInstancesPerRow]Instance
+	s.numInstances = uint32(len(instances))
 	{
 		index := 0
 		for z := 0; z < NumInstancesPerRow; z++ {
@@ -341,16 +352,17 @@ func InitState(window display.Window) (*State, error) {
 	for i, v := range instances {
 		instanceData[i] = v.ToRaw()
 	}
-	instanceBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.instanceBuffer, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Instance Buffer",
 		Contents: wgpu.ToBytes(instanceData[:]),
 		Usage:    wgpu.BufferUsage_Vertex,
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	cameraBindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
+	cameraBindGroupLayout, err := s.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Label: "CameraBindGroupLayout",
 		Entries: []wgpu.BindGroupLayoutEntry{{
 			Binding:    0,
@@ -363,42 +375,49 @@ func InitState(window display.Window) (*State, error) {
 		}},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer cameraBindGroupLayout.Drop()
 
-	cameraBindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+	s.cameraBindGroup, err = s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Label:  "CameraBindGroup",
 		Layout: cameraBindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{{
 			Binding: 0,
-			Buffer:  cameraBuffer,
+			Buffer:  s.cameraBuffer,
 		}},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	shader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: shaderCode,
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer shader.Drop()
 
-	renderPipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
+	renderPipelineLayout, err := s.device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		Label: "Render Pipeline Layout",
 		BindGroupLayouts: []*wgpu.BindGroupLayout{
 			textureBindGroupLayout, cameraBindGroupLayout,
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer renderPipelineLayout.Drop()
 
-	renderPipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+	s.renderPipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label:  "Render Pipeline",
 		Layout: renderPipelineLayout,
 		Vertex: wgpu.VertexState{
@@ -410,7 +429,7 @@ func InitState(window display.Window) (*State, error) {
 			Module:     shader,
 			EntryPoint: "fs_main",
 			Targets: []wgpu.ColorTargetState{{
-				Format:    config.Format,
+				Format:    s.config.Format,
 				Blend:     &wgpu.BlendState_Replace,
 				WriteMask: wgpu.ColorWriteMask_All,
 			}},
@@ -427,49 +446,32 @@ func InitState(window display.Window) (*State, error) {
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	vertexBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.vertexBuffer, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Vertex Buffer",
 		Contents: wgpu.ToBytes(VERTICES[:]),
 		Usage:    wgpu.BufferUsage_Vertex,
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	indexBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.indexBuffer, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Index Buffer",
 		Contents: wgpu.ToBytes(INDICES[:]),
 		Usage:    wgpu.BufferUsage_Index,
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
-	numIndices := uint32(len(INDICES))
+	s.numIndices = uint32(len(INDICES))
 
-	return &State{
-		surface:          surface,
-		swapChain:        swapChain,
-		device:           device,
-		queue:            queue,
-		config:           config,
-		size:             size,
-		renderPipeline:   renderPipeline,
-		vertexBuffer:     vertexBuffer,
-		indexBuffer:      indexBuffer,
-		numIndices:       numIndices,
-		diffuseTexture:   diffuseTexture,
-		diffuseBindGroup: diffuseBindGroup,
-		camera:           camera,
-		cameraController: cameraController,
-		cameraUniform:    cameraUniform,
-		cameraBuffer:     cameraBuffer,
-		cameraBindGroup:  cameraBindGroup,
-		instances:        instances,
-		instanceBuffer:   instanceBuffer,
-	}, nil
+	return s, nil
 }
 
 func (s *State) Update() {
@@ -525,7 +527,7 @@ func (s *State) Render() error {
 	renderPass.SetVertexBuffer(0, s.vertexBuffer, 0, 0)
 	renderPass.SetVertexBuffer(1, s.instanceBuffer, 0, 0)
 	renderPass.SetIndexBuffer(s.indexBuffer, wgpu.IndexFormat_Uint16, 0, 0)
-	renderPass.DrawIndexed(s.numIndices, uint32(len(s.instances)), 0, 0, 0)
+	renderPass.DrawIndexed(s.numIndices, s.numInstances, 0, 0, 0)
 	renderPass.End()
 
 	s.queue.Submit(encoder.Finish(nil))
@@ -534,21 +536,85 @@ func (s *State) Render() error {
 	return nil
 }
 
+func (s *State) Destroy() {
+	if s.indexBuffer != nil {
+		s.indexBuffer.Drop()
+		s.indexBuffer = nil
+	}
+	if s.vertexBuffer != nil {
+		s.vertexBuffer.Drop()
+		s.vertexBuffer = nil
+	}
+	if s.renderPipeline != nil {
+		s.renderPipeline.Drop()
+		s.renderPipeline = nil
+	}
+	if s.cameraBindGroup != nil {
+		s.cameraBindGroup.Drop()
+		s.cameraBindGroup = nil
+	}
+	if s.instanceBuffer != nil {
+		s.instanceBuffer.Drop()
+		s.instanceBuffer = nil
+	}
+	if s.cameraBuffer != nil {
+		s.cameraBuffer.Drop()
+		s.cameraBuffer = nil
+	}
+	if s.cameraUniform != nil {
+		s.cameraUniform = nil
+	}
+	if s.cameraController != nil {
+		s.cameraController = nil
+	}
+	if s.camera != nil {
+		s.camera = nil
+	}
+	if s.diffuseBindGroup != nil {
+		s.diffuseBindGroup.Drop()
+		s.diffuseBindGroup = nil
+	}
+	if s.diffuseTexture != nil {
+		s.diffuseTexture.Destroy()
+		s.diffuseTexture = nil
+	}
+	if s.swapChain != nil {
+		s.swapChain = nil
+	}
+	if s.config != nil {
+		s.config = nil
+	}
+	if s.queue != nil {
+		s.queue = nil
+	}
+	if s.device != nil {
+		s.device.Drop()
+		s.device = nil
+	}
+	if s.surface != nil {
+		s.surface.Drop()
+		s.surface = nil
+	}
+}
+
 func main() {
 	d, err := display.NewDisplay()
 	if err != nil {
 		panic(err)
 	}
+	defer d.Destroy()
 
 	w, err := display.NewWindow(d)
 	if err != nil {
 		panic(err)
 	}
+	defer w.Destroy()
 
 	s, err := InitState(w)
 	if err != nil {
 		panic(err)
 	}
+	defer s.Destroy()
 
 	w.SetResizedCallback(func(physicalWidth, physicalHeight uint32, scaleFactor float64) {
 		s.Resize(dpi.PhysicalSize[uint32]{

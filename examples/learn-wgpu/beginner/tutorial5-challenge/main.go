@@ -88,35 +88,40 @@ type State struct {
 }
 
 func InitState(window display.Window) (*State, error) {
-	size := window.InnerSize()
+	s := &State{}
 
-	surface := wgpu.CreateSurface(getSurfaceDescriptor(window))
+	s.size = window.InnerSize()
+
+	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
 
 	adaper, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
-		CompatibleSurface: surface,
+		CompatibleSurface: s.surface,
 	})
 	if err != nil {
 		return nil, err
 	}
-	device, err := adaper.RequestDevice(nil)
+	defer adaper.Drop()
+
+	s.device, err = adaper.RequestDevice(nil)
 	if err != nil {
 		return nil, err
 	}
-	queue := device.GetQueue()
+	s.queue = s.device.GetQueue()
 
-	config := &wgpu.SwapChainDescriptor{
+	s.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface.GetPreferredFormat(adaper),
-		Width:       size.Width,
-		Height:      size.Height,
+		Format:      s.surface.GetPreferredFormat(adaper),
+		Width:       s.size.Width,
+		Height:      s.size.Height,
 		PresentMode: wgpu.PresentMode_Fifo,
 	}
-	swapChain, err := device.CreateSwapChain(surface, config)
+	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	textureBindGroupLayout, err := device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
+	textureBindGroupLayout, err := s.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Entries: []wgpu.BindGroupLayoutEntry{
 			{
 				Binding:    0,
@@ -138,76 +143,86 @@ func InitState(window display.Window) (*State, error) {
 		Label: "TextureBindGroupLayout",
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer textureBindGroupLayout.Drop()
 
-	diffuseTexture, err := TextureFromPNGBytes(device, queue, happyTreePng, "happy-tree.png")
+	s.diffuseTexture, err = TextureFromPNGBytes(s.device, s.queue, happyTreePng, "happy-tree.png")
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	diffuseBindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+	s.diffuseBindGroup, err = s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Layout: textureBindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{
 			{
 				Binding:     0,
-				TextureView: diffuseTexture.view,
+				TextureView: s.diffuseTexture.view,
 			},
 			{
 				Binding: 1,
-				Sampler: diffuseTexture.sampler,
+				Sampler: s.diffuseTexture.sampler,
 			},
 		},
 		Label: "DiffuseBindGroup",
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	cartoonTexture, err := TextureFromPNGBytes(device, queue, happyTreeCartoonPng, "happy-tree-cartoon.png")
+	s.cartoonTexture, err = TextureFromPNGBytes(s.device, s.queue, happyTreeCartoonPng, "happy-tree-cartoon.png")
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	cartoonBindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+	s.cartoonBindGroup, err = s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Layout: textureBindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{
 			{
 				Binding:     0,
-				TextureView: cartoonTexture.view,
+				TextureView: s.cartoonTexture.view,
 			},
 			{
 				Binding: 1,
-				Sampler: cartoonTexture.sampler,
+				Sampler: s.cartoonTexture.sampler,
 			},
 		},
 		Label: "CartoonBindGroup",
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	shader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: shaderCode,
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer shader.Drop()
 
-	renderPipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
+	renderPipelineLayout, err := s.device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		Label: "Render Pipeline Layout",
 		BindGroupLayouts: []*wgpu.BindGroupLayout{
 			textureBindGroupLayout,
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer renderPipelineLayout.Drop()
 
-	renderPipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+	s.renderPipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label:  "Render Pipeline",
 		Layout: renderPipelineLayout,
 		Vertex: wgpu.VertexState{
@@ -219,7 +234,7 @@ func InitState(window display.Window) (*State, error) {
 			Module:     shader,
 			EntryPoint: "fs_main",
 			Targets: []wgpu.ColorTargetState{{
-				Format:    config.Format,
+				Format:    s.config.Format,
 				Blend:     &wgpu.BlendState_Replace,
 				WriteMask: wgpu.ColorWriteMask_All,
 			}},
@@ -236,45 +251,32 @@ func InitState(window display.Window) (*State, error) {
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	vertexBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.vertexBuffer, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Vertex Buffer",
 		Contents: wgpu.ToBytes(VERTICES[:]),
 		Usage:    wgpu.BufferUsage_Vertex,
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	indexBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.indexBuffer, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Index Buffer",
 		Contents: wgpu.ToBytes(INDICES[:]),
 		Usage:    wgpu.BufferUsage_Index,
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
-	numIndices := uint32(len(INDICES))
+	s.numIndices = uint32(len(INDICES))
 
-	return &State{
-		surface:          surface,
-		swapChain:        swapChain,
-		device:           device,
-		queue:            queue,
-		config:           config,
-		size:             size,
-		renderPipeline:   renderPipeline,
-		vertexBuffer:     vertexBuffer,
-		indexBuffer:      indexBuffer,
-		numIndices:       numIndices,
-		diffuseTexture:   diffuseTexture,
-		diffuseBindGroup: diffuseBindGroup,
-		cartoonTexture:   cartoonTexture,
-		cartoonBindGroup: cartoonBindGroup,
-		isSpacePressed:   false,
-	}, nil
+	return s, nil
 }
 
 func (s *State) Resize(newSize dpi.PhysicalSize[uint32]) {
@@ -333,21 +335,72 @@ func (s *State) Render() error {
 	return nil
 }
 
+func (s *State) Destroy() {
+	if s.indexBuffer != nil {
+		s.indexBuffer.Drop()
+		s.indexBuffer = nil
+	}
+	if s.vertexBuffer != nil {
+		s.vertexBuffer.Drop()
+		s.vertexBuffer = nil
+	}
+	if s.renderPipeline != nil {
+		s.renderPipeline.Drop()
+		s.renderPipeline = nil
+	}
+	if s.cartoonBindGroup != nil {
+		s.cartoonBindGroup.Drop()
+		s.cartoonBindGroup = nil
+	}
+	if s.cartoonTexture != nil {
+		s.cartoonTexture.Destroy()
+		s.cartoonTexture = nil
+	}
+	if s.diffuseBindGroup != nil {
+		s.diffuseBindGroup.Drop()
+		s.diffuseBindGroup = nil
+	}
+	if s.diffuseTexture != nil {
+		s.diffuseTexture.Destroy()
+		s.diffuseTexture = nil
+	}
+	if s.swapChain != nil {
+		s.swapChain = nil
+	}
+	if s.config != nil {
+		s.config = nil
+	}
+	if s.queue != nil {
+		s.queue = nil
+	}
+	if s.device != nil {
+		s.device.Drop()
+		s.device = nil
+	}
+	if s.surface != nil {
+		s.surface.Drop()
+		s.surface = nil
+	}
+}
+
 func main() {
 	d, err := display.NewDisplay()
 	if err != nil {
 		panic(err)
 	}
+	defer d.Destroy()
 
 	w, err := display.NewWindow(d)
 	if err != nil {
 		panic(err)
 	}
+	defer w.Destroy()
 
 	s, err := InitState(w)
 	if err != nil {
 		panic(err)
 	}
+	defer s.Destroy()
 
 	w.SetKeyboardInputCallback(func(state events.ButtonState, scanCode events.ScanCode, virtualKeyCode events.VirtualKey) {
 		if virtualKeyCode == events.VirtualKeySpace {

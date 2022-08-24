@@ -19,42 +19,40 @@ type State struct {
 }
 
 func InitState(window display.Window) (*State, error) {
-	size := window.InnerSize()
+	s := &State{}
 
-	surface := wgpu.CreateSurface(getSurfaceDescriptor(window))
+	s.size = window.InnerSize()
+
+	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
 
 	adaper, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
-		CompatibleSurface: surface,
+		CompatibleSurface: s.surface,
 	})
 	if err != nil {
 		return nil, err
 	}
-	device, err := adaper.RequestDevice(nil)
+	defer adaper.Drop()
+
+	s.device, err = adaper.RequestDevice(nil)
 	if err != nil {
 		return nil, err
 	}
-	queue := device.GetQueue()
+	s.queue = s.device.GetQueue()
 
-	config := &wgpu.SwapChainDescriptor{
+	s.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface.GetPreferredFormat(adaper),
-		Width:       size.Width,
-		Height:      size.Height,
+		Format:      s.surface.GetPreferredFormat(adaper),
+		Width:       s.size.Width,
+		Height:      s.size.Height,
 		PresentMode: wgpu.PresentMode_Fifo,
 	}
-	swapChain, err := device.CreateSwapChain(surface, config)
+	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	return &State{
-		surface:   surface,
-		swapChain: swapChain,
-		device:    device,
-		queue:     queue,
-		config:    config,
-		size:      size,
-	}, nil
+	return s, nil
 }
 
 func (s *State) Resize(newSize dpi.PhysicalSize[uint32]) {
@@ -104,21 +102,44 @@ func (s *State) Render() error {
 	return nil
 }
 
+func (s *State) Destroy() {
+	if s.swapChain != nil {
+		s.swapChain = nil
+	}
+	if s.config != nil {
+		s.config = nil
+	}
+	if s.queue != nil {
+		s.queue = nil
+	}
+	if s.device != nil {
+		s.device.Drop()
+		s.device = nil
+	}
+	if s.surface != nil {
+		s.surface.Drop()
+		s.surface = nil
+	}
+}
+
 func main() {
 	d, err := display.NewDisplay()
 	if err != nil {
 		panic(err)
 	}
+	defer d.Destroy()
 
 	w, err := display.NewWindow(d)
 	if err != nil {
 		panic(err)
 	}
+	defer w.Destroy()
 
 	s, err := InitState(w)
 	if err != nil {
 		panic(err)
 	}
+	defer s.Destroy()
 
 	w.SetResizedCallback(func(physicalWidth, physicalHeight uint32, scaleFactor float64) {
 		s.Resize(dpi.PhysicalSize[uint32]{

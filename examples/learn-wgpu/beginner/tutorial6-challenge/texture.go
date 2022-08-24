@@ -15,6 +15,21 @@ type Texture struct {
 	sampler *wgpu.Sampler
 }
 
+func (t *Texture) Destroy() {
+	if t.sampler != nil {
+		t.sampler.Drop()
+		t.sampler = nil
+	}
+	if t.view != nil {
+		t.view.Drop()
+		t.view = nil
+	}
+	if t.texture != nil {
+		t.texture.Drop()
+		t.texture = nil
+	}
+}
+
 func TextureFromPNGBytes(device *wgpu.Device, queue *wgpu.Queue, buf []byte, label string) (*Texture, error) {
 	img, err := png.Decode(bytes.NewReader(buf))
 	if err != nil {
@@ -25,6 +40,8 @@ func TextureFromPNGBytes(device *wgpu.Device, queue *wgpu.Queue, buf []byte, lab
 }
 
 func TextureFromImage(device *wgpu.Device, queue *wgpu.Queue, img image.Image, label string) (*Texture, error) {
+	t := &Texture{}
+
 	r := img.Bounds()
 	width := r.Dx()
 	height := r.Dy()
@@ -41,7 +58,8 @@ func TextureFromImage(device *wgpu.Device, queue *wgpu.Queue, img image.Image, l
 		Height:             uint32(height),
 		DepthOrArrayLayers: 1,
 	}
-	texture, err := device.CreateTexture(&wgpu.TextureDescriptor{
+	var err error
+	t.texture, err = device.CreateTexture(&wgpu.TextureDescriptor{
 		Label:         label,
 		Size:          size,
 		MipLevelCount: 1,
@@ -57,7 +75,7 @@ func TextureFromImage(device *wgpu.Device, queue *wgpu.Queue, img image.Image, l
 	queue.WriteTexture(
 		&wgpu.ImageCopyTexture{
 			Aspect:   wgpu.TextureAspect_All,
-			Texture:  texture,
+			Texture:  t.texture,
 			MipLevel: 0,
 			Origin:   wgpu.Origin3D{X: 0, Y: 0, Z: 0},
 		},
@@ -70,8 +88,8 @@ func TextureFromImage(device *wgpu.Device, queue *wgpu.Queue, img image.Image, l
 		&size,
 	)
 
-	view := texture.CreateView(nil)
-	sampler, err := device.CreateSampler(&wgpu.SamplerDescriptor{
+	t.view = t.texture.CreateView(nil)
+	t.sampler, err = device.CreateSampler(&wgpu.SamplerDescriptor{
 		AddressModeU: wgpu.AddressMode_ClampToEdge,
 		AddressModeV: wgpu.AddressMode_ClampToEdge,
 		AddressModeW: wgpu.AddressMode_ClampToEdge,
@@ -80,12 +98,9 @@ func TextureFromImage(device *wgpu.Device, queue *wgpu.Queue, img image.Image, l
 		MipmapFilter: wgpu.MipmapFilterMode_Nearest,
 	})
 	if err != nil {
+		t.Destroy()
 		return nil, err
 	}
 
-	return &Texture{
-		texture: texture,
-		view:    view,
-		sampler: sampler,
-	}, nil
+	return t, nil
 }

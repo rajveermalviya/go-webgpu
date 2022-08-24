@@ -31,52 +31,61 @@ type State struct {
 }
 
 func InitState(window display.Window) (*State, error) {
-	size := window.InnerSize()
+	s := &State{}
 
-	surface := wgpu.CreateSurface(getSurfaceDescriptor(window))
+	s.size = window.InnerSize()
+
+	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
 
 	adaper, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
-		CompatibleSurface: surface,
+		CompatibleSurface: s.surface,
 	})
 	if err != nil {
 		return nil, err
 	}
-	device, err := adaper.RequestDevice(nil)
+	defer adaper.Drop()
+
+	s.device, err = adaper.RequestDevice(nil)
 	if err != nil {
 		return nil, err
 	}
-	queue := device.GetQueue()
+	s.queue = s.device.GetQueue()
 
-	config := &wgpu.SwapChainDescriptor{
+	s.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface.GetPreferredFormat(adaper),
-		Width:       size.Width,
-		Height:      size.Height,
+		Format:      s.surface.GetPreferredFormat(adaper),
+		Width:       s.size.Width,
+		Height:      s.size.Height,
 		PresentMode: wgpu.PresentMode_Fifo,
 	}
-	swapChain, err := device.CreateSwapChain(surface, config)
+	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	shader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: shaderCode,
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer shader.Drop()
 
-	renderPipelineLayout, err := device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
+	renderPipelineLayout, err := s.device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		Label: "Render Pipeline Layout",
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer renderPipelineLayout.Drop()
 
-	renderPipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+	s.renderPipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label:  "Render Pipeline",
 		Layout: renderPipelineLayout,
 		Vertex: wgpu.VertexState{
@@ -87,7 +96,7 @@ func InitState(window display.Window) (*State, error) {
 			Module:     shader,
 			EntryPoint: "fs_main",
 			Targets: []wgpu.ColorTargetState{{
-				Format:    config.Format,
+				Format:    s.config.Format,
 				Blend:     &wgpu.BlendState_Replace,
 				WriteMask: wgpu.ColorWriteMask_All,
 			}},
@@ -104,20 +113,23 @@ func InitState(window display.Window) (*State, error) {
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	challengeShader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	challengeShader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "challenge.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{
 			Code: challengeShaderCode,
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
+	defer challengeShader.Drop()
 
-	challengeRenderPipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+	s.challengeRenderPipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label:  "Render Pipeline",
 		Layout: renderPipelineLayout,
 		Vertex: wgpu.VertexState{
@@ -128,7 +140,7 @@ func InitState(window display.Window) (*State, error) {
 			Module:     challengeShader,
 			EntryPoint: "fs_main",
 			Targets: []wgpu.ColorTargetState{{
-				Format:    config.Format,
+				Format:    s.config.Format,
 				Blend:     &wgpu.BlendState_Replace,
 				WriteMask: wgpu.ColorWriteMask_All,
 			}},
@@ -145,20 +157,11 @@ func InitState(window display.Window) (*State, error) {
 		},
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 
-	return &State{
-		surface:                 surface,
-		swapChain:               swapChain,
-		device:                  device,
-		queue:                   queue,
-		config:                  config,
-		size:                    size,
-		renderPipeline:          renderPipeline,
-		challengeRenderPipeline: challengeRenderPipeline,
-		useColor:                true,
-	}, nil
+	return s, nil
 }
 
 func (s *State) Resize(newSize dpi.PhysicalSize[uint32]) {
@@ -214,21 +217,52 @@ func (s *State) Render() error {
 	return nil
 }
 
+func (s *State) Destroy() {
+	if s.challengeRenderPipeline != nil {
+		s.challengeRenderPipeline.Drop()
+		s.challengeRenderPipeline = nil
+	}
+	if s.renderPipeline != nil {
+		s.renderPipeline.Drop()
+		s.renderPipeline = nil
+	}
+	if s.swapChain != nil {
+		s.swapChain = nil
+	}
+	if s.config != nil {
+		s.config = nil
+	}
+	if s.queue != nil {
+		s.queue = nil
+	}
+	if s.device != nil {
+		s.device.Drop()
+		s.device = nil
+	}
+	if s.surface != nil {
+		s.surface.Drop()
+		s.surface = nil
+	}
+}
+
 func main() {
 	d, err := display.NewDisplay()
 	if err != nil {
 		panic(err)
 	}
+	defer d.Destroy()
 
 	w, err := display.NewWindow(d)
 	if err != nil {
 		panic(err)
 	}
+	defer w.Destroy()
 
 	s, err := InitState(w)
 	if err != nil {
 		panic(err)
 	}
+	defer s.Destroy()
 
 	w.SetKeyboardInputCallback(func(state events.ButtonState, scanCode events.ScanCode, virtualKeyCode events.VirtualKey) {
 		if virtualKeyCode == events.VirtualKeySpace {

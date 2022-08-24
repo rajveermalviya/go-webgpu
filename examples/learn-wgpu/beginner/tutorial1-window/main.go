@@ -7,11 +7,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer d.Destroy()
 
 	w, err := display.NewWindow(d)
 	if err != nil {
 		panic(err)
 	}
+	defer w.Destroy()
 
 	w.SetCloseRequestedCallback(func() {
 		d.Destroy()
