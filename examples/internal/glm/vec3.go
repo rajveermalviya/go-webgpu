@@ -4,46 +4,46 @@ import "math"
 
 type Vec3[T float] [3]T
 
-func (v1 Vec3[T]) Dot(v2 Vec3[T]) T {
-	return (v1[0] * v2[0]) + (v1[1] * v2[1]) + (v1[2] * v2[2])
+func (lhs Vec3[T]) Dot(rhs Vec3[T]) T {
+	return (lhs[0] * rhs[0]) + (lhs[1] * rhs[1]) + (lhs[2] * rhs[2])
 }
 
-func (v1 Vec3[T]) Magnitude() T {
-	return T(math.Sqrt(float64(v1.Dot(v1))))
+func (lhs Vec3[T]) Magnitude() T {
+	return T(math.Sqrt(float64(lhs.Dot(lhs))))
 }
 
-func (v1 Vec3[T]) MulScalar(s T) Vec3[T] {
+func (lhs Vec3[T]) MulScalar(s T) Vec3[T] {
 	return Vec3[T]{
-		v1[0] * s,
-		v1[1] * s,
-		v1[2] * s,
+		lhs[0] * s,
+		lhs[1] * s,
+		lhs[2] * s,
 	}
 }
 
-func (v1 Vec3[T]) Normalize() Vec3[T] {
-	return v1.MulScalar(1 / v1.Magnitude())
+func (lhs Vec3[T]) Normalize() Vec3[T] {
+	return lhs.MulScalar(1 / lhs.Magnitude())
 }
 
-func (v1 Vec3[T]) Cross(v2 Vec3[T]) Vec3[T] {
+func (lhs Vec3[T]) Cross(rhs Vec3[T]) Vec3[T] {
 	return Vec3[T]{
-		v1[1]*v2[2] - v2[1]*v1[2],
-		v1[2]*v2[0] - v2[2]*v1[0],
-		v1[0]*v2[1] - v2[0]*v1[1],
+		lhs[1]*rhs[2] - rhs[1]*lhs[2],
+		lhs[2]*rhs[0] - rhs[2]*lhs[0],
+		lhs[0]*rhs[1] - rhs[0]*lhs[1],
 	}
 }
 
-func (v1 Vec3[T]) Add(v2 Vec3[T]) Vec3[T] {
+func (lhs Vec3[T]) Add(rhs Vec3[T]) Vec3[T] {
 	return Vec3[T]{
-		v1[0] + v2[0],
-		v1[1] + v2[1],
-		v1[2] + v2[2],
+		lhs[0] + rhs[0],
+		lhs[1] + rhs[1],
+		lhs[2] + rhs[2],
 	}
 }
 
-func (v1 Vec3[T]) Sub(v2 Vec3[T]) Vec3[T] {
+func (lhs Vec3[T]) Sub(rhs Vec3[T]) Vec3[T] {
 	return Vec3[T]{
-		v1[0] - v2[0],
-		v1[1] - v2[1],
-		v1[2] - v2[2],
+		lhs[0] - rhs[0],
+		lhs[1] - rhs[1],
+		lhs[2] - rhs[2],
 	}
 }

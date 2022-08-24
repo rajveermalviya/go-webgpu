@@ -2,8 +2,8 @@ package glm
 
 import "math"
 
-func PerspectiveRH[T float](fovYradians, aspectRatio, zNear, zFar T) Mat4[T] {
-	sinFov, cosFov := math.Sincos(float64(0.5) * float64(fovYradians))
+func PerspectiveRH[T float](fovYrad, aspectRatio, zNear, zFar T) Mat4[T] {
+	sinFov, cosFov := math.Sincos(float64(0.5) * float64(fovYrad))
 	h := T(cosFov) / T(sinFov)
 	w := h / aspectRatio
 	r := zFar / (zNear - zFar)
@@ -16,9 +16,8 @@ func PerspectiveRH[T float](fovYradians, aspectRatio, zNear, zFar T) Mat4[T] {
 	}
 }
 
-func Perspective[T float](fovyDeg, aspect, near, far T) Mat4[T] {
-	fovyRad := degToRad(fovyDeg)
-	f := T(1 / math.Tan(float64(fovyRad*0.5)))
+func Perspective[T float](fovYRad, aspect, near, far T) Mat4[T] {
+	f := T(1 / math.Tan(float64(fovYRad*0.5)))
 
 	return Mat4[T]{
 		f / aspect, 0, 0, 0,
@@ -41,6 +40,10 @@ func LookAtRH[T float](eye, center, up Vec3[T]) Mat4[T] {
 	}
 }
 
-func degToRad[T float](deg T) (rad T) {
+func DegToRad[T float](deg T) (rad T) {
 	return deg * (math.Pi / 180)
+}
+
+func RadToDeg[T float](rad T) (deg T) {
+	return rad * (180 / math.Pi)
 }

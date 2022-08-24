@@ -4,8 +4,41 @@ import "math"
 
 type Mat4[T float] [16]T
 
-func Mat4FromAngleZ[T float](thetaDeg T) Mat4[T] {
-	thetaRad := degToRad(thetaDeg)
+func Mat4FromQuaternion[T float](quat Quaternion[T]) Mat4[T] {
+	x2 := quat.V[0] + quat.V[0]
+	y2 := quat.V[1] + quat.V[1]
+	z2 := quat.V[2] + quat.V[2]
+
+	xx2 := x2 * quat.V[0]
+	xy2 := x2 * quat.V[1]
+	xz2 := x2 * quat.V[2]
+
+	yy2 := y2 * quat.V[1]
+	yz2 := y2 * quat.V[2]
+	zz2 := z2 * quat.V[2]
+
+	sy2 := y2 * quat.S
+	sz2 := z2 * quat.S
+	sx2 := x2 * quat.S
+
+	return Mat4[T]{
+		1 - yy2 - zz2, xy2 + sz2, xz2 - sy2, 0,
+		xy2 - sz2, 1 - xx2 - zz2, yz2 + sx2, 0,
+		xz2 + sy2, yz2 - sx2, 1 - xx2 - yy2, 0,
+		0, 0, 0, 1,
+	}
+}
+
+func Mat4FromTranslation[T float](v Vec3[T]) Mat4[T] {
+	return Mat4[T]{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		v[0], v[1], v[2], 1,
+	}
+}
+
+func Mat4FromAngleZ[T float](thetaRad T) Mat4[T] {
 	s, c := math.Sincos(float64(thetaRad))
 
 	return Mat4[T]{
@@ -16,22 +49,22 @@ func Mat4FromAngleZ[T float](thetaDeg T) Mat4[T] {
 	}
 }
 
-func (m1 Mat4[T]) Mul4(m2 Mat4[T]) Mat4[T] {
+func (lhs Mat4[T]) Mul4(rhs Mat4[T]) Mat4[T] {
 	return Mat4[T]{
-		m1[0]*m2[0] + m1[4]*m2[1] + m1[8]*m2[2] + m1[12]*m2[3],
-		m1[1]*m2[0] + m1[5]*m2[1] + m1[9]*m2[2] + m1[13]*m2[3],
-		m1[2]*m2[0] + m1[6]*m2[1] + m1[10]*m2[2] + m1[14]*m2[3],
-		m1[3]*m2[0] + m1[7]*m2[1] + m1[11]*m2[2] + m1[15]*m2[3],
-		m1[0]*m2[4] + m1[4]*m2[5] + m1[8]*m2[6] + m1[12]*m2[7],
-		m1[1]*m2[4] + m1[5]*m2[5] + m1[9]*m2[6] + m1[13]*m2[7],
-		m1[2]*m2[4] + m1[6]*m2[5] + m1[10]*m2[6] + m1[14]*m2[7],
-		m1[3]*m2[4] + m1[7]*m2[5] + m1[11]*m2[6] + m1[15]*m2[7],
-		m1[0]*m2[8] + m1[4]*m2[9] + m1[8]*m2[10] + m1[12]*m2[11],
-		m1[1]*m2[8] + m1[5]*m2[9] + m1[9]*m2[10] + m1[13]*m2[11],
-		m1[2]*m2[8] + m1[6]*m2[9] + m1[10]*m2[10] + m1[14]*m2[11],
-		m1[3]*m2[8] + m1[7]*m2[9] + m1[11]*m2[10] + m1[15]*m2[11],
-		m1[0]*m2[12] + m1[4]*m2[13] + m1[8]*m2[14] + m1[12]*m2[15],
-		m1[1]*m2[12] + m1[5]*m2[13] + m1[9]*m2[14] + m1[13]*m2[15],
-		m1[2]*m2[12] + m1[6]*m2[13] + m1[10]*m2[14] + m1[14]*m2[15],
-		m1[3]*m2[12] + m1[7]*m2[13] + m1[11]*m2[14] + m1[15]*m2[15]}
+		lhs[0]*rhs[0] + lhs[4]*rhs[1] + lhs[8]*rhs[2] + lhs[12]*rhs[3],
+		lhs[1]*rhs[0] + lhs[5]*rhs[1] + lhs[9]*rhs[2] + lhs[13]*rhs[3],
+		lhs[2]*rhs[0] + lhs[6]*rhs[1] + lhs[10]*rhs[2] + lhs[14]*rhs[3],
+		lhs[3]*rhs[0] + lhs[7]*rhs[1] + lhs[11]*rhs[2] + lhs[15]*rhs[3],
+		lhs[0]*rhs[4] + lhs[4]*rhs[5] + lhs[8]*rhs[6] + lhs[12]*rhs[7],
+		lhs[1]*rhs[4] + lhs[5]*rhs[5] + lhs[9]*rhs[6] + lhs[13]*rhs[7],
+		lhs[2]*rhs[4] + lhs[6]*rhs[5] + lhs[10]*rhs[6] + lhs[14]*rhs[7],
+		lhs[3]*rhs[4] + lhs[7]*rhs[5] + lhs[11]*rhs[6] + lhs[15]*rhs[7],
+		lhs[0]*rhs[8] + lhs[4]*rhs[9] + lhs[8]*rhs[10] + lhs[12]*rhs[11],
+		lhs[1]*rhs[8] + lhs[5]*rhs[9] + lhs[9]*rhs[10] + lhs[13]*rhs[11],
+		lhs[2]*rhs[8] + lhs[6]*rhs[9] + lhs[10]*rhs[10] + lhs[14]*rhs[11],
+		lhs[3]*rhs[8] + lhs[7]*rhs[9] + lhs[11]*rhs[10] + lhs[15]*rhs[11],
+		lhs[0]*rhs[12] + lhs[4]*rhs[13] + lhs[8]*rhs[14] + lhs[12]*rhs[15],
+		lhs[1]*rhs[12] + lhs[5]*rhs[13] + lhs[9]*rhs[14] + lhs[13]*rhs[15],
+		lhs[2]*rhs[12] + lhs[6]*rhs[13] + lhs[10]*rhs[14] + lhs[14]*rhs[15],
+		lhs[3]*rhs[12] + lhs[7]*rhs[13] + lhs[11]*rhs[14] + lhs[15]*rhs[15]}
 }

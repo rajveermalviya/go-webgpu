@@ -19,6 +19,14 @@ var shaderCode string
 //go:embed happy-tree.png
 var happyTreePng []byte
 
+const NumInstancesPerRow = 10
+
+var InstanceDisplacement = glm.Vec3[float32]{
+	NumInstancesPerRow * 0.5,
+	0.0,
+	NumInstancesPerRow * 0.5,
+}
+
 type Vertex struct {
 	position  [3]float32
 	texCoords [2]float32
@@ -123,28 +131,65 @@ func NewCameraController(speed float32) *CameraController {
 }
 
 func (c *CameraController) UpdateCamera(camera *Camera) {
-	forward := camera.target.Sub(camera.eye)
-	forwardNorm := forward.Normalize()
-	forwardMag := forward.Magnitude()
+	forward := camera.target.Sub(camera.eye).Normalize()
 
-	if c.isForwardPressed && forwardMag > c.speed {
-		camera.eye = camera.eye.Add(forwardNorm.MulScalar(c.speed))
+	if c.isForwardPressed {
+		camera.eye = camera.eye.Add(forward.MulScalar(c.speed))
 	}
 	if c.isBackwardPressed {
-		camera.eye = camera.eye.Sub(forwardNorm.MulScalar(c.speed))
+		camera.eye = camera.eye.Sub(forward.MulScalar(c.speed))
 	}
 
-	right := forwardNorm.Cross(camera.up)
-
-	forward = camera.target.Sub(camera.eye)
-	forwardMag = forward.Magnitude()
+	right := forward.Cross(camera.up)
 
 	if c.isRightPressed {
-		camera.eye = camera.target.Sub(forward.Add(right.MulScalar(c.speed)).Normalize().MulScalar(forwardMag))
+		camera.eye = camera.eye.Add(right.MulScalar(c.speed))
 	}
 	if c.isLeftPressed {
-		camera.eye = camera.target.Sub(forward.Sub(right.MulScalar(c.speed)).Normalize().MulScalar(forwardMag))
+		camera.eye = camera.eye.Sub(right.MulScalar(c.speed))
 	}
+}
+
+type Instance struct {
+	position glm.Vec3[float32]
+	rotation glm.Quaternion[float32]
+}
+
+func (i Instance) ToRaw() InstanceRaw {
+	return InstanceRaw{
+		model: glm.Mat4FromTranslation(i.position).Mul4(glm.Mat4FromQuaternion(i.rotation)),
+	}
+}
+
+type InstanceRaw struct {
+	model glm.Mat4[float32]
+}
+
+var InstanceBufferLayout = wgpu.VertexBufferLayout{
+	ArrayStride: uint64(unsafe.Sizeof(InstanceRaw{})),
+	StepMode:    wgpu.VertexStepMode_Instance,
+	Attributes: []wgpu.VertexAttribute{
+		{
+			Offset:         0,
+			ShaderLocation: 5,
+			Format:         wgpu.VertexFormat_Float32x4,
+		},
+		{
+			Offset:         uint64(unsafe.Sizeof([4]float32{})),
+			ShaderLocation: 6,
+			Format:         wgpu.VertexFormat_Float32x4,
+		},
+		{
+			Offset:         uint64(unsafe.Sizeof([8]float32{})),
+			ShaderLocation: 7,
+			Format:         wgpu.VertexFormat_Float32x4,
+		},
+		{
+			Offset:         uint64(unsafe.Sizeof([12]float32{})),
+			ShaderLocation: 8,
+			Format:         wgpu.VertexFormat_Float32x4,
+		},
+	},
 }
 
 type State struct {
@@ -160,12 +205,14 @@ type State struct {
 	numIndices       uint32
 	diffuseTexture   *Texture
 	diffuseBindGroup *wgpu.BindGroup
-
 	camera           *Camera
 	cameraController *CameraController
 	cameraUniform    *CameraUniform
 	cameraBuffer     *wgpu.Buffer
 	cameraBindGroup  *wgpu.BindGroup
+
+	instances      [NumInstancesPerRow * NumInstancesPerRow]Instance
+	instanceBuffer *wgpu.Buffer
 }
 
 func InitState(window display.Window) (*State, error) {
@@ -246,7 +293,7 @@ func InitState(window display.Window) (*State, error) {
 	}
 
 	camera := &Camera{
-		eye:     glm.Vec3[float32]{0, 1, 2},
+		eye:     glm.Vec3[float32]{0, 5, 10},
 		target:  glm.Vec3[float32]{0, 0, 0},
 		up:      glm.Vec3[float32]{0, 1, 0},
 		aspect:  float32(size.Width) / float32(size.Height),
@@ -262,6 +309,42 @@ func InitState(window display.Window) (*State, error) {
 		Label:    "Camera Buffer",
 		Contents: wgpu.ToBytes(cameraUniform.viewProj[:]),
 		Usage:    wgpu.BufferUsage_Uniform | wgpu.BufferUsage_CopyDst,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var instances [NumInstancesPerRow * NumInstancesPerRow]Instance
+	{
+		index := 0
+		for z := 0; z < NumInstancesPerRow; z++ {
+			for x := 0; x < NumInstancesPerRow; x++ {
+				position := glm.Vec3[float32]{float32(x), 0, float32(z)}.Sub(InstanceDisplacement)
+
+				var rotation glm.Quaternion[float32]
+				if position == (glm.Vec3[float32]{}) {
+					rotation = glm.QuaternionFromAxisAngle(glm.Vec3[float32]{0, 0, 1}, 0)
+				} else {
+					rotation = glm.QuaternionFromAxisAngle(position.Normalize(), glm.DegToRad[float32](45))
+				}
+
+				instances[index] = Instance{
+					position: position,
+					rotation: rotation,
+				}
+				index++
+			}
+		}
+	}
+
+	var instanceData [NumInstancesPerRow * NumInstancesPerRow]InstanceRaw
+	for i, v := range instances {
+		instanceData[i] = v.ToRaw()
+	}
+	instanceBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+		Label:    "Instance Buffer",
+		Contents: wgpu.ToBytes(instanceData[:]),
+		Usage:    wgpu.BufferUsage_Vertex,
 	})
 	if err != nil {
 		return nil, err
@@ -321,7 +404,7 @@ func InitState(window display.Window) (*State, error) {
 		Vertex: wgpu.VertexState{
 			Module:     shader,
 			EntryPoint: "vs_main",
-			Buffers:    []wgpu.VertexBufferLayout{VertexBufferLayout},
+			Buffers:    []wgpu.VertexBufferLayout{VertexBufferLayout, InstanceBufferLayout},
 		},
 		Fragment: &wgpu.FragmentState{
 			Module:     shader,
@@ -384,6 +467,8 @@ func InitState(window display.Window) (*State, error) {
 		cameraUniform:    cameraUniform,
 		cameraBuffer:     cameraBuffer,
 		cameraBindGroup:  cameraBindGroup,
+		instances:        instances,
+		instanceBuffer:   instanceBuffer,
 	}, nil
 }
 
@@ -438,8 +523,9 @@ func (s *State) Render() error {
 	renderPass.SetBindGroup(0, s.diffuseBindGroup, nil)
 	renderPass.SetBindGroup(1, s.cameraBindGroup, nil)
 	renderPass.SetVertexBuffer(0, s.vertexBuffer, 0, 0)
+	renderPass.SetVertexBuffer(1, s.instanceBuffer, 0, 0)
 	renderPass.SetIndexBuffer(s.indexBuffer, wgpu.IndexFormat_Uint16, 0, 0)
-	renderPass.DrawIndexed(s.numIndices, 1, 0, 0, 0)
+	renderPass.DrawIndexed(s.numIndices, uint32(len(s.instances)), 0, 0, 0)
 	renderPass.End()
 
 	s.queue.Submit(encoder.Finish(nil))

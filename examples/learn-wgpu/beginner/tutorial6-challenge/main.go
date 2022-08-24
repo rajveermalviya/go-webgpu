@@ -74,18 +74,18 @@ var OpenGlToWgpuMatrix = glm.Mat4[float32]{
 }
 
 type Camera struct {
-	eye    glm.Vec3[float32]
-	target glm.Vec3[float32]
-	up     glm.Vec3[float32]
-	aspect float32
-	fovy   float32
-	znear  float32
-	zfar   float32
+	eye     glm.Vec3[float32]
+	target  glm.Vec3[float32]
+	up      glm.Vec3[float32]
+	aspect  float32
+	fovYRad float32
+	znear   float32
+	zfar    float32
 }
 
 func (c *Camera) buildViewProjectionMatrix() glm.Mat4[float32] {
 	view := glm.LookAtRH(c.eye, c.target, c.up)
-	proj := glm.Perspective(c.fovy, c.aspect, c.znear, c.zfar)
+	proj := glm.Perspective(c.fovYRad, c.aspect, c.znear, c.zfar)
 	return proj.Mul4(view)
 }
 
@@ -104,7 +104,7 @@ func NewCameraStaging(camera *Camera) *CameraStaging {
 func (c *CameraStaging) UpdateCamera(cameraUniform *CameraUniform) {
 	cameraUniform.modelViewProj = OpenGlToWgpuMatrix.
 		Mul4(c.camera.buildViewProjectionMatrix()).
-		Mul4(glm.Mat4FromAngleZ(c.modelRotationDeg))
+		Mul4(glm.Mat4FromAngleZ(glm.DegToRad(c.modelRotationDeg)))
 }
 
 type CameraUniform struct {
@@ -258,13 +258,13 @@ func InitState(window display.Window) (*State, error) {
 	}
 
 	camera := &Camera{
-		eye:    glm.Vec3[float32]{0, 1, 2},
-		target: glm.Vec3[float32]{0, 0, 0},
-		up:     glm.Vec3[float32]{0, 1, 0},
-		aspect: float32(size.Width) / float32(size.Height),
-		fovy:   45.0,
-		znear:  0.1,
-		zfar:   100.0,
+		eye:     glm.Vec3[float32]{0, 1, 2},
+		target:  glm.Vec3[float32]{0, 0, 0},
+		up:      glm.Vec3[float32]{0, 1, 0},
+		aspect:  float32(size.Width) / float32(size.Height),
+		fovYRad: glm.DegToRad[float32](45),
+		znear:   0.1,
+		zfar:    100.0,
 	}
 	cameraController := NewCameraController(0.2)
 	cameraUniform := NewCameraUnifrom()
