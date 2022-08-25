@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -15,6 +16,8 @@ import (
 var forceFallbackAdapter = os.Getenv("WGPU_FORCE_FALLBACK_ADAPTER") == "1"
 
 func init() {
+	runtime.LockOSThread()
+
 	switch os.Getenv("WGPU_LOG_LEVEL") {
 	case "OFF":
 		wgpu.SetLogLevel(wgpu.LogLevel_Off)
@@ -34,64 +37,62 @@ func init() {
 //go:embed shader.wgsl
 var shader string
 
-func main() {
-	runtime.LockOSThread()
+type State struct {
+	surface   *wgpu.Surface
+	swapChain *wgpu.SwapChain
+	device    *wgpu.Device
+	queue     *wgpu.Queue
+	config    *wgpu.SwapChainDescriptor
+	pipeline  *wgpu.RenderPipeline
+}
 
-	if err := glfw.Init(); err != nil {
-		panic(err)
-	}
-	defer glfw.Terminate()
+func InitState(window *glfw.Window) (*State, error) {
+	s := &State{}
 
-	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	window, err := glfw.CreateWindow(640, 480, "go-webgpu with glfw", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	defer window.Destroy()
-
-	surface := wgpu.CreateSurface(getSurfaceDescriptor(window))
-	if surface == nil {
-		panic("got nil surface")
-	}
+	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
 
 	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
-		CompatibleSurface:    surface,
+		CompatibleSurface:    s.surface,
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
+	defer adapter.Drop()
 
-	device, err := adapter.RequestDevice(nil)
+	s.device, err = adapter.RequestDevice(nil)
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
-	defer device.Drop()
-	queue := device.GetQueue()
+	s.queue = s.device.GetQueue()
 
-	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	shader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label:          "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{Code: shader},
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
 	defer shader.Drop()
 
 	width, height := window.GetSize()
-	config := &wgpu.SwapChainDescriptor{
+	s.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface.GetPreferredFormat(adapter),
+		Format:      s.surface.GetPreferredFormat(adapter),
 		Width:       uint32(width),
 		Height:      uint32(height),
 		PresentMode: wgpu.PresentMode_Fifo,
 	}
-	swapChain, err := device.CreateSwapChain(surface, config)
+	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
 
-	pipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+	s.pipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label: "Render Pipeline",
 		Vertex: wgpu.VertexState{
 			Module:     shader,
@@ -113,7 +114,7 @@ func main() {
 			EntryPoint: "fs_main",
 			Targets: []wgpu.ColorTargetState{
 				{
-					Format:    config.Format,
+					Format:    s.config.Format,
 					Blend:     &wgpu.BlendState_Replace,
 					WriteMask: wgpu.ColorWriteMask_All,
 				},
@@ -121,92 +122,134 @@ func main() {
 		},
 	})
 	if err != nil {
+		s.Destroy()
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func (s *State) Resize(width, height int) {
+	if width > 0 && height > 0 {
+		s.config.Width = uint32(width)
+		s.config.Height = uint32(height)
+
+		var err error
+		s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (s *State) Render() error {
+	nextTexture, err := s.swapChain.GetCurrentTextureView()
+	if err != nil {
+		return err
+	}
+	defer nextTexture.Drop()
+
+	encoder, err := s.device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
+		Label: "Command Encoder",
+	})
+	if err != nil {
+		return err
+	}
+
+	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
+		ColorAttachments: []wgpu.RenderPassColorAttachment{
+			{
+				View:       nextTexture,
+				LoadOp:     wgpu.LoadOp_Clear,
+				StoreOp:    wgpu.StoreOp_Store,
+				ClearValue: wgpu.Color_Green,
+			},
+		},
+	})
+
+	renderPass.SetPipeline(s.pipeline)
+	renderPass.Draw(3, 1, 0, 0)
+	renderPass.End()
+
+	s.queue.Submit(encoder.Finish(nil))
+	s.swapChain.Present()
+
+	return nil
+}
+
+func (s *State) Destroy() {
+	if s.pipeline != nil {
+		s.pipeline.Drop()
+		s.pipeline = nil
+	}
+	if s.swapChain != nil {
+		s.swapChain = nil
+	}
+	if s.config != nil {
+		s.config = nil
+	}
+	if s.queue != nil {
+		s.queue = nil
+	}
+	if s.device != nil {
+		s.device.Drop()
+		s.device = nil
+	}
+	if s.surface != nil {
+		s.surface.Drop()
+		s.surface = nil
+	}
+}
+
+func main() {
+	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
-	defer pipeline.Drop()
+	defer glfw.Terminate()
 
-	renderBundleEncoder, err := device.CreateRenderBundleEncoder(&wgpu.RenderBundleEncoderDescriptor{
-		ColorFormats: []wgpu.TextureFormat{config.Format},
-		SampleCount:  1,
-	})
+	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+	window, err := glfw.CreateWindow(640, 480, "go-webgpu with glfw", nil, nil)
 	if err != nil {
 		panic(err)
 	}
+	defer window.Destroy()
 
-	renderBundleEncoder.SetPipeline(pipeline)
-	renderBundleEncoder.Draw(3, 1, 0, 0)
-	renderBundle := renderBundleEncoder.Finish(nil)
-	defer renderBundle.Drop()
+	s, err := InitState(window)
+	if err != nil {
+		panic(err)
+	}
+	defer s.Destroy()
 
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		// Print resource usage on pressing 'R'
 		if key == glfw.KeyR && (action == glfw.Press || action == glfw.Repeat) {
-			r, _ := json.MarshalIndent(wgpu.GenerateReport(), "", "  ")
-			fmt.Print(string(r))
+			report := wgpu.GenerateReport()
+			buf, _ := json.MarshalIndent(report, "", "  ")
+			fmt.Print(string(buf))
 		}
 	})
 
+	window.SetSizeCallback(func(w *glfw.Window, width, height int) {
+		s.Resize(width, height)
+	})
+
 	for !window.ShouldClose() {
-		func() {
-			var nextTexture *wgpu.TextureView
+		glfw.PollEvents()
 
-			for attempt := 0; attempt < 2; attempt++ {
-				width, height := window.GetSize()
+		err := s.Render()
+		if err != nil {
+			fmt.Println(err)
 
-				if width != int(config.Width) || height != int(config.Height) {
-					config.Width = uint32(width)
-					config.Height = uint32(height)
-
-					swapChain, err = device.CreateSwapChain(surface, config)
-					if err != nil {
-						panic(err)
-					}
-				}
-
-				nextTexture, err = swapChain.GetCurrentTextureView()
-				if err != nil {
-					fmt.Printf("err: %v\n", err)
-				}
-				if attempt == 0 && nextTexture == nil {
-					fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
-					config.Width = 0
-					config.Height = 0
-					continue
-				}
-
-				break
-			}
-
-			if nextTexture == nil {
-				panic("Cannot acquire next swap chain texture")
-			}
-			defer nextTexture.Drop()
-
-			encoder, err := device.CreateCommandEncoder(&wgpu.CommandEncoderDescriptor{
-				Label: "Command Encoder",
-			})
-			if err != nil {
+			errstr := err.Error()
+			switch {
+			case strings.Contains(errstr, "Lost"):
+				s.Resize(window.GetSize())
+			case strings.Contains(errstr, "Outdated"):
+				s.Resize(window.GetSize())
+			case strings.Contains(errstr, "Timeout"):
+			default:
 				panic(err)
 			}
-
-			renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
-				ColorAttachments: []wgpu.RenderPassColorAttachment{
-					{
-						View:       nextTexture,
-						LoadOp:     wgpu.LoadOp_Clear,
-						StoreOp:    wgpu.StoreOp_Store,
-						ClearValue: wgpu.Color_Green,
-					},
-				},
-			})
-
-			renderPass.ExecuteBundles(renderBundle)
-			renderPass.End()
-
-			queue.Submit(encoder.Finish(nil))
-			swapChain.Present()
-
-			glfw.PollEvents()
-		}()
+		}
 	}
 }
