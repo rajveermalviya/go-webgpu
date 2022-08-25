@@ -59,6 +59,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer adapter.Drop()
 
 	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
 		Label: "Device",
@@ -152,6 +153,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer f.Close()
+
 	imageEncoder := png.Encoder{CompressionLevel: png.BestCompression}
 	err = imageEncoder.Encode(f, &image.NRGBA{
 		Pix:    data,
