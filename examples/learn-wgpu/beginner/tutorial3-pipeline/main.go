@@ -35,12 +35,14 @@ func InitState(window display.Window) (*State, error) {
 		CompatibleSurface: s.surface,
 	})
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 	defer adaper.Drop()
 
 	s.device, err = adaper.RequestDevice(nil)
 	if err != nil {
+		s.Destroy()
 		return nil, err
 	}
 	s.queue = s.device.GetQueue()
