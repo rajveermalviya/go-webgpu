@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"strings"
 
 	"github.com/rajveermalviya/gamen/display"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -157,56 +158,26 @@ func (a *app) resize(width, height uint32) {
 		return
 	}
 
-	var err error
-	a.config.Width = width
-	a.config.Height = height
+	if width > 0 && height > 0 {
+		a.config.Width = width
+		a.config.Height = height
 
-	a.swapChain, err = a.device.CreateSwapChain(a.surface, a.config)
-	if err != nil {
-		panic(err)
+		var err error
+		a.swapChain, err = a.device.CreateSwapChain(a.surface, a.config)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
-func (a *app) redraw() {
+func (a *app) render() error {
 	if !a.hasInit || !a.hasSurfaceInit {
-		return
+		return nil
 	}
 
-	var nextTexture *wgpu.TextureView
-	var err error
-
-	for attempt := 0; attempt < 2; attempt++ {
-		size := a.window.InnerSize()
-		if size.Width == 0 || size.Height == 0 {
-			return
-		}
-
-		if size.Width != a.config.Width || size.Height != a.config.Height {
-			a.config.Width = size.Width
-			a.config.Height = size.Height
-
-			a.swapChain, err = a.device.CreateSwapChain(a.surface, a.config)
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		nextTexture, err = a.swapChain.GetCurrentTextureView()
-		if err != nil {
-			println("err:", err)
-		}
-		if attempt == 0 && nextTexture == nil {
-			println("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...")
-			a.config.Width = 0
-			a.config.Height = 0
-			continue
-		}
-
-		break
-	}
-
-	if nextTexture == nil {
-		panic("Cannot acquire next swap chain texture")
+	nextTexture, err := a.swapChain.GetCurrentTextureView()
+	if err != nil {
+		return err
 	}
 	defer nextTexture.Drop()
 
@@ -214,7 +185,7 @@ func (a *app) redraw() {
 		Label: "Command Encoder",
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
@@ -235,6 +206,8 @@ func (a *app) redraw() {
 	queue := a.device.GetQueue()
 	queue.Submit(encoder.Finish(nil))
 	a.swapChain.Present()
+
+	return err
 }
 
 func main() {
@@ -272,12 +245,27 @@ func main() {
 
 	w.SetCloseRequestedCallback(func() { d.Destroy() })
 
-loop:
 	for {
-		a.redraw()
-
 		if !d.Poll() {
-			break loop
+			break
+		}
+
+		err := a.render()
+		if err != nil {
+			errstr := err.Error()
+			fmt.Println(errstr)
+
+			switch {
+			case strings.Contains(errstr, "Lost"):
+				size := w.InnerSize()
+				a.resize(size.Width, size.Height)
+			case strings.Contains(errstr, "Outdated"):
+				size := w.InnerSize()
+				a.resize(size.Width, size.Height)
+			case strings.Contains(errstr, "Timeout"):
+			default:
+				panic(err)
+			}
 		}
 	}
 }
