@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"strings"
 	"unsafe"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -17,6 +18,8 @@ import (
 var forceFallbackAdapter = os.Getenv("WGPU_FORCE_FALLBACK_ADAPTER") == "1"
 
 func init() {
+	runtime.LockOSThread()
+
 	switch os.Getenv("WGPU_LOG_LEVEL") {
 	case "OFF":
 		wgpu.SetLogLevel(wgpu.LogLevel_Off)
@@ -33,11 +36,26 @@ func init() {
 	}
 }
 
-const vertexSize = uint64(unsafe.Sizeof(Vertex{}))
-
 type Vertex struct {
 	pos      [4]float32
 	texCoord [2]float32
+}
+
+var VertexBufferLayout = wgpu.VertexBufferLayout{
+	ArrayStride: uint64(unsafe.Sizeof(Vertex{})),
+	StepMode:    wgpu.VertexStepMode_Vertex,
+	Attributes: []wgpu.VertexAttribute{
+		{
+			Format:         wgpu.VertexFormat_Float32x4,
+			Offset:         0,
+			ShaderLocation: 0,
+		},
+		{
+			Format:         wgpu.VertexFormat_Float32x2,
+			Offset:         4 * 4,
+			ShaderLocation: 1,
+		},
+	},
 }
 
 func vertex(pos1, pos2, pos3, tc1, tc2 float32) Vertex {
@@ -47,7 +65,7 @@ func vertex(pos1, pos2, pos3, tc1, tc2 float32) Vertex {
 	}
 }
 
-var vertexData = []Vertex{
+var vertexData = [...]Vertex{
 	// top (0, 0, 1)
 	vertex(-1, -1, 1, 0, 0),
 	vertex(1, -1, 1, 1, 0),
@@ -80,7 +98,7 @@ var vertexData = []Vertex{
 	vertex(1, -1, -1, 0, 1),
 }
 
-var indexData = []uint16{
+var indexData = [...]uint16{
 	0, 1, 2, 2, 3, 0, // top
 	4, 5, 6, 6, 7, 4, // bottom
 	8, 9, 10, 10, 11, 8, // right
@@ -89,12 +107,12 @@ var indexData = []uint16{
 	20, 21, 22, 22, 23, 20, // back
 }
 
-func createTexels(size int) []uint8 {
-	arr := make([]uint8, size*size)
+const texelsSize = 256
 
-	for id := 0; id < (size * size); id++ {
-		cx := 3.0*float32(id%size)/float32(size-1) - 2.0
-		cy := 2.0*float32(id/size)/float32(size-1) - 1.0
+func createTexels() (texels [texelsSize * texelsSize]uint8) {
+	for id := 0; id < (texelsSize * texelsSize); id++ {
+		cx := 3.0*float32(id%texelsSize)/float32(texelsSize-1) - 2.0
+		cy := 2.0*float32(id/texelsSize)/float32(texelsSize-1) - 1.0
 		x, y, count := float32(cx), float32(cy), uint8(0)
 		for count < 0xFF && x*x+y*y < 4.0 {
 			oldX := x
@@ -102,10 +120,10 @@ func createTexels(size int) []uint8 {
 			y = 2.0*oldX*y + cy
 			count += 1
 		}
-		arr[id] = count
+		texels[id] = count
 	}
 
-	return arr
+	return texels
 }
 
 func generateMatrix(aspectRatio float32) glm.Mat4[float32] {
@@ -122,85 +140,85 @@ func generateMatrix(aspectRatio float32) glm.Mat4[float32] {
 //go:embed shader.wgsl
 var shader string
 
-func main() {
-	runtime.LockOSThread()
+type State struct {
+	surface    *wgpu.Surface
+	swapChain  *wgpu.SwapChain
+	device     *wgpu.Device
+	queue      *wgpu.Queue
+	config     *wgpu.SwapChainDescriptor
+	vertexBuf  *wgpu.Buffer
+	indexBuf   *wgpu.Buffer
+	uniformBuf *wgpu.Buffer
+	pipeline   *wgpu.RenderPipeline
+	bindGroup  *wgpu.BindGroup
+}
 
-	if err := glfw.Init(); err != nil {
-		panic(err)
-	}
-	defer glfw.Terminate()
+func InitState(window *glfw.Window) (*State, error) {
+	s := &State{}
 
-	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	window, err := glfw.CreateWindow(640, 480, "go-webgpu with glfw", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	defer window.Destroy()
-
-	surface := wgpu.CreateSurface(getSurfaceDescriptor(window))
-	if surface == nil {
-		panic("got nil surface")
-	}
+	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
 
 	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
-		CompatibleSurface:    surface,
+		CompatibleSurface:    s.surface,
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
+	defer adapter.Drop()
 
-	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
+	s.device, err = adapter.RequestDevice(&wgpu.DeviceDescriptor{
 		Label: "Device",
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
-	defer device.Drop()
-	queue := device.GetQueue()
+	s.queue = s.device.GetQueue()
 
 	width, height := window.GetSize()
-	config := &wgpu.SwapChainDescriptor{
+	s.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface.GetPreferredFormat(adapter),
+		Format:      s.surface.GetPreferredFormat(adapter),
 		Width:       uint32(width),
 		Height:      uint32(height),
 		PresentMode: wgpu.PresentMode_Fifo,
 	}
 
-	swapChain, err := device.CreateSwapChain(surface, config)
+	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
 
-	vertexBuf, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.vertexBuf, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Vertex Buffer",
-		Contents: wgpu.ToBytes(vertexData),
+		Contents: wgpu.ToBytes(vertexData[:]),
 		Usage:    wgpu.BufferUsage_Vertex,
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
-	defer vertexBuf.Drop()
 
-	indexBuf, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	s.indexBuf, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Index Buffer",
-		Contents: wgpu.ToBytes(indexData),
+		Contents: wgpu.ToBytes(indexData[:]),
 		Usage:    wgpu.BufferUsage_Index,
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
-	defer indexBuf.Drop()
 
-	size := 256
-	texels := createTexels(size)
+	texels := createTexels()
 	textureExtent := wgpu.Extent3D{
-		Width:              uint32(size),
-		Height:             uint32(size),
+		Width:              texelsSize,
+		Height:             texelsSize,
 		DepthOrArrayLayers: 1,
 	}
-	texture, err := device.CreateTexture(&wgpu.TextureDescriptor{
+	texture, err := s.device.CreateTexture(&wgpu.TextureDescriptor{
 		Size:          textureExtent,
 		MipLevelCount: 1,
 		SampleCount:   1,
@@ -209,71 +227,58 @@ func main() {
 		Usage:         wgpu.TextureUsage_TextureBinding | wgpu.TextureUsage_CopyDst,
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
 	defer texture.Drop()
 
 	textureView := texture.CreateView(nil)
 	defer textureView.Drop()
 
-	queue.WriteTexture(
+	s.queue.WriteTexture(
 		texture.AsImageCopy(),
-		wgpu.ToBytes(texels),
+		wgpu.ToBytes(texels[:]),
 		&wgpu.TextureDataLayout{
 			Offset:       0,
-			BytesPerRow:  uint32(size),
+			BytesPerRow:  texelsSize,
 			RowsPerImage: 0,
 		},
 		&textureExtent,
 	)
 
-	mxTotal := generateMatrix(float32(config.Width) / float32(config.Height))
-	uniformBuf, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+	mxTotal := generateMatrix(float32(s.config.Width) / float32(s.config.Height))
+	s.uniformBuf, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Uniform Buffer",
 		Contents: wgpu.ToBytes(mxTotal[:]),
 		Usage:    wgpu.BufferUsage_Uniform | wgpu.BufferUsage_CopyDst,
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
-	defer uniformBuf.Drop()
 
-	shader, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
+	shader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label:          "shader.wgsl",
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{Code: shader},
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
 	defer shader.Drop()
 
-	pipeline, err := device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
+	s.pipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Vertex: wgpu.VertexState{
 			Module:     shader,
 			EntryPoint: "vs_main",
-			Buffers: []wgpu.VertexBufferLayout{{
-				ArrayStride: vertexSize,
-				StepMode:    wgpu.VertexStepMode_Vertex,
-				Attributes: []wgpu.VertexAttribute{
-					{
-						Format:         wgpu.VertexFormat_Float32x4,
-						Offset:         0,
-						ShaderLocation: 0,
-					},
-					{
-						Format:         wgpu.VertexFormat_Float32x2,
-						Offset:         4 * 4,
-						ShaderLocation: 1,
-					},
-				},
-			}},
+			Buffers:    []wgpu.VertexBufferLayout{VertexBufferLayout},
 		},
 		Fragment: &wgpu.FragmentState{
 			Module:     shader,
 			EntryPoint: "fs_main",
 			Targets: []wgpu.ColorTargetState{
 				{
-					Format:    config.Format,
+					Format:    s.config.Format,
 					Blend:     nil,
 					WriteMask: wgpu.ColorWriteMask_All,
 				},
@@ -292,18 +297,18 @@ func main() {
 		},
 	})
 	if err != nil {
-		panic(err)
+		s.Destroy()
+		return nil, err
 	}
-	defer pipeline.Drop()
 
-	bindGroupLayout := pipeline.GetBindGroupLayout(0)
+	bindGroupLayout := s.pipeline.GetBindGroupLayout(0)
 
-	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+	s.bindGroup, err = s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Layout: bindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{
 			{
 				Binding: 0,
-				Buffer:  uniformBuf,
+				Buffer:  s.uniformBuf,
 				Offset:  0,
 				Size:    0,
 			},
@@ -314,76 +319,145 @@ func main() {
 		},
 	})
 	if err != nil {
+		s.Destroy()
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func (s *State) Resize(width, height int) {
+	if width > 0 && height > 0 {
+		s.config.Width = uint32(width)
+		s.config.Height = uint32(height)
+
+		mxTotal := generateMatrix(float32(width) / float32(height))
+		s.queue.WriteBuffer(s.uniformBuf, 0, wgpu.ToBytes(mxTotal[:]))
+
+		var err error
+		s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (s *State) Render() error {
+	nextTexture, err := s.swapChain.GetCurrentTextureView()
+	if err != nil {
+		return err
+	}
+	defer nextTexture.Drop()
+
+	encoder, err := s.device.CreateCommandEncoder(nil)
+	if err != nil {
+		return err
+	}
+
+	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
+		ColorAttachments: []wgpu.RenderPassColorAttachment{
+			{
+				View:       nextTexture,
+				LoadOp:     wgpu.LoadOp_Clear,
+				StoreOp:    wgpu.StoreOp_Store,
+				ClearValue: wgpu.Color{R: 0.1, G: 0.2, B: 0.3, A: 1.0},
+			},
+		},
+	})
+
+	renderPass.SetPipeline(s.pipeline)
+	renderPass.SetBindGroup(0, s.bindGroup, nil)
+	renderPass.SetIndexBuffer(s.indexBuf, wgpu.IndexFormat_Uint16, 0, 0)
+	renderPass.SetVertexBuffer(0, s.vertexBuf, 0, 0)
+	renderPass.DrawIndexed(uint32(len(indexData)), 1, 0, 0, 0)
+	renderPass.End()
+
+	s.queue.Submit(encoder.Finish(nil))
+	s.swapChain.Present()
+
+	return nil
+}
+
+func (s *State) Destroy() {
+	if s.bindGroup != nil {
+		s.bindGroup.Drop()
+		s.bindGroup = nil
+	}
+	if s.pipeline != nil {
+		s.pipeline.Drop()
+		s.pipeline = nil
+	}
+	if s.uniformBuf != nil {
+		s.uniformBuf.Drop()
+		s.uniformBuf = nil
+	}
+	if s.indexBuf != nil {
+		s.indexBuf.Drop()
+		s.indexBuf = nil
+	}
+	if s.vertexBuf != nil {
+		s.vertexBuf.Drop()
+		s.vertexBuf = nil
+	}
+	if s.swapChain != nil {
+		s.swapChain = nil
+	}
+	if s.config != nil {
+		s.config = nil
+	}
+	if s.queue != nil {
+		s.queue = nil
+	}
+	if s.device != nil {
+		s.device.Drop()
+		s.device = nil
+	}
+	if s.surface != nil {
+		s.surface.Drop()
+		s.surface = nil
+	}
+}
+
+func main() {
+	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
-	defer bindGroup.Drop()
+	defer glfw.Terminate()
+
+	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+	window, err := glfw.CreateWindow(640, 480, "go-webgpu with glfw", nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer window.Destroy()
+
+	s, err := InitState(window)
+	if err != nil {
+		panic(err)
+	}
+	defer s.Destroy()
+
+	window.SetSizeCallback(func(w *glfw.Window, width, height int) {
+		s.Resize(width, height)
+	})
 
 	for !window.ShouldClose() {
-		func() {
-			var nextTexture *wgpu.TextureView
+		glfw.PollEvents()
 
-			for attempt := 0; attempt < 2; attempt++ {
-				width, height := window.GetSize()
+		err := s.Render()
+		if err != nil {
+			fmt.Println(err)
 
-				if width != int(config.Width) || height != int(config.Height) {
-					config.Width = uint32(width)
-					config.Height = uint32(height)
-
-					mxTotal := generateMatrix(float32(config.Width) / float32(config.Height))
-					queue.WriteBuffer(uniformBuf, 0, wgpu.ToBytes(mxTotal[:]))
-
-					swapChain, err = device.CreateSwapChain(surface, config)
-					if err != nil {
-						panic(err)
-					}
-				}
-
-				nextTexture, err = swapChain.GetCurrentTextureView()
-				if err != nil {
-					fmt.Printf("err: %v\n", err)
-				}
-				if attempt == 0 && nextTexture == nil {
-					fmt.Printf("swapChain.GetCurrentTextureView() failed; trying to create a new swap chain...\n")
-					config.Width = 0
-					config.Height = 0
-					continue
-				}
-
-				break
-			}
-
-			if nextTexture == nil {
-				panic("Cannot acquire next swap chain texture")
-			}
-			defer nextTexture.Drop()
-
-			encoder, err := device.CreateCommandEncoder(nil)
-			if err != nil {
+			errstr := err.Error()
+			switch {
+			case strings.Contains(errstr, "Lost"):
+				s.Resize(window.GetSize())
+			case strings.Contains(errstr, "Outdated"):
+				s.Resize(window.GetSize())
+			case strings.Contains(errstr, "Timeout"):
+			default:
 				panic(err)
 			}
-
-			renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
-				ColorAttachments: []wgpu.RenderPassColorAttachment{
-					{
-						View:       nextTexture,
-						LoadOp:     wgpu.LoadOp_Clear,
-						StoreOp:    wgpu.StoreOp_Store,
-						ClearValue: wgpu.Color{R: 0.1, G: 0.2, B: 0.3, A: 1.0},
-					},
-				},
-			})
-
-			renderPass.SetPipeline(pipeline)
-			renderPass.SetBindGroup(0, bindGroup, nil)
-			renderPass.SetIndexBuffer(indexBuf, wgpu.IndexFormat_Uint16, 0, 0)
-			renderPass.SetVertexBuffer(0, vertexBuf, 0, 0)
-			renderPass.DrawIndexed(uint32(len(indexData)), 1, 0, 0, 0)
-			renderPass.End()
-
-			queue.Submit(encoder.Finish(nil))
-			swapChain.Present()
-
-			glfw.PollEvents()
-		}()
+		}
 	}
 }
