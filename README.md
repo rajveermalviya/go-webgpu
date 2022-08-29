@@ -15,73 +15,14 @@ For more info check:
 
 Included static libs & windows dll are built via [Github Actions](./.github/workflows/build-wgpu.yml).
 
-## Check out examples
+## Examples
 
-### [compute](./examples/compute/main.go)
+|                                                    |                                                  |                                                          |
+| -------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------- |
+| [![](./tests/boids/image-msaa.png)][boids-example] | [![](./tests/cube/image-msaa.png)][cube-example] | [![](./tests/triangle/image-msaa.png)][triangle-example] |
 
-```shell
-go run github.com/rajveermalviya/go-webgpu/examples/compute@latest
-```
+[boids-example]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/boids
+[cube-example]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/cube
+[triangle-example]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/triangle
 
-### [capture](./examples/capture/main.go)
-
-Creates `./image.png` with all pixels red and size 100x200
-
-```shell
-go run github.com/rajveermalviya/go-webgpu/examples/capture@latest
-```
-
-### [triangle](./examples/triangle/main.go)
-
-This example uses [go-glfw](https://github.com/go-gl/glfw) so it will use cgo on **_all platforms_**, you will also need
-[some libraries installed](https://github.com/go-gl/glfw#installation) to run the example.
-
-```shell
-go run github.com/rajveermalviya/go-webgpu/examples/triangle@latest
-
-# same example but with 4x MSAA
-go run github.com/rajveermalviya/go-webgpu/examples/triangle-msaa@latest
-```
-
-![](./examples/triangle/image-msaa.png)
-
-### [cube](./examples/cube/main.go)
-
-This example also uses [go-glfw](https://github.com/go-gl/glfw).
-
-```shell
-go run github.com/rajveermalviya/go-webgpu/examples/cube@latest
-```
-
-![](./examples/cube/image-msaa.png)
-
-### [boids](./examples/boids/main.go)
-
-This example also uses [go-glfw](https://github.com/go-gl/glfw).
-
-```shell
-go run github.com/rajveermalviya/go-webgpu/examples/boids@latest
-```
-
-![](./examples/boids/image-msaa.png)
-
-### [gamen-windowing](./examples/gamen-windowing/main.go)
-
-This example uses [gamen](https://github.com/rajveermalviya/gamen) for windowing, it **doesn't** use cgo on windows.
-
-```shell
-go run github.com/rajveermalviya/go-webgpu/examples/gamen-windowing@latest
-```
-
-This example also supports running on android.
-
-```shell
-# install android sdk
-# connect your device and setup adb / run android emulator
-
-# install tsukuru to build apk
-go install github.com/rajveermalviya/tsukuru@latest
-
-cd examples/gamen-windowing
-tsukuru run apk .
-```
+You can check out all the examples in [go-webgpu-examples repo](https://github.com/rajveermalviya/go-webgpu-examples)

@@ -2,6 +2,6 @@ go 1.18
 
 use (
 	./cmd/gen_enums
-	./examples
+	./tests
 	./wgpu
 )
