@@ -9,7 +9,7 @@ import (
 	"unsafe"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
-	"github.com/rajveermalviya/go-webgpu-examples/internal/glm"
+	"github.com/rajveermalviya/go-webgpu/tests/internal/glm"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
 
 	_ "embed"
