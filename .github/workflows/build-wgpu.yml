@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  WGPU_COMMIT: 210dd1b339f906178c7aa69cc175798ddd02a54a
+  WGPU_COMMIT: 5f9532af781e9e0af8449ad6a63a2286cc008395
   ANDROID_MIN_SDK: "21"
 
 jobs:
@@ -137,12 +137,12 @@ jobs:
           mkdir -p /tmp/go-webgpu-ndk/
           cd /tmp/go-webgpu-ndk/
 
-          # ndkVersion "25.0.8775105"
-          curl -LO https://dl.google.com/android/repository/android-ndk-r25-linux.zip
+          # ndkVersion "25.1.8937393"
+          curl -LO https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
 
-          unzip android-ndk-r25-linux.zip
-          rm android-ndk-r25-linux.zip
-          export ANDROID_NDK_PATH=$PWD/android-ndk-r25
+          unzip android-ndk-r25b-linux.zip
+          rm android-ndk-r25b-linux.zip
+          export ANDROID_NDK_PATH=$PWD/android-ndk-r25b
 
           echo "ANDROID_NDK_PATH=$ANDROID_NDK_PATH" >> $GITHUB_ENV
           echo "LIBCLANG_PATH=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
@@ -158,7 +158,7 @@ jobs:
         run: |
           set -ex
 
-          git clone --recursive https://github.com/rajveermalviya/wgpu-native.git tmp
+          git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
           cd tmp
           git checkout $WGPU_COMMIT
 
@@ -169,7 +169,6 @@ jobs:
             export RUSTFLAGS="-L $PWD/tmp-lib"
           fi
 
-          export CARGO_PROFILE_RELEASE_OPT_LEVEL=2
           cargo build --release
           ls -al target/${{ matrix.target }}/release/
 
