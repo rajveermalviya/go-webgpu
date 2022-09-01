@@ -18,13 +18,13 @@ jobs:
       matrix:
         include:
           - name: build - linux/amd64
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
             goos: linux
             goarch: amd64
 
           - name: build - linux/386
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             target: i686-unknown-linux-gnu
             goos: linux
             goarch: "386"
