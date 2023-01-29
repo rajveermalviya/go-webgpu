@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  WGPU_COMMIT: 5f9532af781e9e0af8449ad6a63a2286cc008395
+  WGPU_COMMIT: b6a188c6ac386b249d8decaf806e87946058383e
   ANDROID_MIN_SDK: "21"
 
 jobs:
@@ -123,9 +123,9 @@ jobs:
 
     steps:
       # Checkout
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@1.63.0
+        uses: dtolnay/rust-toolchain@1.67.0
         with:
           target: ${{ matrix.target }}
 
@@ -244,7 +244,7 @@ jobs:
           tree $GITHUB_WORKSPACE/wgpu
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           commit-message: update `wgpu-native` library
           branch-suffix: random
