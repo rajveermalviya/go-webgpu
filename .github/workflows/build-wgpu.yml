@@ -172,17 +172,12 @@ jobs:
           cargo build --release
           ls -al target/${{ matrix.target }}/release/
 
-          if [ ${{ matrix.goos }} == "windows" ]; then
-            mv target/${{ matrix.target }}/release/wgpu_native.dll target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_wgpu_native.dll
-          else
-            mv target/${{ matrix.target }}/release/libwgpu_native.a target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_libwgpu_native.a
-          fi
+          mv target/${{ matrix.target }}/release/libwgpu_native.a target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_libwgpu_native.a
 
       - uses: actions/upload-artifact@v3
         with:
           name: wgpu-artifacts
           path: |
-            ${{ github.workspace }}/tmp/target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_wgpu_native.dll
             ${{ github.workspace }}/tmp/target/${{ matrix.target }}/release/${{ matrix.goos }}_${{ matrix.goarch }}_libwgpu_native.a
 
   send-pr:
@@ -223,21 +218,8 @@ jobs:
               GOARCH="${tuple[1]}"
 
               mkdir -p $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH
-
-              if [ $GOOS == "windows" ]; then
-                rm -f $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.gz
-                rm -f $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.sum
-
-
-                cp $GITHUB_WORKSPACE/tmp/"$GOOS"_"$GOARCH"_wgpu_native.dll $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll
-                sha256sum $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll > $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll.sum
-                gzip -n -9 $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/wgpu_native.dll
-
-              else
-                rm -f $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a
-
-                cp $GITHUB_WORKSPACE/tmp/"$GOOS"_"$GOARCH"_libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a
-              fi
+              rm -f $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a
+              cp $GITHUB_WORKSPACE/tmp/"$GOOS"_"$GOARCH"_libwgpu_native.a $GITHUB_WORKSPACE/wgpu/lib/$GOOS/$GOARCH/libwgpu_native.a
           done
 
           rm -rf $GITHUB_WORKSPACE/tmp
