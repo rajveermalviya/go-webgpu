@@ -38,6 +38,7 @@ func init() {
 var shader string
 
 type State struct {
+	instance  *wgpu.Instance
 	surface   *wgpu.Surface
 	swapChain *wgpu.SwapChain
 	device    *wgpu.Device
@@ -49,9 +50,11 @@ type State struct {
 func InitState(window *glfw.Window) (*State, error) {
 	s := &State{}
 
-	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
+	s.instance = wgpu.CreateInstance(nil)
 
-	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
+	s.surface = s.instance.CreateSurface(getSurfaceDescriptor(window))
+
+	adapter, err := s.instance.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
 		CompatibleSurface:    s.surface,
 	})
@@ -199,6 +202,10 @@ func (s *State) Destroy() {
 		s.surface.Drop()
 		s.surface = nil
 	}
+	if s.instance != nil {
+		s.instance.Drop()
+		s.instance = nil
+	}
 }
 
 func main() {
@@ -223,13 +230,13 @@ func main() {
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		// Print resource usage on pressing 'R'
 		if key == glfw.KeyR && (action == glfw.Press || action == glfw.Repeat) {
-			report := wgpu.GenerateReport()
+			report := s.instance.GenerateReport()
 			buf, _ := json.MarshalIndent(report, "", "  ")
 			fmt.Print(string(buf))
 		}
 	})
 
-	window.SetSizeCallback(func(w *glfw.Window, width, height int) {
+	window.SetSizeCallback(func(_ *glfw.Window, width, height int) {
 		s.Resize(width, height)
 	})
 

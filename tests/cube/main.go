@@ -156,9 +156,12 @@ type State struct {
 func InitState(window *glfw.Window) (*State, error) {
 	s := &State{}
 
-	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
+	instance := wgpu.CreateInstance(nil)
+	defer instance.Drop()
 
-	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
+	s.surface = instance.CreateSurface(getSurfaceDescriptor(window))
+
+	adapter, err := instance.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
 		CompatibleSurface:    s.surface,
 	})
@@ -168,9 +171,7 @@ func InitState(window *glfw.Window) (*State, error) {
 	}
 	defer adapter.Drop()
 
-	s.device, err = adapter.RequestDevice(&wgpu.DeviceDescriptor{
-		Label: "Device",
-	})
+	s.device, err = adapter.RequestDevice(nil)
 	if err != nil {
 		s.Destroy()
 		return nil, err
@@ -241,7 +242,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		&wgpu.TextureDataLayout{
 			Offset:       0,
 			BytesPerRow:  texelsSize,
-			RowsPerImage: 0,
+			RowsPerImage: wgpu.CopyStrideUndefined,
 		},
 		&textureExtent,
 	)
@@ -309,12 +310,12 @@ func InitState(window *glfw.Window) (*State, error) {
 			{
 				Binding: 0,
 				Buffer:  s.uniformBuf,
-				Offset:  0,
-				Size:    0,
+				Size:    wgpu.WholeSize,
 			},
 			{
 				Binding:     1,
 				TextureView: textureView,
+				Size:        wgpu.WholeSize,
 			},
 		},
 	})
@@ -367,8 +368,8 @@ func (s *State) Render() error {
 
 	renderPass.SetPipeline(s.pipeline)
 	renderPass.SetBindGroup(0, s.bindGroup, nil)
-	renderPass.SetIndexBuffer(s.indexBuf, wgpu.IndexFormat_Uint16, 0, 0)
-	renderPass.SetVertexBuffer(0, s.vertexBuf, 0, 0)
+	renderPass.SetIndexBuffer(s.indexBuf, wgpu.IndexFormat_Uint16, 0, wgpu.WholeSize)
+	renderPass.SetVertexBuffer(0, s.vertexBuf, 0, wgpu.WholeSize)
 	renderPass.DrawIndexed(uint32(len(indexData)), 1, 0, 0, 0)
 	renderPass.End()
 

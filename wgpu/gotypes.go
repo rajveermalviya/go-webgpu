@@ -2,17 +2,15 @@ package wgpu
 
 import "unsafe"
 
-type AdapterExtras struct {
-	BackendType BackendType
+type InstanceDescriptor struct {
+	Backends InstanceBackend
 }
 
 type RequestAdapterOptions struct {
 	CompatibleSurface    *Surface
 	PowerPreference      PowerPreference
 	ForceFallbackAdapter bool
-
-	// ChainedStruct -> WGPUAdapterExtras
-	AdapterExtras *AdapterExtras
+	BackendType          BackendType
 }
 
 type SurfaceDescriptorFromWindowsHWND struct {
@@ -46,22 +44,11 @@ type SurfaceDescriptorFromAndroidNativeWindow struct {
 type SurfaceDescriptor struct {
 	Label string
 
-	// ChainedStruct -> WGPUSurfaceDescriptorFromWindowsHWND
-	WindowsHWND *SurfaceDescriptorFromWindowsHWND
-
-	// ChainedStruct -> WGPUSurfaceDescriptorFromXcbWindow
-	XcbWindow *SurfaceDescriptorFromXcbWindow
-
-	// ChainedStruct -> WGPUSurfaceDescriptorFromXlibWindow
-	XlibWindow *SurfaceDescriptorFromXlibWindow
-
-	// ChainedStruct -> WGPUSurfaceDescriptorFromMetalLayer
-	MetalLayer *SurfaceDescriptorFromMetalLayer
-
-	// ChainedStruct -> WGPUSurfaceDescriptorFromWaylandSurface
-	WaylandSurface *SurfaceDescriptorFromWaylandSurface
-
-	// ChainedStruct -> WGPUSurfaceDescriptorFromAndroidNativeWindow
+	WindowsHWND         *SurfaceDescriptorFromWindowsHWND
+	XcbWindow           *SurfaceDescriptorFromXcbWindow
+	XlibWindow          *SurfaceDescriptorFromXlibWindow
+	MetalLayer          *SurfaceDescriptorFromMetalLayer
+	WaylandSurface      *SurfaceDescriptorFromWaylandSurface
 	AndroidNativeWindow *SurfaceDescriptorFromAndroidNativeWindow
 }
 
@@ -71,6 +58,7 @@ type Limits struct {
 	MaxTextureDimension3D                     uint32
 	MaxTextureArrayLayers                     uint32
 	MaxBindGroups                             uint32
+	MaxBindingsPerBindGroup                   uint32
 	MaxDynamicUniformBuffersPerPipelineLayout uint32
 	MaxDynamicStorageBuffersPerPipelineLayout uint32
 	MaxSampledTexturesPerShaderStage          uint32
@@ -83,17 +71,20 @@ type Limits struct {
 	MinUniformBufferOffsetAlignment           uint32
 	MinStorageBufferOffsetAlignment           uint32
 	MaxVertexBuffers                          uint32
+	MaxBufferSize                             uint64
 	MaxVertexAttributes                       uint32
 	MaxVertexBufferArrayStride                uint32
 	MaxInterStageShaderComponents             uint32
+	MaxInterStageShaderVariables              uint32
+	MaxColorAttachments                       uint32
 	MaxComputeWorkgroupStorageSize            uint32
 	MaxComputeInvocationsPerWorkgroup         uint32
 	MaxComputeWorkgroupSizeX                  uint32
 	MaxComputeWorkgroupSizeY                  uint32
 	MaxComputeWorkgroupSizeZ                  uint32
 	MaxComputeWorkgroupsPerDimension          uint32
-	MaxPushConstantSize                       uint32
-	MaxBufferSize                             uint64
+
+	MaxPushConstantSize uint32
 }
 
 type SupportedLimits struct {
@@ -109,10 +100,6 @@ type AdapterProperties struct {
 	BackendType       BackendType
 }
 
-type DeviceExtras struct {
-	TracePath string
-}
-
 type RequiredLimits struct {
 	Limits Limits
 }
@@ -121,9 +108,7 @@ type DeviceDescriptor struct {
 	Label            string
 	RequiredFeatures []FeatureName
 	RequiredLimits   *RequiredLimits
-
-	// WGPUChainedStruct -> WGPUDeviceExtras
-	DeviceExtras *DeviceExtras
+	TracePath        string
 }
 
 type ComputePassTimestampWrite struct {
@@ -292,16 +277,10 @@ type PushConstantRange struct {
 	End    uint32
 }
 
-type PipelineLayoutExtras struct {
-	PushConstantRanges []PushConstantRange
-}
-
 type PipelineLayoutDescriptor struct {
-	Label            string
-	BindGroupLayouts []*BindGroupLayout
-
-	// WGPUChainedStruct -> WGPUPipelineLayoutExtras
-	PipelineLayoutExtras *PipelineLayoutExtras
+	Label              string
+	BindGroupLayouts   []*BindGroupLayout
+	PushConstantRanges []PushConstantRange
 }
 
 type VertexAttribute struct {

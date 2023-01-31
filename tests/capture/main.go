@@ -53,7 +53,10 @@ func main() {
 	width := 100
 	height := 200
 
-	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
+	instance := wgpu.CreateInstance(nil)
+	defer instance.Drop()
+
+	adapter, err := instance.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
 	})
 	if err != nil {
@@ -61,9 +64,7 @@ func main() {
 	}
 	defer adapter.Drop()
 
-	device, err := adapter.RequestDevice(&wgpu.DeviceDescriptor{
-		Label: "Device",
-	})
+	device, err := adapter.RequestDevice(nil)
 	if err != nil {
 		panic(err)
 	}
@@ -125,8 +126,9 @@ func main() {
 		&wgpu.ImageCopyBuffer{
 			Buffer: outputBuffer,
 			Layout: wgpu.TextureDataLayout{
-				Offset:      0,
-				BytesPerRow: uint32(bufferDimensions.paddedBytesPerRow),
+				Offset:       0,
+				BytesPerRow:  uint32(bufferDimensions.paddedBytesPerRow),
+				RowsPerImage: wgpu.CopyStrideUndefined,
 			},
 		},
 		&textureExtent,
@@ -146,7 +148,7 @@ func main() {
 		SubmissionIndex: index,
 	})
 
-	data := outputBuffer.GetMappedRange(0, bufferSize)
+	data := outputBuffer.GetMappedRange(0, uint(bufferSize))
 
 	// Save png
 	f, err := os.Create("image.png")

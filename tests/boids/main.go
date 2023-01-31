@@ -67,9 +67,12 @@ type State struct {
 func InitState(window *glfw.Window) (*State, error) {
 	s := &State{}
 
-	s.surface = wgpu.CreateSurface(getSurfaceDescriptor(window))
+	instance := wgpu.CreateInstance(nil)
+	defer instance.Drop()
 
-	adapter, err := wgpu.RequestAdapter(&wgpu.RequestAdapterOptions{
+	s.surface = instance.CreateSurface(getSurfaceDescriptor(window))
+
+	adapter, err := instance.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
 		CompatibleSurface:    s.surface,
 	})
@@ -78,9 +81,7 @@ func InitState(window *glfw.Window) (*State, error) {
 	}
 	defer adapter.Drop()
 
-	s.device, err = adapter.RequestDevice(&wgpu.DeviceDescriptor{
-		Label: "Device",
-	})
+	s.device, err = adapter.RequestDevice(nil)
 	if err != nil {
 		s.Destroy()
 		return nil, err
@@ -265,14 +266,17 @@ func InitState(window *glfw.Window) (*State, error) {
 				{
 					Binding: 0,
 					Buffer:  simParamBuffer,
+					Size:    wgpu.WholeSize,
 				},
 				{
 					Binding: 1,
 					Buffer:  s.particleBuffers[i],
+					Size:    wgpu.WholeSize,
 				},
 				{
 					Binding: 2,
 					Buffer:  s.particleBuffers[(i+1)%2],
+					Size:    wgpu.WholeSize,
 				},
 			},
 		})
@@ -331,8 +335,8 @@ func (s *State) Render() error {
 		},
 	})
 	renderPass.SetPipeline(s.renderPipeline)
-	renderPass.SetVertexBuffer(0, s.particleBuffers[(s.frameNum+1)%2], 0, 0)
-	renderPass.SetVertexBuffer(1, s.vertexBuffer, 0, 0)
+	renderPass.SetVertexBuffer(0, s.particleBuffers[(s.frameNum+1)%2], 0, wgpu.WholeSize)
+	renderPass.SetVertexBuffer(1, s.vertexBuffer, 0, wgpu.WholeSize)
 	renderPass.Draw(3, NumParticles, 0, 0)
 	renderPass.End()
 

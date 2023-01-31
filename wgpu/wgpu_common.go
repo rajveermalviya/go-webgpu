@@ -5,6 +5,16 @@ import (
 	"strconv"
 )
 
+const (
+	ArrayLayerCountUndefined        = 0xffffffff
+	CopyStrideUndefined             = 0xffffffff
+	LimitU32Undefined        uint32 = 0xffffffff
+	LimitU64Undefined        uint64 = 0xffffffffffffffff
+	MipLevelCountUndefined          = 0xffffffff
+	WholeMapSize                    = ^uint(0)
+	WholeSize                       = 0xffffffffffffffff
+)
+
 type Version uint32
 
 func (v Version) String() string {
