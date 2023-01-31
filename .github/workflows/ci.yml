@@ -42,7 +42,7 @@ jobs:
         run: |
           set -x;
           cd wgpu;
-          go test;
+          go test -x;
         shell: bash
       - name: Run examples
         if: ${{ matrix.run_examples }}
