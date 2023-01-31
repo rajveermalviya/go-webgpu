@@ -463,6 +463,7 @@ type ErrorFilter uint32
 const (
 	ErrorFilter_Validation  ErrorFilter = 0x00000000
 	ErrorFilter_OutOfMemory ErrorFilter = 0x00000001
+	ErrorFilter_Internal    ErrorFilter = 0x00000002
 )
 
 func (v ErrorFilter) String() string {
@@ -471,6 +472,8 @@ func (v ErrorFilter) String() string {
 		return "Validation"
 	case ErrorFilter_OutOfMemory:
 		return "OutOfMemory"
+	case ErrorFilter_Internal:
+		return "Internal"
 	default:
 		return ""
 	}
@@ -482,8 +485,9 @@ const (
 	ErrorType_NoError     ErrorType = 0x00000000
 	ErrorType_Validation  ErrorType = 0x00000001
 	ErrorType_OutOfMemory ErrorType = 0x00000002
-	ErrorType_Unknown     ErrorType = 0x00000003
-	ErrorType_DeviceLost  ErrorType = 0x00000004
+	ErrorType_Internal    ErrorType = 0x00000003
+	ErrorType_Unknown     ErrorType = 0x00000004
+	ErrorType_DeviceLost  ErrorType = 0x00000005
 )
 
 func (v ErrorType) String() string {
@@ -494,6 +498,8 @@ func (v ErrorType) String() string {
 		return "Validation"
 	case ErrorType_OutOfMemory:
 		return "OutOfMemory"
+	case ErrorType_Internal:
+		return "Internal"
 	case ErrorType_Unknown:
 		return "Unknown"
 	case ErrorType_DeviceLost:
@@ -508,14 +514,15 @@ type FeatureName uint32
 const (
 	FeatureName_Undefined                                  FeatureName = 0x00000000
 	FeatureName_DepthClipControl                           FeatureName = 0x00000001
-	FeatureName_Depth24UnormStencil8                       FeatureName = 0x00000002
-	FeatureName_Depth32FloatStencil8                       FeatureName = 0x00000003
-	FeatureName_TimestampQuery                             FeatureName = 0x00000004
-	FeatureName_PipelineStatisticsQuery                    FeatureName = 0x00000005
-	FeatureName_TextureCompressionBC                       FeatureName = 0x00000006
-	FeatureName_TextureCompressionETC2                     FeatureName = 0x00000007
-	FeatureName_TextureCompressionASTC                     FeatureName = 0x00000008
-	FeatureName_IndirectFirstInstance                      FeatureName = 0x00000009
+	FeatureName_Depth32FloatStencil8                       FeatureName = 0x00000002
+	FeatureName_TimestampQuery                             FeatureName = 0x00000003
+	FeatureName_PipelineStatisticsQuery                    FeatureName = 0x00000004
+	FeatureName_TextureCompressionBC                       FeatureName = 0x00000005
+	FeatureName_TextureCompressionETC2                     FeatureName = 0x00000006
+	FeatureName_TextureCompressionASTC                     FeatureName = 0x00000007
+	FeatureName_IndirectFirstInstance                      FeatureName = 0x00000008
+	FeatureName_ShaderF16                                  FeatureName = 0x00000009
+	FeatureName_RG11B10UfloatRenderable                    FeatureName = 0x0000000A
 	NativeFeature_PUSH_CONSTANTS                           FeatureName = 0x60000001
 	NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES FeatureName = 0x60000002
 	NativeFeature_MULTI_DRAW_INDIRECT                      FeatureName = 0x60000003
@@ -529,8 +536,6 @@ func (v FeatureName) String() string {
 		return "Undefined"
 	case FeatureName_DepthClipControl:
 		return "DepthClipControl"
-	case FeatureName_Depth24UnormStencil8:
-		return "Depth24UnormStencil8"
 	case FeatureName_Depth32FloatStencil8:
 		return "Depth32FloatStencil8"
 	case FeatureName_TimestampQuery:
@@ -545,6 +550,10 @@ func (v FeatureName) String() string {
 		return "TextureCompressionASTC"
 	case FeatureName_IndirectFirstInstance:
 		return "IndirectFirstInstance"
+	case FeatureName_ShaderF16:
+		return "ShaderF16"
+	case FeatureName_RG11B10UfloatRenderable:
+		return "RG11B10UfloatRenderable"
 	case NativeFeature_PUSH_CONSTANTS:
 		return "NativeFeature_PUSH_CONSTANTS"
 	case NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES:
@@ -612,6 +621,45 @@ func (v IndexFormat) String() string {
 		return "Uint16"
 	case IndexFormat_Uint32:
 		return "Uint32"
+	default:
+		return ""
+	}
+}
+
+type InstanceBackend uint32
+
+const (
+	InstanceBackend_None          InstanceBackend = 0x00000000
+	InstanceBackend_Vulkan        InstanceBackend = 0x00000002
+	InstanceBackend_Metal         InstanceBackend = 0x00000004
+	InstanceBackend_DX12          InstanceBackend = 0x00000008
+	InstanceBackend_DX11          InstanceBackend = 0x00000010
+	InstanceBackend_GL            InstanceBackend = 0x00000020
+	InstanceBackend_Secondary     InstanceBackend = 0x00000030
+	InstanceBackend_BrowserWebGPU InstanceBackend = 0x00000040
+	InstanceBackend_Primary       InstanceBackend = 0x0000004E
+)
+
+func (v InstanceBackend) String() string {
+	switch v {
+	case InstanceBackend_None:
+		return "None"
+	case InstanceBackend_Vulkan:
+		return "Vulkan"
+	case InstanceBackend_Metal:
+		return "Metal"
+	case InstanceBackend_DX12:
+		return "DX12"
+	case InstanceBackend_DX11:
+		return "DX11"
+	case InstanceBackend_GL:
+		return "GL"
+	case InstanceBackend_Secondary:
+		return "Secondary"
+	case InstanceBackend_BrowserWebGPU:
+		return "BrowserWebGPU"
+	case InstanceBackend_Primary:
+		return "Primary"
 	default:
 		return ""
 	}
@@ -750,24 +798,6 @@ func (v PowerPreference) String() string {
 		return "LowPower"
 	case PowerPreference_HighPerformance:
 		return "HighPerformance"
-	default:
-		return ""
-	}
-}
-
-type PredefinedColorSpace uint32
-
-const (
-	PredefinedColorSpace_Undefined PredefinedColorSpace = 0x00000000
-	PredefinedColorSpace_Srgb      PredefinedColorSpace = 0x00000001
-)
-
-func (v PredefinedColorSpace) String() string {
-	switch v {
-	case PredefinedColorSpace_Undefined:
-		return "Undefined"
-	case PredefinedColorSpace_Srgb:
-		return "Srgb"
 	default:
 		return ""
 	}
@@ -1162,61 +1192,60 @@ const (
 	TextureFormat_Depth16Unorm         TextureFormat = 0x00000026
 	TextureFormat_Depth24Plus          TextureFormat = 0x00000027
 	TextureFormat_Depth24PlusStencil8  TextureFormat = 0x00000028
-	TextureFormat_Depth24UnormStencil8 TextureFormat = 0x00000029
-	TextureFormat_Depth32Float         TextureFormat = 0x0000002A
-	TextureFormat_Depth32FloatStencil8 TextureFormat = 0x0000002B
-	TextureFormat_BC1RGBAUnorm         TextureFormat = 0x0000002C
-	TextureFormat_BC1RGBAUnormSrgb     TextureFormat = 0x0000002D
-	TextureFormat_BC2RGBAUnorm         TextureFormat = 0x0000002E
-	TextureFormat_BC2RGBAUnormSrgb     TextureFormat = 0x0000002F
-	TextureFormat_BC3RGBAUnorm         TextureFormat = 0x00000030
-	TextureFormat_BC3RGBAUnormSrgb     TextureFormat = 0x00000031
-	TextureFormat_BC4RUnorm            TextureFormat = 0x00000032
-	TextureFormat_BC4RSnorm            TextureFormat = 0x00000033
-	TextureFormat_BC5RGUnorm           TextureFormat = 0x00000034
-	TextureFormat_BC5RGSnorm           TextureFormat = 0x00000035
-	TextureFormat_BC6HRGBUfloat        TextureFormat = 0x00000036
-	TextureFormat_BC6HRGBFloat         TextureFormat = 0x00000037
-	TextureFormat_BC7RGBAUnorm         TextureFormat = 0x00000038
-	TextureFormat_BC7RGBAUnormSrgb     TextureFormat = 0x00000039
-	TextureFormat_ETC2RGB8Unorm        TextureFormat = 0x0000003A
-	TextureFormat_ETC2RGB8UnormSrgb    TextureFormat = 0x0000003B
-	TextureFormat_ETC2RGB8A1Unorm      TextureFormat = 0x0000003C
-	TextureFormat_ETC2RGB8A1UnormSrgb  TextureFormat = 0x0000003D
-	TextureFormat_ETC2RGBA8Unorm       TextureFormat = 0x0000003E
-	TextureFormat_ETC2RGBA8UnormSrgb   TextureFormat = 0x0000003F
-	TextureFormat_EACR11Unorm          TextureFormat = 0x00000040
-	TextureFormat_EACR11Snorm          TextureFormat = 0x00000041
-	TextureFormat_EACRG11Unorm         TextureFormat = 0x00000042
-	TextureFormat_EACRG11Snorm         TextureFormat = 0x00000043
-	TextureFormat_ASTC4x4Unorm         TextureFormat = 0x00000044
-	TextureFormat_ASTC4x4UnormSrgb     TextureFormat = 0x00000045
-	TextureFormat_ASTC5x4Unorm         TextureFormat = 0x00000046
-	TextureFormat_ASTC5x4UnormSrgb     TextureFormat = 0x00000047
-	TextureFormat_ASTC5x5Unorm         TextureFormat = 0x00000048
-	TextureFormat_ASTC5x5UnormSrgb     TextureFormat = 0x00000049
-	TextureFormat_ASTC6x5Unorm         TextureFormat = 0x0000004A
-	TextureFormat_ASTC6x5UnormSrgb     TextureFormat = 0x0000004B
-	TextureFormat_ASTC6x6Unorm         TextureFormat = 0x0000004C
-	TextureFormat_ASTC6x6UnormSrgb     TextureFormat = 0x0000004D
-	TextureFormat_ASTC8x5Unorm         TextureFormat = 0x0000004E
-	TextureFormat_ASTC8x5UnormSrgb     TextureFormat = 0x0000004F
-	TextureFormat_ASTC8x6Unorm         TextureFormat = 0x00000050
-	TextureFormat_ASTC8x6UnormSrgb     TextureFormat = 0x00000051
-	TextureFormat_ASTC8x8Unorm         TextureFormat = 0x00000052
-	TextureFormat_ASTC8x8UnormSrgb     TextureFormat = 0x00000053
-	TextureFormat_ASTC10x5Unorm        TextureFormat = 0x00000054
-	TextureFormat_ASTC10x5UnormSrgb    TextureFormat = 0x00000055
-	TextureFormat_ASTC10x6Unorm        TextureFormat = 0x00000056
-	TextureFormat_ASTC10x6UnormSrgb    TextureFormat = 0x00000057
-	TextureFormat_ASTC10x8Unorm        TextureFormat = 0x00000058
-	TextureFormat_ASTC10x8UnormSrgb    TextureFormat = 0x00000059
-	TextureFormat_ASTC10x10Unorm       TextureFormat = 0x0000005A
-	TextureFormat_ASTC10x10UnormSrgb   TextureFormat = 0x0000005B
-	TextureFormat_ASTC12x10Unorm       TextureFormat = 0x0000005C
-	TextureFormat_ASTC12x10UnormSrgb   TextureFormat = 0x0000005D
-	TextureFormat_ASTC12x12Unorm       TextureFormat = 0x0000005E
-	TextureFormat_ASTC12x12UnormSrgb   TextureFormat = 0x0000005F
+	TextureFormat_Depth32Float         TextureFormat = 0x00000029
+	TextureFormat_Depth32FloatStencil8 TextureFormat = 0x0000002A
+	TextureFormat_BC1RGBAUnorm         TextureFormat = 0x0000002B
+	TextureFormat_BC1RGBAUnormSrgb     TextureFormat = 0x0000002C
+	TextureFormat_BC2RGBAUnorm         TextureFormat = 0x0000002D
+	TextureFormat_BC2RGBAUnormSrgb     TextureFormat = 0x0000002E
+	TextureFormat_BC3RGBAUnorm         TextureFormat = 0x0000002F
+	TextureFormat_BC3RGBAUnormSrgb     TextureFormat = 0x00000030
+	TextureFormat_BC4RUnorm            TextureFormat = 0x00000031
+	TextureFormat_BC4RSnorm            TextureFormat = 0x00000032
+	TextureFormat_BC5RGUnorm           TextureFormat = 0x00000033
+	TextureFormat_BC5RGSnorm           TextureFormat = 0x00000034
+	TextureFormat_BC6HRGBUfloat        TextureFormat = 0x00000035
+	TextureFormat_BC6HRGBFloat         TextureFormat = 0x00000036
+	TextureFormat_BC7RGBAUnorm         TextureFormat = 0x00000037
+	TextureFormat_BC7RGBAUnormSrgb     TextureFormat = 0x00000038
+	TextureFormat_ETC2RGB8Unorm        TextureFormat = 0x00000039
+	TextureFormat_ETC2RGB8UnormSrgb    TextureFormat = 0x0000003A
+	TextureFormat_ETC2RGB8A1Unorm      TextureFormat = 0x0000003B
+	TextureFormat_ETC2RGB8A1UnormSrgb  TextureFormat = 0x0000003C
+	TextureFormat_ETC2RGBA8Unorm       TextureFormat = 0x0000003D
+	TextureFormat_ETC2RGBA8UnormSrgb   TextureFormat = 0x0000003E
+	TextureFormat_EACR11Unorm          TextureFormat = 0x0000003F
+	TextureFormat_EACR11Snorm          TextureFormat = 0x00000040
+	TextureFormat_EACRG11Unorm         TextureFormat = 0x00000041
+	TextureFormat_EACRG11Snorm         TextureFormat = 0x00000042
+	TextureFormat_ASTC4x4Unorm         TextureFormat = 0x00000043
+	TextureFormat_ASTC4x4UnormSrgb     TextureFormat = 0x00000044
+	TextureFormat_ASTC5x4Unorm         TextureFormat = 0x00000045
+	TextureFormat_ASTC5x4UnormSrgb     TextureFormat = 0x00000046
+	TextureFormat_ASTC5x5Unorm         TextureFormat = 0x00000047
+	TextureFormat_ASTC5x5UnormSrgb     TextureFormat = 0x00000048
+	TextureFormat_ASTC6x5Unorm         TextureFormat = 0x00000049
+	TextureFormat_ASTC6x5UnormSrgb     TextureFormat = 0x0000004A
+	TextureFormat_ASTC6x6Unorm         TextureFormat = 0x0000004B
+	TextureFormat_ASTC6x6UnormSrgb     TextureFormat = 0x0000004C
+	TextureFormat_ASTC8x5Unorm         TextureFormat = 0x0000004D
+	TextureFormat_ASTC8x5UnormSrgb     TextureFormat = 0x0000004E
+	TextureFormat_ASTC8x6Unorm         TextureFormat = 0x0000004F
+	TextureFormat_ASTC8x6UnormSrgb     TextureFormat = 0x00000050
+	TextureFormat_ASTC8x8Unorm         TextureFormat = 0x00000051
+	TextureFormat_ASTC8x8UnormSrgb     TextureFormat = 0x00000052
+	TextureFormat_ASTC10x5Unorm        TextureFormat = 0x00000053
+	TextureFormat_ASTC10x5UnormSrgb    TextureFormat = 0x00000054
+	TextureFormat_ASTC10x6Unorm        TextureFormat = 0x00000055
+	TextureFormat_ASTC10x6UnormSrgb    TextureFormat = 0x00000056
+	TextureFormat_ASTC10x8Unorm        TextureFormat = 0x00000057
+	TextureFormat_ASTC10x8UnormSrgb    TextureFormat = 0x00000058
+	TextureFormat_ASTC10x10Unorm       TextureFormat = 0x00000059
+	TextureFormat_ASTC10x10UnormSrgb   TextureFormat = 0x0000005A
+	TextureFormat_ASTC12x10Unorm       TextureFormat = 0x0000005B
+	TextureFormat_ASTC12x10UnormSrgb   TextureFormat = 0x0000005C
+	TextureFormat_ASTC12x12Unorm       TextureFormat = 0x0000005D
+	TextureFormat_ASTC12x12UnormSrgb   TextureFormat = 0x0000005E
 )
 
 func (v TextureFormat) String() string {
@@ -1303,8 +1332,6 @@ func (v TextureFormat) String() string {
 		return "Depth24Plus"
 	case TextureFormat_Depth24PlusStencil8:
 		return "Depth24PlusStencil8"
-	case TextureFormat_Depth24UnormStencil8:
-		return "Depth24UnormStencil8"
 	case TextureFormat_Depth32Float:
 		return "Depth32Float"
 	case TextureFormat_Depth32FloatStencil8:
@@ -1619,8 +1646,9 @@ func (v VertexFormat) String() string {
 type VertexStepMode uint32
 
 const (
-	VertexStepMode_Vertex   VertexStepMode = 0x00000000
-	VertexStepMode_Instance VertexStepMode = 0x00000001
+	VertexStepMode_Vertex              VertexStepMode = 0x00000000
+	VertexStepMode_Instance            VertexStepMode = 0x00000001
+	VertexStepMode_VertexBufferNotUsed VertexStepMode = 0x00000002
 )
 
 func (v VertexStepMode) String() string {
@@ -1629,6 +1657,8 @@ func (v VertexStepMode) String() string {
 		return "Vertex"
 	case VertexStepMode_Instance:
 		return "Instance"
+	case VertexStepMode_VertexBufferNotUsed:
+		return "VertexBufferNotUsed"
 	default:
 		return ""
 	}

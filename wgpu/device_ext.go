@@ -33,7 +33,7 @@ func (p *Device) CreateBufferInit(descriptor *BufferInitDescriptor) (*Buffer, er
 	if err != nil {
 		return nil, err
 	}
-	buf := buffer.GetMappedRange(0, uint64(paddedSize))
+	buf := buffer.GetMappedRange(0, uint(paddedSize))
 	copy(buf, descriptor.Contents)
 	buffer.Unmap()
 
