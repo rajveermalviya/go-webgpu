@@ -153,8 +153,14 @@ type State struct {
 	bindGroup  *wgpu.BindGroup
 }
 
-func InitState(window *glfw.Window) (*State, error) {
-	s := &State{}
+func InitState(window *glfw.Window) (s *State, err error) {
+	defer func() {
+		if err != nil {
+			s.Destroy()
+			s = nil
+		}
+	}()
+	s = &State{}
 
 	instance := wgpu.CreateInstance(nil)
 	defer instance.Drop()
@@ -166,15 +172,13 @@ func InitState(window *glfw.Window) (*State, error) {
 		CompatibleSurface:    s.surface,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer adapter.Drop()
 
 	s.device, err = adapter.RequestDevice(nil)
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	s.queue = s.device.GetQueue()
 
@@ -189,8 +193,7 @@ func InitState(window *glfw.Window) (*State, error) {
 
 	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	s.vertexBuf, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
@@ -199,8 +202,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		Usage:    wgpu.BufferUsage_Vertex,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	s.indexBuf, err = s.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
@@ -209,8 +211,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		Usage:    wgpu.BufferUsage_Index,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	texels := createTexels()
@@ -228,8 +229,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		Usage:         wgpu.TextureUsage_TextureBinding | wgpu.TextureUsage_CopyDst,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer texture.Drop()
 
@@ -254,8 +254,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		Usage:    wgpu.BufferUsage_Uniform | wgpu.BufferUsage_CopyDst,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	shader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
@@ -263,8 +262,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{Code: shader},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer shader.Drop()
 
@@ -298,11 +296,11 @@ func InitState(window *glfw.Window) (*State, error) {
 		},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	bindGroupLayout := s.pipeline.GetBindGroupLayout(0)
+	defer bindGroupLayout.Drop()
 
 	s.bindGroup, err = s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Layout: bindGroupLayout,
@@ -320,8 +318,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	return s, nil
@@ -335,6 +332,9 @@ func (s *State) Resize(width, height int) {
 		mxTotal := generateMatrix(float32(width) / float32(height))
 		s.queue.WriteBuffer(s.uniformBuf, 0, wgpu.ToBytes(mxTotal[:]))
 
+		if s.swapChain != nil {
+			s.swapChain.Drop()
+		}
 		var err error
 		s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 		if err != nil {
@@ -401,6 +401,7 @@ func (s *State) Destroy() {
 		s.vertexBuf = nil
 	}
 	if s.swapChain != nil {
+		s.swapChain.Drop()
 		s.swapChain = nil
 	}
 	if s.config != nil {

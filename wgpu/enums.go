@@ -374,6 +374,33 @@ func (v CompilationMessageType) String() string {
 	}
 }
 
+type CompositeAlphaMode uint32
+
+const (
+	CompositeAlphaMode_Auto           CompositeAlphaMode = 0x00000000
+	CompositeAlphaMode_Opaque         CompositeAlphaMode = 0x00000001
+	CompositeAlphaMode_PreMultiplied  CompositeAlphaMode = 0x00000002
+	CompositeAlphaMode_PostMultiplied CompositeAlphaMode = 0x00000003
+	CompositeAlphaMode_Inherit        CompositeAlphaMode = 0x00000004
+)
+
+func (v CompositeAlphaMode) String() string {
+	switch v {
+	case CompositeAlphaMode_Auto:
+		return "Auto"
+	case CompositeAlphaMode_Opaque:
+		return "Opaque"
+	case CompositeAlphaMode_PreMultiplied:
+		return "PreMultiplied"
+	case CompositeAlphaMode_PostMultiplied:
+		return "PostMultiplied"
+	case CompositeAlphaMode_Inherit:
+		return "Inherit"
+	default:
+		return ""
+	}
+}
+
 type ComputePassTimestampLocation uint32
 
 const (
@@ -453,6 +480,27 @@ func (v DeviceLostReason) String() string {
 		return "Undefined"
 	case DeviceLostReason_Destroyed:
 		return "Destroyed"
+	default:
+		return ""
+	}
+}
+
+type Dx12Compiler uint32
+
+const (
+	Dx12Compiler_Undefined Dx12Compiler = 0x00000000
+	Dx12Compiler_Fxc       Dx12Compiler = 0x00000001
+	Dx12Compiler_Dxc       Dx12Compiler = 0x00000002
+)
+
+func (v Dx12Compiler) String() string {
+	switch v {
+	case Dx12Compiler_Undefined:
+		return "Undefined"
+	case Dx12Compiler_Fxc:
+		return "Fxc"
+	case Dx12Compiler_Dxc:
+		return "Dxc"
 	default:
 		return ""
 	}

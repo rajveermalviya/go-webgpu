@@ -30,3 +30,7 @@ func (p *SwapChain) GetCurrentTextureView() (*TextureView, error) {
 func (p *SwapChain) Present() {
 	C.wgpuSwapChainPresent(p.ref)
 }
+
+func (p *SwapChain) Drop() {
+	C.wgpuSwapChainDrop(p.ref)
+}

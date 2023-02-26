@@ -222,3 +222,7 @@ func (p *RenderPassEncoder) MultiDrawIndexedIndirectCount(encoder *RenderPassEnc
 		C.uint32_t(maxCount),
 	)
 }
+
+func (p *RenderPassEncoder) Drop() {
+	C.wgpuRenderPassEncoderDrop(p.ref)
+}

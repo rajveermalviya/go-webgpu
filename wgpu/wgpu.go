@@ -75,7 +75,6 @@ void logCallback_cgo(WGPULogLevel level, char const *msg) {
 import "C"
 import (
 	"strconv"
-	"unsafe"
 )
 
 const (
@@ -104,15 +103,6 @@ func SetLogLevel(level LogLevel) {
 
 func GetVersion() Version {
 	return Version(C.wgpuGetVersion())
-}
-
-func free[T any](ptr unsafe.Pointer, len C.size_t) {
-	var v T
-	C.wgpuFree(
-		unsafe.Pointer(ptr),
-		len*C.size_t(unsafe.Sizeof(v)),
-		C.size_t(unsafe.Alignof(v)),
-	)
 }
 
 type (

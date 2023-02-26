@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"unsafe"
 
 	"github.com/rajveermalviya/go-webgpu/wgpu"
@@ -163,7 +162,7 @@ func main() {
 		return strconv.FormatUint(uint64(e), 10)
 	})
 
-	fmt.Printf("Steps: [%s]\n", strings.Join(dispSteps, ", "))
+	fmt.Printf("Steps: %#v\n", dispSteps)
 }
 
 func mapSlice[E1 any, E2 any](s []E1, f func(e E1) E2) []E2 {
