@@ -23,14 +23,14 @@ jobs:
             goos: linux
             goarch: amd64
 
-         - name: build - windows/amd64
-            os: windows-2019
-            target: x86_64-pc-windows-gnu
-            goos: windows
-            goarch: amd64
-            setup_env: |
-              choco install -y --force llvm | exit 0
-              echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
+          - name: build - windows/amd64
+              os: windows-2019
+              target: x86_64-pc-windows-gnu
+              goos: windows
+              goarch: amd64
+              setup_env: |
+                choco install -y --force llvm | exit 0
+                echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
 
           - name: build - darwin/amd64
             os: macos-11
