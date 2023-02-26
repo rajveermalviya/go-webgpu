@@ -128,12 +128,12 @@ jobs:
           mkdir -p /tmp/go-webgpu-ndk/
           cd /tmp/go-webgpu-ndk/
 
-          # ndkVersion "25.1.8937393"
-          curl -LO https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          # ndkVersion "25.2.9519653"
+          curl -LO https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
 
-          unzip android-ndk-r25b-linux.zip
-          rm android-ndk-r25b-linux.zip
-          export ANDROID_NDK_PATH=$PWD/android-ndk-r25b
+          unzip android-ndk-r25c-linux.zip
+          rm android-ndk-r25c-linux.zip
+          export ANDROID_NDK_PATH=$PWD/android-ndk-r25c
 
           echo "ANDROID_NDK_PATH=$ANDROID_NDK_PATH" >> $GITHUB_ENV
           echo "LIBCLANG_PATH=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13" >> $GITHUB_ENV
