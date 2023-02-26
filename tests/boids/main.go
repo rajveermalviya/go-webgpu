@@ -64,8 +64,14 @@ type State struct {
 	workGroupCount     uint32
 }
 
-func InitState(window *glfw.Window) (*State, error) {
-	s := &State{}
+func InitState(window *glfw.Window) (s *State, err error) {
+	defer func() {
+		if err != nil {
+			s.Destroy()
+			s = nil
+		}
+	}()
+	s = &State{}
 
 	instance := wgpu.CreateInstance(nil)
 	defer instance.Drop()
@@ -77,14 +83,13 @@ func InitState(window *glfw.Window) (*State, error) {
 		CompatibleSurface:    s.surface,
 	})
 	if err != nil {
-		return nil, err
+		return s, err
 	}
 	defer adapter.Drop()
 
 	s.device, err = adapter.RequestDevice(nil)
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	s.queue = s.device.GetQueue()
 
@@ -99,8 +104,7 @@ func InitState(window *glfw.Window) (*State, error) {
 
 	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	computeShader, err := s.device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
@@ -110,8 +114,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer computeShader.Drop()
 
@@ -122,8 +125,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer drawShader.Drop()
 
@@ -143,8 +145,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		Usage:    wgpu.BufferUsage_Uniform | wgpu.BufferUsage_CopyDst,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer simParamBuffer.Drop()
 
@@ -204,8 +205,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	s.computePipeline, err = s.device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
@@ -216,8 +216,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	vertexBufferData := [...]float32{-0.01, -0.02, 0.01, -0.02, 0.00, 0.02}
@@ -227,8 +226,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		Usage:    wgpu.BufferUsage_Vertex | wgpu.BufferUsage_CopyDst,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	var initialParticleData [4 * NumParticles]float32
@@ -250,14 +248,14 @@ func InitState(window *glfw.Window) (*State, error) {
 				wgpu.BufferUsage_CopyDst,
 		})
 		if err != nil {
-			s.Destroy()
-			return nil, err
+			return s, err
 		}
 
 		s.particleBuffers = append(s.particleBuffers, particleBuffer)
 	}
 
 	computeBindGroupLayout := s.computePipeline.GetBindGroupLayout(0)
+	defer computeBindGroupLayout.Drop()
 
 	for i := 0; i < 2; i++ {
 		particleBindGroup, err := s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
@@ -281,8 +279,7 @@ func InitState(window *glfw.Window) (*State, error) {
 			},
 		})
 		if err != nil {
-			s.Destroy()
-			return nil, err
+			return s, err
 		}
 
 		s.particleBindGroups = append(s.particleBindGroups, particleBindGroup)
@@ -299,6 +296,9 @@ func (s *State) Resize(width, height int) {
 		s.config.Width = uint32(width)
 		s.config.Height = uint32(height)
 
+		if s.swapChain != nil {
+			s.swapChain.Drop()
+		}
 		var err error
 		s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 		if err != nil {
@@ -374,6 +374,7 @@ func (s *State) Destroy() {
 		s.renderPipeline = nil
 	}
 	if s.swapChain != nil {
+		s.swapChain.Drop()
 		s.swapChain = nil
 	}
 	if s.config != nil {

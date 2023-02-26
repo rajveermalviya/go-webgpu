@@ -47,8 +47,14 @@ type State struct {
 	pipeline  *wgpu.RenderPipeline
 }
 
-func InitState(window *glfw.Window) (*State, error) {
-	s := &State{}
+func InitState(window *glfw.Window) (s *State, err error) {
+	defer func() {
+		if err != nil {
+			s.Destroy()
+			s = nil
+		}
+	}()
+	s = &State{}
 
 	s.instance = wgpu.CreateInstance(nil)
 
@@ -59,15 +65,13 @@ func InitState(window *glfw.Window) (*State, error) {
 		CompatibleSurface:    s.surface,
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer adapter.Drop()
 
 	s.device, err = adapter.RequestDevice(nil)
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	s.queue = s.device.GetQueue()
 
@@ -76,8 +80,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		WGSLDescriptor: &wgpu.ShaderModuleWGSLDescriptor{Code: shader},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 	defer shader.Drop()
 
@@ -91,8 +94,7 @@ func InitState(window *glfw.Window) (*State, error) {
 	}
 	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	s.pipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
@@ -125,8 +127,7 @@ func InitState(window *glfw.Window) (*State, error) {
 		},
 	})
 	if err != nil {
-		s.Destroy()
-		return nil, err
+		return s, err
 	}
 
 	return s, nil
@@ -137,6 +138,9 @@ func (s *State) Resize(width, height int) {
 		s.config.Width = uint32(width)
 		s.config.Height = uint32(height)
 
+		if s.swapChain != nil {
+			s.swapChain.Drop()
+		}
 		var err error
 		s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
 		if err != nil {
@@ -186,6 +190,7 @@ func (s *State) Destroy() {
 		s.pipeline = nil
 	}
 	if s.swapChain != nil {
+		s.swapChain.Drop()
 		s.swapChain = nil
 	}
 	if s.config != nil {

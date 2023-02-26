@@ -126,3 +126,7 @@ func (p *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offse
 		C.uint64_t(size),
 	)
 }
+
+func (p *RenderBundleEncoder) Drop() {
+	C.wgpuRenderBundleEncoderDrop(p.ref)
+}

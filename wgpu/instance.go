@@ -20,7 +20,10 @@ type Instance struct {
 }
 
 type InstanceDescriptor struct {
-	Backends InstanceBackend
+	Backends           InstanceBackend
+	Dx12ShaderCompiler Dx12Compiler
+	DxilPath           string
+	DxcPath            string
 }
 
 func CreateInstance(descriptor *InstanceDescriptor) *Instance {
@@ -33,6 +36,19 @@ func CreateInstance(descriptor *InstanceDescriptor) *Instance {
 		instanceExtras.chain.next = nil
 		instanceExtras.chain.sType = C.WGPUSType_InstanceExtras
 		instanceExtras.backends = C.WGPUInstanceBackendFlags(descriptor.Backends)
+		instanceExtras.dx12ShaderCompiler = C.WGPUDx12Compiler(descriptor.Dx12ShaderCompiler)
+
+		if descriptor.DxilPath != "" {
+			dxilPath := C.CString(descriptor.DxilPath)
+			defer C.free(unsafe.Pointer(dxilPath))
+			instanceExtras.dxilPath = dxilPath
+		}
+
+		if descriptor.DxcPath != "" {
+			dxcPath := C.CString(descriptor.DxcPath)
+			defer C.free(unsafe.Pointer(dxcPath))
+			instanceExtras.dxcPath = dxcPath
+		}
 
 		desc.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(instanceExtras))
 	}

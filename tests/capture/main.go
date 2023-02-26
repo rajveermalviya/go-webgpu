@@ -110,9 +110,12 @@ func main() {
 		panic(err)
 	}
 
+	textureView := texture.CreateView(nil)
+	defer textureView.Drop()
+
 	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
 		ColorAttachments: []wgpu.RenderPassColorAttachment{{
-			View:       texture.CreateView(nil),
+			View:       textureView,
 			LoadOp:     wgpu.LoadOp_Clear,
 			StoreOp:    wgpu.StoreOp_Store,
 			ClearValue: wgpu.Color_Red,

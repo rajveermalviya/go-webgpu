@@ -58,3 +58,7 @@ func (p *ComputePassEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, d
 func (p *ComputePassEncoder) SetPipeline(pipeline *ComputePipeline) {
 	C.wgpuComputePassEncoderSetPipeline(p.ref, pipeline.ref)
 }
+
+func (p *ComputePassEncoder) Drop() {
+	C.wgpuComputePassEncoderDrop(p.ref)
+}
