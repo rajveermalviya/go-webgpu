@@ -17,117 +17,100 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - name: build - linux/amd64
-          #   os: ubuntu-20.04
-          #   target: x86_64-unknown-linux-gnu
-          #   goos: linux
-          #   goarch: amd64
+          - name: build - linux/amd64
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            goos: linux
+            goarch: amd64
 
-          - name: build - windows/amd64
+         - name: build - windows/amd64
             os: windows-2019
             target: x86_64-pc-windows-gnu
             goos: windows
             goarch: amd64
             setup_env: |
-              set -ex
+              choco install -y --force llvm | exit 0
+              echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $GITHUB_ENV
 
-              mkdir -p $TMP/go-webgpu-clang
-              cd $TMP/go-webgpu-clang
+          - name: build - darwin/amd64
+            os: macos-11
+            target: x86_64-apple-darwin
+            goos: darwin
+            goarch: amd64
 
-              curl -LO https://github.com/mstorsjo/llvm-mingw/releases/download/20220906/llvm-mingw-20220906-ucrt-x86_64.zip
+          - name: build - darwin/arm64
+            os: macos-11
+            target: aarch64-apple-darwin
+            goos: darwin
+            goarch: arm64
 
-              unzip llvm-mingw-20220906-ucrt-x86_64.zip
-              rm llvm-mingw-20220906-ucrt-x86_64.zip
+          - name: build - ios/amd64
+            os: macos-11
+            target: x86_64-apple-ios
+            goos: ios
+            goarch: amd64
 
-              export CC="$TMP\go-webgpu-clang\llvm-mingw-20220906-ucrt-x86_64\bin\x86_64-w64-mingw32-clang.exe"
-              export CXX="$TMP\go-webgpu-clang\llvm-mingw-20220906-ucrt-x86_64\bin\x86_64-w64-mingw32-clang++.exe"
-              export AR="$TMP\go-webgpu-clang\llvm-mingw-20220906-ucrt-x86_64\bin\x86_64-w64-mingw32-ar.exe"
+          - name: build - ios/arm64
+            os: macos-11
+            target: aarch64-apple-ios
+            goos: ios
+            goarch: arm64
+
+          - name: build - android/amd64
+            os: ubuntu-22.04
+            target: x86_64-linux-android
+            goos: android
+            goarch: amd64
+            setup_env: |
+              set -x
+              export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$ANDROID_MIN_SDK-clang
 
               echo "CC=$CC" >> $GITHUB_ENV
-              echo "CXX=$CXX" >> $GITHUB_ENV
+              echo "CXX=$CC++" >> $GITHUB_ENV
               echo "CLANG_PATH=$CC" >> $GITHUB_ENV
-              echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=$CC" >> $GITHUB_ENV
-              echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_AR=$AR" >> $GITHUB_ENV
+              echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
 
-          # - name: build - darwin/amd64
-          #   os: macos-11
-          #   target: x86_64-apple-darwin
-          #   goos: darwin
-          #   goarch: amd64
+          - name: build - android/386
+            os: ubuntu-22.04
+            target: i686-linux-android
+            goos: android
+            goarch: '386'
+            setup_env: |
+              set -x
+              export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android$ANDROID_MIN_SDK-clang
 
-          # - name: build - darwin/arm64
-          #   os: macos-11
-          #   target: aarch64-apple-darwin
-          #   goos: darwin
-          #   goarch: arm64
+              echo "CC=$CC" >> $GITHUB_ENV
+              echo "CXX=$CC++" >> $GITHUB_ENV
+              echo "CLANG_PATH=$CC" >> $GITHUB_ENV
+              echo "CARGO_TARGET_I686_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
 
-          # - name: build - ios/amd64
-          #   os: macos-11
-          #   target: x86_64-apple-ios
-          #   goos: ios
-          #   goarch: amd64
+          - name: build - android/arm64
+            os: ubuntu-22.04
+            target: aarch64-linux-android
+            goos: android
+            goarch: arm64
+            setup_env: |
+              set -x
+              export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$ANDROID_MIN_SDK-clang
 
-          # - name: build - ios/arm64
-          #   os: macos-11
-          #   target: aarch64-apple-ios
-          #   goos: ios
-          #   goarch: arm64
+              echo "CC=$CC" >> $GITHUB_ENV
+              echo "CXX=$CC++" >> $GITHUB_ENV
+              echo "CLANG_PATH=$CC" >> $GITHUB_ENV
+              echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
 
-          # - name: build - android/amd64
-          #   os: ubuntu-22.04
-          #   target: x86_64-linux-android
-          #   goos: android
-          #   goarch: amd64
-          #   setup_env: |
-          #     set -x
-          #     export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android$ANDROID_MIN_SDK-clang
+          - name: build - android/arm
+            os: ubuntu-22.04
+            target: armv7-linux-androideabi
+            goos: android
+            goarch: arm
+            setup_env: |
+              set -x
+              export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_MIN_SDK-clang
 
-          #     echo "CC=$CC" >> $GITHUB_ENV
-          #     echo "CXX=$CC++" >> $GITHUB_ENV
-          #     echo "CLANG_PATH=$CC" >> $GITHUB_ENV
-          #     echo "CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
-
-          # - name: build - android/386
-          #   os: ubuntu-22.04
-          #   target: i686-linux-android
-          #   goos: android
-          #   goarch: '386'
-          #   setup_env: |
-          #     set -x
-          #     export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android$ANDROID_MIN_SDK-clang
-
-          #     echo "CC=$CC" >> $GITHUB_ENV
-          #     echo "CXX=$CC++" >> $GITHUB_ENV
-          #     echo "CLANG_PATH=$CC" >> $GITHUB_ENV
-          #     echo "CARGO_TARGET_I686_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
-
-          # - name: build - android/arm64
-          #   os: ubuntu-22.04
-          #   target: aarch64-linux-android
-          #   goos: android
-          #   goarch: arm64
-          #   setup_env: |
-          #     set -x
-          #     export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android$ANDROID_MIN_SDK-clang
-
-          #     echo "CC=$CC" >> $GITHUB_ENV
-          #     echo "CXX=$CC++" >> $GITHUB_ENV
-          #     echo "CLANG_PATH=$CC" >> $GITHUB_ENV
-          #     echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$CC" >> $GITHUB_ENV
-
-          # - name: build - android/arm
-          #   os: ubuntu-22.04
-          #   target: armv7-linux-androideabi
-          #   goos: android
-          #   goarch: arm
-          #   setup_env: |
-          #     set -x
-          #     export CC=$ANDROID_NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi$ANDROID_MIN_SDK-clang
-
-          #     echo "CC=$CC" >> $GITHUB_ENV
-          #     echo "CXX=$CC++" >> $GITHUB_ENV
-          #     echo "CLANG_PATH=$CC" >> $GITHUB_ENV
-          #     echo "CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$CC" >> $GITHUB_ENV
+              echo "CC=$CC" >> $GITHUB_ENV
+              echo "CXX=$CC++" >> $GITHUB_ENV
+              echo "CLANG_PATH=$CC" >> $GITHUB_ENV
+              echo "CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$CC" >> $GITHUB_ENV
 
     steps:
       # Checkout
