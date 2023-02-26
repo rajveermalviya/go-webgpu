@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  WGPU_COMMIT: 169b5168aeeced011e311578aa681eb01f33d5d0
+  WGPU_REF: v0.15.1.1
   ANDROID_MIN_SDK: "21"
 
 jobs:
@@ -151,7 +151,7 @@ jobs:
 
           git clone --recursive https://github.com/gfx-rs/wgpu-native.git tmp
           cd tmp
-          git checkout $WGPU_COMMIT
+          git checkout $WGPU_REF
 
           # workaround missing libgcc in ndk r23+
           if [ ${{ matrix.goos }} == "android" ]; then
