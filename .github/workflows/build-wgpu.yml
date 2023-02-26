@@ -23,15 +23,6 @@ jobs:
             goos: linux
             goarch: amd64
 
-          - name: build - linux/386
-            os: ubuntu-20.04
-            target: i686-unknown-linux-gnu
-            goos: linux
-            goarch: "386"
-            setup_env: |
-              sudo apt update -y
-              sudo apt install -y gcc-multilib
-
           - name: build - windows/amd64
             os: windows-2019
             target: x86_64-pc-windows-gnu
