@@ -197,7 +197,6 @@ jobs:
               "darwin_arm64"
               "ios_amd64"
               "ios_arm64"
-              "linux_386"
               "linux_amd64"
               "windows_amd64")
 
