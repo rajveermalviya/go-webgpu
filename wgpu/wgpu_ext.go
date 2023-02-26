@@ -1,14 +1,24 @@
 package wgpu
 
 const (
-	CopyBytesPerRowAlignment    = 256
+	// Buffer-Texture copies must have `TextureDataLayout.BytesPerRow` aligned to this number.
+	//
+	// This doesn't apply to `(*Queue).WriteTexture()`.
+	CopyBytesPerRowAlignment = 256
+	// An offset into the query resolve buffer has to be aligned to this.
 	QueryResolveBufferAlignment = 256
-	CopyBufferAlignment         = 4
-	MapAlignment                = 8
-	VertexStrideAlignment       = 4
-	PushConstantAlignment       = 4
-	QuerySetMaxQueries          = 8192
-	QuerySize                   = 8
+	// Buffer to buffer copy as well as buffer clear offsets and sizes must be aligned to this number.
+	CopyBufferAlignment = 4
+	// Size to align mappings.
+	MapAlignment = 8
+	// Vertex buffer strides have to be aligned to this number.
+	VertexStrideAlignment = 4
+	// Alignment all push constants need
+	PushConstantAlignment = 4
+	// Maximum queries in a query set
+	QuerySetMaxQueries = 8192
+	// Size of a single piece of query data.
+	QuerySize = 8
 )
 
 var (

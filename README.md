@@ -1,28 +1,25 @@
 # go-webgpu
 
-Go bindings for [`wgpu-native`](https://github.com/gfx-rs/wgpu-native), a cross-platform, safe, graphics api. It runs natively on Vulkan, Metal, D3D12.
+go bindings for [`wgpu-native`](https://github.com/gfx-rs/wgpu-native), a cross-platform, safe, graphics api. it runs natively on vulkan, metal, d3d12 and opengles.
 
-For more info check:
-- [WebGPU](https://gpuweb.github.io/gpuweb/)
-- [WGSL](https://gpuweb.github.io/gpuweb/wgsl/)
+for more info check:
+- [webgpu](https://gpuweb.github.io/gpuweb/)
+- [wgsl](https://gpuweb.github.io/gpuweb/wgsl/)
 - [webgpu-native](https://github.com/webgpu-native/webgpu-headers)
 
-## cgo
-
-- on windows cgo **is not** used (i.e. works with `CGO_ENABLED=0`). so only Go compiler is needed.
-
-- on unix (linux, darwin, android) cgo **is** used, so you will need C toolchain (`gcc` or `clang`) installed.
-
-Included static libs & windows dll are built via [Github Actions](./.github/workflows/build-wgpu.yml).
+included static libs are built via [github actions](./.github/workflows/build-wgpu.yml).
 
 ## Examples
 
-|                                                    |                                                  |                                                          |
-| -------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------- |
-| [![](./tests/boids/image-msaa.png)][boids-example] | [![](./tests/cube/image-msaa.png)][cube-example] | [![](./tests/triangle/image-msaa.png)][triangle-example] |
+| | | |
+| - | - | - |
+| [![b-i]][b] | [![c-i]][c] | [![t-i]][t] |
 
-[boids-example]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/boids
-[cube-example]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/cube
-[triangle-example]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/triangle
+[b-i]: https://raw.githubusercontent.com/rajveermalviya/go-webgpu/main/tests/boids/image-msaa.png
+[b]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/boids
+[c-i]: https://raw.githubusercontent.com/rajveermalviya/go-webgpu/main/tests/cube/image-msaa.png
+[c]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/cube
+[t-i]: https://raw.githubusercontent.com/rajveermalviya/go-webgpu/main/tests/triangle/image-msaa.png
+[t]: https://github.com/rajveermalviya/go-webgpu-examples/tree/main/triangle
 
-You can check out all the examples in [go-webgpu-examples repo](https://github.com/rajveermalviya/go-webgpu-examples)
+you can check out all the examples in [go-webgpu-examples repo](https://github.com/rajveermalviya/go-webgpu-examples)
