@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b
-	github.com/rajveermalviya/go-webgpu/wgpu v0.1.5
+	github.com/rajveermalviya/go-webgpu/wgpu v0.0.0-00010101000000-000000000000
 )
 
-require golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect
+replace github.com/rajveermalviya/go-webgpu/wgpu => ../wgpu
