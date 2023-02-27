@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  WGPU_REF: v0.15.1.1
+  WGPU_REF: v0.15.1.2
   ANDROID_MIN_SDK: "21"
 
 jobs:
