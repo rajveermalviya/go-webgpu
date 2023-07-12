@@ -21,6 +21,6 @@ func (p *RenderPipeline) GetBindGroupLayout(groupIndex uint32) *BindGroupLayout 
 	return &BindGroupLayout{ref}
 }
 
-func (p *RenderPipeline) Drop() {
-	C.wgpuRenderPipelineDrop(p.ref)
+func (p *RenderPipeline) Release() {
+	C.wgpuRenderPipelineRelease(p.ref)
 }

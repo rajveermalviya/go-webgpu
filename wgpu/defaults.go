@@ -26,6 +26,7 @@ func DefaultLimits() Limits {
 		MaxInterStageShaderComponents:             LimitU32Undefined,
 		MaxInterStageShaderVariables:              LimitU32Undefined,
 		MaxColorAttachments:                       LimitU32Undefined,
+		MaxColorAttachmentBytesPerSample:          LimitU32Undefined,
 		MaxComputeWorkgroupStorageSize:            LimitU32Undefined,
 		MaxComputeInvocationsPerWorkgroup:         LimitU32Undefined,
 		MaxComputeWorkgroupSizeX:                  LimitU32Undefined,

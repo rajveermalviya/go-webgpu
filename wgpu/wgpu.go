@@ -24,7 +24,7 @@ package wgpu
 // Windows
 #cgo windows,amd64 LDFLAGS: -L${SRCDIR}/lib/windows/amd64 -lwgpu_native
 
-#cgo windows LDFLAGS: -ld3dcompiler_47 -lws2_32 -luserenv -lbcrypt
+#cgo windows LDFLAGS: -ld3dcompiler_47 -lws2_32 -luserenv -lbcrypt -lntdll
 
 #include <stdio.h>
 #include "./lib/wgpu.h"
@@ -117,15 +117,15 @@ type (
 	TextureView     struct{ ref C.WGPUTextureView }
 )
 
-func (p *BindGroup) Drop()       { C.wgpuBindGroupDrop(p.ref) }
-func (p *BindGroupLayout) Drop() { C.wgpuBindGroupLayoutDrop(p.ref) }
-func (p *CommandBuffer) Drop()   { C.wgpuCommandBufferDrop(p.ref) }
-func (p *PipelineLayout) Drop()  { C.wgpuPipelineLayoutDrop(p.ref) }
-func (p *QuerySet) Drop()        { C.wgpuQuerySetDrop(p.ref) }
-func (p *RenderBundle) Drop()    { C.wgpuRenderBundleDrop(p.ref) }
-func (p *Sampler) Drop()         { C.wgpuSamplerDrop(p.ref) }
-func (p *ShaderModule) Drop()    { C.wgpuShaderModuleDrop(p.ref) }
-func (p *TextureView) Drop()     { C.wgpuTextureViewDrop(p.ref) }
+func (p *BindGroup) Release()       { C.wgpuBindGroupRelease(p.ref) }
+func (p *BindGroupLayout) Release() { C.wgpuBindGroupLayoutRelease(p.ref) }
+func (p *CommandBuffer) Release()   { C.wgpuCommandBufferRelease(p.ref) }
+func (p *PipelineLayout) Release()  { C.wgpuPipelineLayoutRelease(p.ref) }
+func (p *QuerySet) Release()        { C.wgpuQuerySetRelease(p.ref) }
+func (p *RenderBundle) Release()    { C.wgpuRenderBundleRelease(p.ref) }
+func (p *Sampler) Release()         { C.wgpuSamplerRelease(p.ref) }
+func (p *ShaderModule) Release()    { C.wgpuShaderModuleRelease(p.ref) }
+func (p *TextureView) Release()     { C.wgpuTextureViewRelease(p.ref) }
 
 // common types
 
@@ -154,6 +154,7 @@ type Limits struct {
 	MaxInterStageShaderComponents             uint32
 	MaxInterStageShaderVariables              uint32
 	MaxColorAttachments                       uint32
+	MaxColorAttachmentBytesPerSample          uint32
 	MaxComputeWorkgroupStorageSize            uint32
 	MaxComputeInvocationsPerWorkgroup         uint32
 	MaxComputeWorkgroupSizeX                  uint32

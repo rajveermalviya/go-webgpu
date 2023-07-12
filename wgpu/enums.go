@@ -50,18 +50,21 @@ func (v AddressMode) String() string {
 type BackendType uint32
 
 const (
-	BackendType_Null     BackendType = 0x00000000
-	BackendType_WebGPU   BackendType = 0x00000001
-	BackendType_D3D11    BackendType = 0x00000002
-	BackendType_D3D12    BackendType = 0x00000003
-	BackendType_Metal    BackendType = 0x00000004
-	BackendType_Vulkan   BackendType = 0x00000005
-	BackendType_OpenGL   BackendType = 0x00000006
-	BackendType_OpenGLES BackendType = 0x00000007
+	BackendType_Undefined BackendType = 0x00000000
+	BackendType_Null      BackendType = 0x00000001
+	BackendType_WebGPU    BackendType = 0x00000002
+	BackendType_D3D11     BackendType = 0x00000003
+	BackendType_D3D12     BackendType = 0x00000004
+	BackendType_Metal     BackendType = 0x00000005
+	BackendType_Vulkan    BackendType = 0x00000006
+	BackendType_OpenGL    BackendType = 0x00000007
+	BackendType_OpenGLES  BackendType = 0x00000008
 )
 
 func (v BackendType) String() string {
 	switch v {
+	case BackendType_Undefined:
+		return "Undefined"
 	case BackendType_Null:
 		return "Null"
 	case BackendType_WebGPU:
@@ -189,19 +192,22 @@ type BufferMapAsyncStatus uint32
 
 const (
 	BufferMapAsyncStatus_Success                 BufferMapAsyncStatus = 0x00000000
-	BufferMapAsyncStatus_Error                   BufferMapAsyncStatus = 0x00000001
+	BufferMapAsyncStatus_ValidationError         BufferMapAsyncStatus = 0x00000001
 	BufferMapAsyncStatus_Unknown                 BufferMapAsyncStatus = 0x00000002
 	BufferMapAsyncStatus_DeviceLost              BufferMapAsyncStatus = 0x00000003
 	BufferMapAsyncStatus_DestroyedBeforeCallback BufferMapAsyncStatus = 0x00000004
 	BufferMapAsyncStatus_UnmappedBeforeCallback  BufferMapAsyncStatus = 0x00000005
+	BufferMapAsyncStatus_MappingAlreadyPending   BufferMapAsyncStatus = 0x00000006
+	BufferMapAsyncStatus_OffsetOutOfRange        BufferMapAsyncStatus = 0x00000007
+	BufferMapAsyncStatus_SizeOutOfRange          BufferMapAsyncStatus = 0x00000008
 )
 
 func (v BufferMapAsyncStatus) String() string {
 	switch v {
 	case BufferMapAsyncStatus_Success:
 		return "Success"
-	case BufferMapAsyncStatus_Error:
-		return "Error"
+	case BufferMapAsyncStatus_ValidationError:
+		return "ValidationError"
 	case BufferMapAsyncStatus_Unknown:
 		return "Unknown"
 	case BufferMapAsyncStatus_DeviceLost:
@@ -210,6 +216,33 @@ func (v BufferMapAsyncStatus) String() string {
 		return "DestroyedBeforeCallback"
 	case BufferMapAsyncStatus_UnmappedBeforeCallback:
 		return "UnmappedBeforeCallback"
+	case BufferMapAsyncStatus_MappingAlreadyPending:
+		return "MappingAlreadyPending"
+	case BufferMapAsyncStatus_OffsetOutOfRange:
+		return "OffsetOutOfRange"
+	case BufferMapAsyncStatus_SizeOutOfRange:
+		return "SizeOutOfRange"
+	default:
+		return ""
+	}
+}
+
+type BufferMapState uint32
+
+const (
+	BufferMapState_Unmapped BufferMapState = 0x00000000
+	BufferMapState_Pending  BufferMapState = 0x00000001
+	BufferMapState_Mapped   BufferMapState = 0x00000002
+)
+
+func (v BufferMapState) String() string {
+	switch v {
+	case BufferMapState_Unmapped:
+		return "Unmapped"
+	case BufferMapState_Pending:
+		return "Pending"
+	case BufferMapState_Mapped:
+		return "Mapped"
 	default:
 		return ""
 	}
@@ -423,18 +456,21 @@ type CreatePipelineAsyncStatus uint32
 
 const (
 	CreatePipelineAsyncStatus_Success         CreatePipelineAsyncStatus = 0x00000000
-	CreatePipelineAsyncStatus_Error           CreatePipelineAsyncStatus = 0x00000001
-	CreatePipelineAsyncStatus_DeviceLost      CreatePipelineAsyncStatus = 0x00000002
-	CreatePipelineAsyncStatus_DeviceDestroyed CreatePipelineAsyncStatus = 0x00000003
-	CreatePipelineAsyncStatus_Unknown         CreatePipelineAsyncStatus = 0x00000004
+	CreatePipelineAsyncStatus_ValidationError CreatePipelineAsyncStatus = 0x00000001
+	CreatePipelineAsyncStatus_InternalError   CreatePipelineAsyncStatus = 0x00000002
+	CreatePipelineAsyncStatus_DeviceLost      CreatePipelineAsyncStatus = 0x00000003
+	CreatePipelineAsyncStatus_DeviceDestroyed CreatePipelineAsyncStatus = 0x00000004
+	CreatePipelineAsyncStatus_Unknown         CreatePipelineAsyncStatus = 0x00000005
 )
 
 func (v CreatePipelineAsyncStatus) String() string {
 	switch v {
 	case CreatePipelineAsyncStatus_Success:
 		return "Success"
-	case CreatePipelineAsyncStatus_Error:
-		return "Error"
+	case CreatePipelineAsyncStatus_ValidationError:
+		return "ValidationError"
+	case CreatePipelineAsyncStatus_InternalError:
+		return "InternalError"
 	case CreatePipelineAsyncStatus_DeviceLost:
 		return "DeviceLost"
 	case CreatePipelineAsyncStatus_DeviceDestroyed:
@@ -560,22 +596,24 @@ func (v ErrorType) String() string {
 type FeatureName uint32
 
 const (
-	FeatureName_Undefined                                  FeatureName = 0x00000000
-	FeatureName_DepthClipControl                           FeatureName = 0x00000001
-	FeatureName_Depth32FloatStencil8                       FeatureName = 0x00000002
-	FeatureName_TimestampQuery                             FeatureName = 0x00000003
-	FeatureName_PipelineStatisticsQuery                    FeatureName = 0x00000004
-	FeatureName_TextureCompressionBC                       FeatureName = 0x00000005
-	FeatureName_TextureCompressionETC2                     FeatureName = 0x00000006
-	FeatureName_TextureCompressionASTC                     FeatureName = 0x00000007
-	FeatureName_IndirectFirstInstance                      FeatureName = 0x00000008
-	FeatureName_ShaderF16                                  FeatureName = 0x00000009
-	FeatureName_RG11B10UfloatRenderable                    FeatureName = 0x0000000A
-	NativeFeature_PUSH_CONSTANTS                           FeatureName = 0x60000001
-	NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES FeatureName = 0x60000002
-	NativeFeature_MULTI_DRAW_INDIRECT                      FeatureName = 0x60000003
-	NativeFeature_MULTI_DRAW_INDIRECT_COUNT                FeatureName = 0x60000004
-	NativeFeature_VERTEX_WRITABLE_STORAGE                  FeatureName = 0x60000005
+	FeatureName_Undefined                              FeatureName = 0x00000000
+	FeatureName_DepthClipControl                       FeatureName = 0x00000001
+	FeatureName_Depth32FloatStencil8                   FeatureName = 0x00000002
+	FeatureName_TimestampQuery                         FeatureName = 0x00000003
+	FeatureName_PipelineStatisticsQuery                FeatureName = 0x00000004
+	FeatureName_TextureCompressionBC                   FeatureName = 0x00000005
+	FeatureName_TextureCompressionETC2                 FeatureName = 0x00000006
+	FeatureName_TextureCompressionASTC                 FeatureName = 0x00000007
+	FeatureName_IndirectFirstInstance                  FeatureName = 0x00000008
+	FeatureName_ShaderF16                              FeatureName = 0x00000009
+	FeatureName_RG11B10UfloatRenderable                FeatureName = 0x0000000A
+	FeatureName_BGRA8UnormStorage                      FeatureName = 0x0000000B
+	FeatureName_Float32Filterable                      FeatureName = 0x0000000C
+	NativeFeature_PushConstants                        FeatureName = 0x60000001
+	NativeFeature_TextureAdapterSpecificFormatFeatures FeatureName = 0x60000002
+	NativeFeature_MultiDrawIndirect                    FeatureName = 0x60000003
+	NativeFeature_MultiDrawIndirectCount               FeatureName = 0x60000004
+	NativeFeature_VertexWritableStorage                FeatureName = 0x60000005
 )
 
 func (v FeatureName) String() string {
@@ -602,16 +640,20 @@ func (v FeatureName) String() string {
 		return "ShaderF16"
 	case FeatureName_RG11B10UfloatRenderable:
 		return "RG11B10UfloatRenderable"
-	case NativeFeature_PUSH_CONSTANTS:
-		return "NativeFeature_PUSH_CONSTANTS"
-	case NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES:
-		return "NativeFeature_TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES"
-	case NativeFeature_MULTI_DRAW_INDIRECT:
-		return "NativeFeature_MULTI_DRAW_INDIRECT"
-	case NativeFeature_MULTI_DRAW_INDIRECT_COUNT:
-		return "NativeFeature_MULTI_DRAW_INDIRECT_COUNT"
-	case NativeFeature_VERTEX_WRITABLE_STORAGE:
-		return "NativeFeature_VERTEX_WRITABLE_STORAGE"
+	case FeatureName_BGRA8UnormStorage:
+		return "BGRA8UnormStorage"
+	case FeatureName_Float32Filterable:
+		return "Float32Filterable"
+	case NativeFeature_PushConstants:
+		return "NativeFeature_PushConstants"
+	case NativeFeature_TextureAdapterSpecificFormatFeatures:
+		return "NativeFeature_TextureAdapterSpecificFormatFeatures"
+	case NativeFeature_MultiDrawIndirect:
+		return "NativeFeature_MultiDrawIndirect"
+	case NativeFeature_MultiDrawIndirectCount:
+		return "NativeFeature_MultiDrawIndirectCount"
+	case NativeFeature_VertexWritableStorage:
+		return "NativeFeature_VertexWritableStorage"
 	default:
 		return ""
 	}
@@ -1146,30 +1188,6 @@ func (v TextureAspect) String() string {
 		return "StencilOnly"
 	case TextureAspect_DepthOnly:
 		return "DepthOnly"
-	default:
-		return ""
-	}
-}
-
-type TextureComponentType uint32
-
-const (
-	TextureComponentType_Float           TextureComponentType = 0x00000000
-	TextureComponentType_Sint            TextureComponentType = 0x00000001
-	TextureComponentType_Uint            TextureComponentType = 0x00000002
-	TextureComponentType_DepthComparison TextureComponentType = 0x00000003
-)
-
-func (v TextureComponentType) String() string {
-	switch v {
-	case TextureComponentType_Float:
-		return "Float"
-	case TextureComponentType_Sint:
-		return "Sint"
-	case TextureComponentType_Uint:
-		return "Uint"
-	case TextureComponentType_DepthComparison:
-		return "DepthComparison"
 	default:
 		return ""
 	}

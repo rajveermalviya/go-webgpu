@@ -5,12 +5,92 @@ package wgpu
 #include <stdlib.h>
 #include "./lib/wgpu.h"
 
+extern void gowebgpu_error_callback_c(WGPUErrorType type, char const * message, void * userdata);
+
+static inline void gowebgpu_command_encoder_clear_buffer(WGPUCommandEncoder commandEncoder, WGPUBuffer buffer, uint64_t offset, uint64_t size, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderClearBuffer(commandEncoder, buffer, offset, size);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_copy_buffer_to_buffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_copy_buffer_to_texture(WGPUCommandEncoder commandEncoder, WGPUImageCopyBuffer const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderCopyBufferToTexture(commandEncoder, source, destination, copySize);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_copy_texture_to_buffer(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyBuffer const * destination, WGPUExtent3D const * copySize, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderCopyTextureToBuffer(commandEncoder, source, destination, copySize);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_copy_texture_to_texture(WGPUCommandEncoder commandEncoder, WGPUImageCopyTexture const * source, WGPUImageCopyTexture const * destination, WGPUExtent3D const * copySize, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderCopyTextureToTexture(commandEncoder, source, destination, copySize);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline WGPUCommandBuffer gowebgpu_command_encoder_finish(WGPUCommandEncoder commandEncoder, WGPUCommandBufferDescriptor const * descriptor, WGPUDevice device, void * error_userdata) {
+	WGPUCommandBuffer ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuCommandEncoderFinish(commandEncoder, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline void gowebgpu_command_encoder_insert_debug_marker(WGPUCommandEncoder commandEncoder, char const * markerLabel, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderInsertDebugMarker(commandEncoder, markerLabel);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_pop_debug_group(WGPUCommandEncoder commandEncoder, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderPopDebugGroup(commandEncoder);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_push_debug_group(WGPUCommandEncoder commandEncoder, char const * groupLabel, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderPushDebugGroup(commandEncoder, groupLabel);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_resolve_query_set(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderResolveQuerySet(commandEncoder, querySet, firstQuery, queryCount, destination, destinationOffset);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_write_timestamp(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t queryIndex, WGPUDevice device, void * error_userdata) {
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	wgpuCommandEncoderWriteTimestamp(commandEncoder, querySet, queryIndex);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+}
+
+static inline void gowebgpu_command_encoder_release(WGPUCommandEncoder commandEncoder, WGPUDevice device) {
+	wgpuDeviceRelease(device);
+	wgpuCommandEncoderRelease(commandEncoder);
+}
+
 */
 import "C"
-import "unsafe"
+import (
+	"errors"
+	"runtime/cgo"
+	"unsafe"
+)
 
 type CommandEncoder struct {
-	ref C.WGPUCommandEncoder
+	deviceRef C.WGPUDevice
+	ref       C.WGPUCommandEncoder
 }
 
 type ComputePassDescriptor struct {
@@ -37,7 +117,8 @@ func (p *CommandEncoder) BeginComputePass(descriptor *ComputePassDescriptor) *Co
 		panic("Failed to acquire ComputePassEncoder")
 	}
 
-	return &ComputePassEncoder{ref}
+	C.wgpuDeviceReference(p.deviceRef)
+	return &ComputePassEncoder{deviceRef: p.deviceRef, ref: ref}
 }
 
 type RenderPassColorAttachment struct {
@@ -109,7 +190,7 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 				colorAttachmentsSlice[i] = colorAttachment
 			}
 
-			desc.colorAttachmentCount = C.uint32_t(colorAttachmentCount)
+			desc.colorAttachmentCount = C.size_t(colorAttachmentCount)
 			desc.colorAttachments = (*C.WGPURenderPassColorAttachment)(colorAttachments)
 		}
 
@@ -134,31 +215,46 @@ func (p *CommandEncoder) BeginRenderPass(descriptor *RenderPassDescriptor) *Rend
 	}
 
 	ref := C.wgpuCommandEncoderBeginRenderPass(p.ref, &desc)
-	if ref == nil {
-		panic("Failed to acquire RenderPassEncoder")
-	}
-
-	return &RenderPassEncoder{ref}
+	C.wgpuDeviceReference(p.deviceRef)
+	return &RenderPassEncoder{deviceRef: p.deviceRef, ref: ref}
 }
 
-func (p *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) {
-	C.wgpuCommandEncoderClearBuffer(
+func (p *CommandEncoder) ClearBuffer(buffer *Buffer, offset uint64, size uint64) (err error) {
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).ClearBuffer(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_clear_buffer(
 		p.ref,
 		buffer.ref,
 		C.uint64_t(offset),
 		C.uint64_t(size),
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
 	)
+	return
 }
 
-func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinatonOffset uint64, size uint64) {
-	C.wgpuCommandEncoderCopyBufferToBuffer(
+func (p *CommandEncoder) CopyBufferToBuffer(source *Buffer, sourceOffset uint64, destination *Buffer, destinatonOffset uint64, size uint64) (err error) {
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).CopyBufferToBuffer(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_copy_buffer_to_buffer(
 		p.ref,
 		source.ref,
 		C.uint64_t(sourceOffset),
 		destination.ref,
 		C.uint64_t(destinatonOffset),
 		C.uint64_t(size),
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
 	)
+	return
 }
 
 type ImageCopyBuffer struct {
@@ -166,7 +262,7 @@ type ImageCopyBuffer struct {
 	Buffer *Buffer
 }
 
-func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destination *ImageCopyTexture, copySize *Extent3D) {
+func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destination *ImageCopyTexture, copySize *Extent3D) (err error) {
 	var src C.WGPUImageCopyBuffer
 	if source != nil {
 		if source.Buffer != nil {
@@ -204,10 +300,24 @@ func (p *CommandEncoder) CopyBufferToTexture(source *ImageCopyBuffer, destinatio
 		}
 	}
 
-	C.wgpuCommandEncoderCopyBufferToTexture(p.ref, &src, &dst, &cpySize)
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).CopyBufferToTexture(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_copy_buffer_to_texture(
+		p.ref,
+		&src,
+		&dst,
+		&cpySize,
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
 }
 
-func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destination *ImageCopyBuffer, copySize *Extent3D) {
+func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destination *ImageCopyBuffer, copySize *Extent3D) (err error) {
 	var src C.WGPUImageCopyTexture
 	if source != nil {
 		src = C.WGPUImageCopyTexture{
@@ -245,10 +355,24 @@ func (p *CommandEncoder) CopyTextureToBuffer(source *ImageCopyTexture, destinati
 		}
 	}
 
-	C.wgpuCommandEncoderCopyTextureToBuffer(p.ref, &src, &dst, &cpySize)
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).CopyTextureToBuffer(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_copy_texture_to_buffer(
+		p.ref,
+		&src,
+		&dst,
+		&cpySize,
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
 }
 
-func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destination *ImageCopyTexture, copySize *Extent3D) {
+func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destination *ImageCopyTexture, copySize *Extent3D) (err error) {
 	var src C.WGPUImageCopyTexture
 	if source != nil {
 		src = C.WGPUImageCopyTexture{
@@ -290,14 +414,28 @@ func (p *CommandEncoder) CopyTextureToTexture(source *ImageCopyTexture, destinat
 		}
 	}
 
-	C.wgpuCommandEncoderCopyTextureToTexture(p.ref, &src, &dst, &cpySize)
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).CopyTextureToTexture(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_copy_texture_to_texture(
+		p.ref,
+		&src,
+		&dst,
+		&cpySize,
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
 }
 
 type CommandBufferDescriptor struct {
 	Label string
 }
 
-func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuffer {
+func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) (*CommandBuffer, error) {
 	var desc *C.WGPUCommandBufferDescriptor
 
 	if descriptor != nil && descriptor.Label != "" {
@@ -309,32 +447,117 @@ func (p *CommandEncoder) Finish(descriptor *CommandBufferDescriptor) *CommandBuf
 		}
 	}
 
-	ref := C.wgpuCommandEncoderFinish(p.ref, desc)
-	if ref == nil {
-		panic("Failed to acquire CommandBuffer")
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).Finish(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_command_encoder_finish(
+		p.ref,
+		desc,
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuCommandBufferRelease(ref)
+		return nil, err
 	}
 
-	return &CommandBuffer{ref}
+	return &CommandBuffer{ref}, nil
 }
 
-func (p *CommandEncoder) InsertDebugMarker(markerLabel string) {
+func (p *CommandEncoder) InsertDebugMarker(markerLabel string) (err error) {
 	markerLabelStr := C.CString(markerLabel)
 	defer C.free(unsafe.Pointer(markerLabelStr))
 
-	C.wgpuCommandEncoderInsertDebugMarker(p.ref, markerLabelStr)
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).InsertDebugMarker(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_insert_debug_marker(
+		p.ref,
+		markerLabelStr,
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
 }
 
-func (p *CommandEncoder) PopDebugGroup() {
-	C.wgpuCommandEncoderPopDebugGroup(p.ref)
+func (p *CommandEncoder) PopDebugGroup() (err error) {
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).PopDebugGroup(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_pop_debug_group(
+		p.ref,
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
 }
 
-func (p *CommandEncoder) PushDebugGroup(groupLabel string) {
+func (p *CommandEncoder) PushDebugGroup(groupLabel string) (err error) {
 	groupLabelStr := C.CString(groupLabel)
 	defer C.free(unsafe.Pointer(groupLabelStr))
 
-	C.wgpuCommandEncoderPushDebugGroup(p.ref, groupLabelStr)
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).PushDebugGroup(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_push_debug_group(
+		p.ref,
+		groupLabelStr,
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
 }
 
-func (p *CommandEncoder) Drop() {
-	C.wgpuCommandEncoderDrop(p.ref)
+func (p *CommandEncoder) ResolveQuerySet(querySet *QuerySet, firstQuery uint32, queryCount uint32, destination *Buffer, destinationOffset uint64) (err error) {
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).ResolveQuerySet(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_resolve_query_set(
+		p.ref,
+		querySet.ref,
+		C.uint32_t(firstQuery),
+		C.uint32_t(queryCount),
+		destination.ref,
+		C.uint64_t(destinationOffset),
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
+}
+
+func (p *CommandEncoder) WriteTimestamp(querySet *QuerySet, queryIndex uint32) (err error) {
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*CommandEncoder).WriteTimestamp(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	C.gowebgpu_command_encoder_write_timestamp(
+		p.ref,
+		querySet.ref,
+		C.uint32_t(queryIndex),
+		p.deviceRef,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	return
+}
+
+func (p *CommandEncoder) Release() {
+	C.gowebgpu_command_encoder_release(p.ref, p.deviceRef)
 }

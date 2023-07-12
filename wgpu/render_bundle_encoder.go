@@ -98,7 +98,7 @@ func (p *RenderBundleEncoder) SetBindGroup(groupIndex uint32, group *BindGroup, 
 	} else {
 		C.wgpuRenderBundleEncoderSetBindGroup(
 			p.ref, C.uint32_t(groupIndex), group.ref,
-			C.uint32_t(dynamicOffsetCount), (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0])),
+			C.size_t(dynamicOffsetCount), (*C.uint32_t)(unsafe.Pointer(&dynamicOffsets[0])),
 		)
 	}
 }
@@ -127,6 +127,6 @@ func (p *RenderBundleEncoder) SetVertexBuffer(slot uint32, buffer *Buffer, offse
 	)
 }
 
-func (p *RenderBundleEncoder) Drop() {
-	C.wgpuRenderBundleEncoderDrop(p.ref)
+func (p *RenderBundleEncoder) Release() {
+	C.wgpuRenderBundleEncoderRelease(p.ref)
 }
