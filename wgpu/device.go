@@ -5,65 +5,120 @@ package wgpu
 #include <stdlib.h>
 #include "./lib/wgpu.h"
 
+extern void gowebgpu_error_callback_c(WGPUErrorType type, char const * message, void * userdata);
+
+static inline WGPUBindGroup gowebgpu_device_create_bind_group(WGPUDevice device, WGPUBindGroupDescriptor const * descriptor, void * error_userdata) {
+	WGPUBindGroup ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateBindGroup(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUBindGroupLayout gowebgpu_device_create_bind_group_layout(WGPUDevice device, WGPUBindGroupLayoutDescriptor const * descriptor, void * error_userdata) {
+	WGPUBindGroupLayout ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateBindGroupLayout(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUBuffer gowebgpu_device_create_buffer(WGPUDevice device, WGPUBufferDescriptor const * descriptor, void * error_userdata) {
+	WGPUBuffer ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateBuffer(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUCommandEncoder gowebgpu_device_create_command_encoder(WGPUDevice device, WGPUCommandEncoderDescriptor const * descriptor, void * error_userdata) {
+	WGPUCommandEncoder ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateCommandEncoder(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUComputePipeline gowebgpu_device_create_compute_pipeline(WGPUDevice device, WGPUComputePipelineDescriptor const * descriptor, void * error_userdata) {
+	WGPUComputePipeline ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateComputePipeline(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUPipelineLayout gowebgpu_device_create_pipeline_layout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor, void * error_userdata) {
+	WGPUPipelineLayout ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreatePipelineLayout(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUQuerySet gowebgpu_device_create_query_set(WGPUDevice device, WGPUQuerySetDescriptor const * descriptor, void * error_userdata) {
+	WGPUQuerySet ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateQuerySet(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPURenderPipeline gowebgpu_device_create_render_pipeline(WGPUDevice device, WGPURenderPipelineDescriptor const * descriptor, void * error_userdata) {
+	WGPURenderPipeline ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateRenderPipeline(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUSampler gowebgpu_device_create_sampler(WGPUDevice device, WGPUSamplerDescriptor const * descriptor, void * error_userdata) {
+	WGPUSampler ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateSampler(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUShaderModule gowebgpu_device_create_shader_module(WGPUDevice device, WGPUShaderModuleDescriptor const * descriptor, void * error_userdata) {
+	WGPUShaderModule ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateShaderModule(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
+static inline WGPUTexture gowebgpu_device_create_texture(WGPUDevice device, WGPUTextureDescriptor const * descriptor, void * error_userdata) {
+	WGPUTexture ref = NULL;
+	wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+	ref = wgpuDeviceCreateTexture(device, descriptor);
+	wgpuDevicePopErrorScope(device, gowebgpu_error_callback_c, error_userdata);
+	return ref;
+}
+
 */
 import "C"
 import (
-	"fmt"
+	"errors"
 	"runtime/cgo"
 	"unsafe"
 )
 
 type Device struct {
-	ref     C.WGPUDevice
-	errChan chan *Error
-	handle  cgo.Handle
+	ref C.WGPUDevice
 }
 
-func (p *Device) getErr() (err error) {
-	select {
-	case err = <-p.errChan:
-	default:
-	}
-	return
-}
+type errorCallback func(typ ErrorType, message string)
 
-func (p *Device) storeErr(typ ErrorType, message string) {
-	err := &Error{Type: typ, Message: fmt.Sprint(message)}
-	select {
-	case p.errChan <- err:
-	default:
-		var prevErr *Error
-
-		select {
-		case prevErr = <-p.errChan:
-		default:
-		}
-
-		var str string
-		if prevErr != nil {
-			str = fmt.Sprintf("go-webgpu: previous uncaptured error: %s\n\n", prevErr.Error())
-		}
-		str += fmt.Sprintf("go-webgpu: current uncaptured error: %s\n\n", err.Error())
-		panic(str)
+//export gowebgpu_error_callback_go
+func gowebgpu_error_callback_go(_type C.WGPUErrorType, message *C.char, userdata unsafe.Pointer) {
+	handle := *(*cgo.Handle)(userdata)
+	cb, ok := handle.Value().(errorCallback)
+	if ok {
+		cb(ErrorType(_type), C.GoString(message))
 	}
 }
 
-func (p *Device) Drop() {
-	C.wgpuDeviceDrop(p.ref)
-
-loop:
-	for {
-		select {
-		case err := <-p.errChan:
-			fmt.Printf("go-webgpu: uncaptured error: %s\n", err.Error())
-		default:
-			break loop
-		}
-	}
-
-	p.handle.Delete()
-	close(p.errChan)
-}
+func (p *Device) Release() { C.wgpuDeviceRelease(p.ref) }
 
 type BindGroupEntry struct {
 	Binding     uint32
@@ -122,18 +177,26 @@ func (p *Device) CreateBindGroup(descriptor *BindGroupDescriptor) (*BindGroup, e
 				entriesSlice[i] = entry
 			}
 
-			desc.entryCount = C.uint32_t(entryCount)
+			desc.entryCount = C.size_t(entryCount)
 			desc.entries = (*C.WGPUBindGroupEntry)(entries)
 		}
 	}
 
-	ref := C.wgpuDeviceCreateBindGroup(p.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateBindGroup(): " + message)
 	}
-	if ref == nil {
-		panic("Failed to acquire BindGroup")
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_bind_group(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuBindGroupRelease(ref)
+		return nil, err
 	}
 
 	return &BindGroup{ref}, nil
@@ -223,18 +286,26 @@ func (p *Device) CreateBindGroupLayout(descriptor *BindGroupLayoutDescriptor) (*
 				}
 			}
 
-			desc.entryCount = C.uint32_t(entryCount)
+			desc.entryCount = C.size_t(entryCount)
 			desc.entries = (*C.WGPUBindGroupLayoutEntry)(entries)
 		}
 	}
 
-	ref := C.wgpuDeviceCreateBindGroupLayout(p.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateBindGroupLayout(): " + message)
 	}
-	if ref == nil {
-		panic("Failed to acquire BindGroupLayout")
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_bind_group_layout(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuBindGroupLayoutRelease(ref)
+		return nil, err
 	}
 
 	return &BindGroupLayout{ref}, nil
@@ -263,17 +334,25 @@ func (p *Device) CreateBuffer(descriptor *BufferDescriptor) (*Buffer, error) {
 		desc.mappedAtCreation = C.bool(descriptor.MappedAtCreation)
 	}
 
-	ref := C.wgpuDeviceCreateBuffer(p.ref, &desc)
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateBuffer(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
 
-	err := p.getErr()
+	ref := C.gowebgpu_device_create_buffer(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
 	if err != nil {
+		C.wgpuBufferRelease(ref)
 		return nil, err
 	}
-	if ref == nil {
-		panic("Failed to acquire Buffer")
-	}
 
-	return &Buffer{ref}, nil
+	C.wgpuDeviceReference(p.ref)
+	return &Buffer{deviceRef: p.ref, ref: ref}, nil
 }
 
 type CommandEncoderDescriptor struct {
@@ -292,16 +371,25 @@ func (p *Device) CreateCommandEncoder(descriptor *CommandEncoderDescriptor) (*Co
 		}
 	}
 
-	ref := C.wgpuDeviceCreateCommandEncoder(p.ref, desc)
-	err := p.getErr()
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateCommandEncoder(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_command_encoder(
+		p.ref,
+		desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
 	if err != nil {
+		C.wgpuCommandEncoderRelease(ref)
 		return nil, err
 	}
-	if ref == nil {
-		panic("Failed to acquire CommandEncoder")
-	}
 
-	return &CommandEncoder{ref}, nil
+	C.wgpuDeviceReference(p.ref)
+	return &CommandEncoder{deviceRef: p.ref, ref: ref}, nil
 }
 
 type ConstantEntry struct {
@@ -351,13 +439,21 @@ func (p *Device) CreateComputePipeline(descriptor *ComputePipelineDescriptor) (*
 		desc.compute = compute
 	}
 
-	ref := C.wgpuDeviceCreateComputePipeline(p.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateComputePipeline(): " + message)
 	}
-	if ref == nil {
-		panic("Failed to acquire ComputePipeline")
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_compute_pipeline(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuComputePipelineRelease(ref)
+		return nil, err
 	}
 
 	return &ComputePipeline{ref}, nil
@@ -397,7 +493,7 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 				bindGroupLayoutsSlice[i] = v.ref
 			}
 
-			desc.bindGroupLayoutCount = C.uint32_t(bindGroupLayoutCount)
+			desc.bindGroupLayoutCount = C.size_t(bindGroupLayoutCount)
 			desc.bindGroupLayouts = (*C.WGPUBindGroupLayout)(bindGroupLayouts)
 		}
 
@@ -431,16 +527,77 @@ func (p *Device) CreatePipelineLayout(descriptor *PipelineLayoutDescriptor) (*Pi
 		}
 	}
 
-	ref := C.wgpuDeviceCreatePipelineLayout(p.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreatePipelineLayout(): " + message)
 	}
-	if ref == nil {
-		panic("Failed to acquire PipelineLayout")
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_pipeline_layout(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuPipelineLayoutRelease(ref)
+		return nil, err
 	}
 
 	return &PipelineLayout{ref}, nil
+}
+
+type QuerySetDescriptor struct {
+	Label              string
+	Type               QueryType
+	Count              uint32
+	PipelineStatistics []PipelineStatisticName
+}
+
+func (p *Device) CreateQuerySet(descriptor *QuerySetDescriptor) (*QuerySet, error) {
+	var desc C.WGPUQuerySetDescriptor
+
+	if descriptor != nil {
+		if descriptor.Label != "" {
+			label := C.CString(descriptor.Label)
+			defer C.free(unsafe.Pointer(label))
+			desc.label = label
+		}
+
+		desc._type = C.WGPUQueryType(descriptor.Type)
+		desc.count = C.uint32_t(descriptor.Count)
+
+		pipelineStatisticsCount := len(descriptor.PipelineStatistics)
+		if pipelineStatisticsCount > 0 {
+			pipelineStatistics := C.malloc(C.size_t(pipelineStatisticsCount) * C.size_t(unsafe.Sizeof(C.WGPUPipelineStatisticName(0))))
+			defer C.free(pipelineStatistics)
+
+			pipelineStatisticsSlice := unsafe.Slice((*PipelineStatisticName)(pipelineStatistics), pipelineStatisticsCount)
+			copy(pipelineStatisticsSlice, descriptor.PipelineStatistics)
+
+			desc.pipelineStatisticsCount = C.size_t(pipelineStatisticsCount)
+			desc.pipelineStatistics = (*C.WGPUPipelineStatisticName)(pipelineStatistics)
+		}
+	}
+
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateQuerySet(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_query_set(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuQuerySetRelease(ref)
+		return nil, err
+	}
+
+	return &QuerySet{ref: ref}, nil
 }
 
 type RenderBundleEncoderDescriptor struct {
@@ -464,13 +621,13 @@ func (p *Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescri
 
 		colorFormatsCount := len(descriptor.ColorFormats)
 		if colorFormatsCount > 0 {
-			colorFormats := C.malloc(C.size_t(colorFormatsCount) * C.size_t(unsafe.Sizeof(TextureFormat(0))))
+			colorFormats := C.malloc(C.size_t(colorFormatsCount) * C.size_t(unsafe.Sizeof(C.WGPUTextureFormat(0))))
 			defer C.free(colorFormats)
 
 			colorFormatsSlice := unsafe.Slice((*TextureFormat)(colorFormats), colorFormatsCount)
 			copy(colorFormatsSlice, descriptor.ColorFormats)
 
-			desc.colorFormatsCount = C.uint32_t(colorFormatsCount)
+			desc.colorFormatsCount = C.size_t(colorFormatsCount)
 			desc.colorFormats = (*C.WGPUTextureFormat)(colorFormats)
 		}
 
@@ -481,13 +638,6 @@ func (p *Device) CreateRenderBundleEncoder(descriptor *RenderBundleEncoderDescri
 	}
 
 	ref := C.wgpuDeviceCreateRenderBundleEncoder(p.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
-	}
-	if ref == nil {
-		panic("Failed to acquire RenderPipeline")
-	}
 
 	return &RenderBundleEncoder{ref}, nil
 }
@@ -642,14 +792,14 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 							}
 						}
 
-						buffer.attributeCount = C.uint32_t(attributeCount)
+						buffer.attributeCount = C.size_t(attributeCount)
 						buffer.attributes = (*C.WGPUVertexAttribute)(attributes)
 					}
 
 					buffersSlice[i] = buffer
 				}
 
-				vert.bufferCount = C.uint32_t(bufferCount)
+				vert.bufferCount = C.size_t(bufferCount)
 				vert.buffers = (*C.WGPUVertexBufferLayout)(buffers)
 			}
 
@@ -752,7 +902,7 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 					targetsSlice[i] = target
 				}
 
-				frag.targetCount = C.uint32_t(targetCount)
+				frag.targetCount = C.size_t(targetCount)
 				frag.targets = (*C.WGPUColorTargetState)(targets)
 			} else {
 				frag.targetCount = 0
@@ -763,13 +913,21 @@ func (p *Device) CreateRenderPipeline(descriptor *RenderPipelineDescriptor) (*Re
 		}
 	}
 
-	ref := C.wgpuDeviceCreateRenderPipeline(p.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateRenderPipeline(): " + message)
 	}
-	if ref == nil {
-		panic("Failed to acquire RenderPipeline")
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_render_pipeline(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuRenderPipelineRelease(ref)
+		return nil, err
 	}
 
 	return &RenderPipeline{ref}, nil
@@ -814,13 +972,21 @@ func (p *Device) CreateSampler(descriptor *SamplerDescriptor) (*Sampler, error) 
 		}
 	}
 
-	ref := C.wgpuDeviceCreateSampler(p.ref, desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateSampler(): " + message)
 	}
-	if ref == nil {
-		panic("Failed to acquire Sampler")
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_sampler(
+		p.ref,
+		desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuSamplerRelease(ref)
+		return nil, err
 	}
 
 	return &Sampler{ref}, nil
@@ -947,13 +1113,21 @@ func (p *Device) CreateShaderModule(descriptor *ShaderModuleDescriptor) (*Shader
 		}
 	}
 
-	ref := C.wgpuDeviceCreateShaderModule(p.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateShaderModule(): " + message)
 	}
-	if ref == nil {
-		panic("Failed to acquire ShaderModule")
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_shader_module(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
+	if err != nil {
+		C.wgpuShaderModuleRelease(ref)
+		return nil, err
 	}
 
 	return &ShaderModule{ref}, nil
@@ -1008,15 +1182,8 @@ func (p *Device) CreateSwapChain(surface *Surface, descriptor *SwapChainDescript
 	}
 
 	ref := C.wgpuDeviceCreateSwapChain(p.ref, surface.ref, &desc)
-	err := p.getErr()
-	if err != nil {
-		return nil, err
-	}
-	if ref == nil {
-		panic("Failed to acquire SwapChain")
-	}
-
-	return &SwapChain{ref: ref, device: p}, nil
+	C.wgpuDeviceReference(p.ref)
+	return &SwapChain{deviceRef: p.ref, ref: ref}, nil
 }
 
 type TextureDescriptor struct {
@@ -1054,17 +1221,25 @@ func (p *Device) CreateTexture(descriptor *TextureDescriptor) (*Texture, error) 
 		}
 	}
 
-	ref := C.wgpuDeviceCreateTexture(p.ref, &desc)
-	err := p.getErr()
+	var err error = nil
+	var cb errorCallback = func(_ ErrorType, message string) {
+		err = errors.New("wgpu.(*Device).CreateTexture(): " + message)
+	}
+	errorCallbackHandle := cgo.NewHandle(cb)
+	defer errorCallbackHandle.Delete()
+
+	ref := C.gowebgpu_device_create_texture(
+		p.ref,
+		&desc,
+		unsafe.Pointer(&errorCallbackHandle),
+	)
 	if err != nil {
+		C.wgpuTextureRelease(ref)
 		return nil, err
 	}
-	if ref == nil {
-		panic("Failed to acquire Texture")
-	}
 
-	texture := &Texture{ref}
-	return texture, nil
+	C.wgpuDeviceReference(p.ref)
+	return &Texture{deviceRef: p.ref, ref: ref}, nil
 }
 
 func (p *Device) EnumerateFeatures() []FeatureName {
@@ -1128,10 +1303,8 @@ func (p *Device) GetLimits() SupportedLimits {
 
 func (p *Device) GetQueue() *Queue {
 	ref := C.wgpuDeviceGetQueue(p.ref)
-	if ref == nil {
-		panic("Failed to acquire Queue")
-	}
-	return &Queue{ref}
+	C.wgpuDeviceReference(p.ref)
+	return &Queue{deviceRef: p.ref, ref: ref}
 }
 
 func (p *Device) HasFeature(feature FeatureName) bool {

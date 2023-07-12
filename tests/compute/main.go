@@ -40,7 +40,7 @@ func main() {
 	numbers := []uint32{1, 2, 3, 4}
 
 	instance := wgpu.CreateInstance(nil)
-	defer instance.Drop()
+	defer instance.Release()
 
 	adapter, err := instance.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
@@ -48,14 +48,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer adapter.Drop()
+	defer adapter.Release()
 
 	device, err := adapter.RequestDevice(nil)
 	if err != nil {
 		panic(err)
 	}
-	defer device.Drop()
+	defer device.Release()
 	queue := device.GetQueue()
+	defer queue.Release()
 
 	shaderModule, err := device.CreateShaderModule(&wgpu.ShaderModuleDescriptor{
 		Label: "shader.wgsl",
@@ -66,7 +67,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer shaderModule.Drop()
+	defer shaderModule.Release()
 
 	size := uint64(len(numbers)) * uint64(unsafe.Sizeof(uint32(0)))
 
@@ -78,7 +79,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer stagingBuffer.Drop()
+	defer stagingBuffer.Release()
 
 	storageBuffer, err := device.CreateBufferInit(&wgpu.BufferInitDescriptor{
 		Label:    "Storage Buffer",
@@ -90,7 +91,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer storageBuffer.Drop()
+	defer storageBuffer.Release()
 
 	computePipeline, err := device.CreateComputePipeline(&wgpu.ComputePipelineDescriptor{
 		Compute: wgpu.ProgrammableStageDescriptor{
@@ -101,10 +102,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer computePipeline.Drop()
+	defer computePipeline.Release()
 
 	bindGroupLayout := computePipeline.GetBindGroupLayout(0)
-	defer bindGroupLayout.Drop()
+	defer bindGroupLayout.Release()
 
 	bindGroup, err := device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Layout: bindGroupLayout,
@@ -117,14 +118,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer bindGroup.Drop()
+	defer bindGroup.Release()
 
 	encoder, err := device.CreateCommandEncoder(nil)
 	if err != nil {
 		panic(err)
 	}
+	defer encoder.Release()
 
 	computePass := encoder.BeginComputePass(nil)
+	defer computePass.Release()
 	computePass.SetPipeline(computePipeline)
 	computePass.SetBindGroup(0, bindGroup, nil)
 	computePass.DispatchWorkgroups(uint32(len(numbers)), 1, 1)
@@ -132,12 +135,21 @@ func main() {
 
 	encoder.CopyBufferToBuffer(storageBuffer, 0, stagingBuffer, 0, size)
 
-	queue.Submit(encoder.Finish(nil))
+	cmdBuffer, err := encoder.Finish(nil)
+	if err != nil {
+		panic(err)
+	}
+	defer cmdBuffer.Release()
+	queue.Submit(cmdBuffer)
 
 	var status wgpu.BufferMapAsyncStatus
-	stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, size, func(s wgpu.BufferMapAsyncStatus) {
+	err = stagingBuffer.MapAsync(wgpu.MapMode_Read, 0, size, func(s wgpu.BufferMapAsyncStatus) {
 		status = s
 	})
+	if err != nil {
+		panic(err)
+	}
+	defer stagingBuffer.Unmap()
 
 	device.Poll(true, nil)
 
@@ -145,15 +157,7 @@ func main() {
 		panic(status)
 	}
 
-	steps := make([]uint32, len(numbers))
-	{
-		data := stagingBuffer.GetMappedRange(0, uint(size))
-
-		copy(steps, wgpu.FromBytes[uint32](data))
-
-		data = nil
-		stagingBuffer.Unmap()
-	}
+	steps := wgpu.FromBytes[uint32](stagingBuffer.GetMappedRange(0, uint(size)))
 
 	dispSteps := mapSlice(steps, func(e uint32) string {
 		if e == OVERFLOW {
@@ -165,8 +169,8 @@ func main() {
 	fmt.Printf("Steps: %#v\n", dispSteps)
 }
 
-func mapSlice[E1 any, E2 any](s []E1, f func(e E1) E2) []E2 {
-	rs := make([]E2, len(s))
+func mapSlice[S any, R any](s []S, f func(e S) R) []R {
+	rs := make([]R, len(s))
 	for i, e := range s {
 		rs[i] = f(e)
 	}

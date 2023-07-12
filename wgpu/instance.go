@@ -220,17 +220,7 @@ func (p *Instance) RequestAdapter(options *RequestAdapterOptions) (*Adapter, err
 		}
 		opts.powerPreference = C.WGPUPowerPreference(options.PowerPreference)
 		opts.forceFallbackAdapter = C.bool(options.ForceFallbackAdapter)
-
-		if options.BackendType != BackendType_Null {
-			adapterExtras := (*C.WGPUAdapterExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUAdapterExtras{}))))
-			defer C.free(unsafe.Pointer(adapterExtras))
-
-			adapterExtras.chain.next = nil
-			adapterExtras.chain.sType = C.WGPUSType_AdapterExtras
-			adapterExtras.backend = C.WGPUBackendType(options.BackendType)
-
-			opts.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(adapterExtras))
-		}
+		opts.backendType = C.WGPUBackendType(options.BackendType)
 	}
 
 	var status RequestAdapterStatus
@@ -247,6 +237,33 @@ func (p *Instance) RequestAdapter(options *RequestAdapterOptions) (*Adapter, err
 		return nil, errors.New("failed to request adapter")
 	}
 	return adapter, nil
+}
+
+type InstanceEnumerateAdapterOptons struct {
+	Backends InstanceBackend
+}
+
+func (p *Instance) EnumerateAdapters(options *InstanceEnumerateAdapterOptons) []*Adapter {
+	var opts *C.WGPUInstanceEnumerateAdapterOptions
+	if options != nil {
+		opts = &C.WGPUInstanceEnumerateAdapterOptions{
+			backends: C.WGPUInstanceBackendFlags(options.Backends),
+		}
+	}
+
+	size := C.wgpuInstanceEnumerateAdapters(p.ref, opts, nil)
+	if size == 0 {
+		return nil
+	}
+
+	adapterRefs := make([]C.WGPUAdapter, size)
+	C.wgpuInstanceEnumerateAdapters(p.ref, opts, (*C.WGPUAdapter)(unsafe.Pointer(&adapterRefs[0])))
+
+	adapters := make([]*Adapter, size)
+	for i, ref := range adapterRefs {
+		adapters[i] = &Adapter{ref}
+	}
+	return adapters
 }
 
 type StorageReport struct {
@@ -336,6 +353,6 @@ func (p *Instance) GenerateReport() GlobalReport {
 	return report
 }
 
-func (p *Instance) Drop() {
-	C.wgpuInstanceDrop(p.ref)
+func (p *Instance) Release() {
+	C.wgpuInstanceRelease(p.ref)
 }

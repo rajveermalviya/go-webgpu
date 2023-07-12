@@ -54,7 +54,7 @@ func main() {
 	height := 200
 
 	instance := wgpu.CreateInstance(nil)
-	defer instance.Drop()
+	defer instance.Release()
 
 	adapter, err := instance.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,
@@ -62,14 +62,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer adapter.Drop()
+	defer adapter.Release()
 
 	device, err := adapter.RequestDevice(nil)
 	if err != nil {
 		panic(err)
 	}
-	defer device.Drop()
+	defer device.Release()
 	queue := device.GetQueue()
+	defer queue.Release()
 
 	bufferDimensions := newBufferDimensions(uint64(width), uint64(height))
 
@@ -82,7 +83,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer outputBuffer.Drop()
+	defer outputBuffer.Release()
 
 	textureExtent := wgpu.Extent3D{
 		Width:              uint32(bufferDimensions.width),
@@ -102,16 +103,20 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer texture.Drop()
+	defer texture.Release()
 
 	// Set the background to be red
 	encoder, err := device.CreateCommandEncoder(nil)
 	if err != nil {
 		panic(err)
 	}
+	defer encoder.Release()
 
-	textureView := texture.CreateView(nil)
-	defer textureView.Drop()
+	textureView, err := texture.CreateView(nil)
+	if err != nil {
+		panic(err)
+	}
+	defer textureView.Release()
 
 	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
 		ColorAttachments: []wgpu.RenderPassColorAttachment{{
@@ -121,6 +126,7 @@ func main() {
 			ClearValue: wgpu.Color_Red,
 		}},
 	})
+	defer renderPass.Release()
 	renderPass.End()
 
 	// Copy the data from the texture to the buffer
@@ -137,7 +143,13 @@ func main() {
 		&textureExtent,
 	)
 
-	index := queue.Submit(encoder.Finish(nil))
+	cmdBuffer, err := encoder.Finish(nil)
+	if err != nil {
+		panic(err)
+	}
+	defer cmdBuffer.Release()
+
+	queue.Submit(cmdBuffer)
 
 	outputBuffer.MapAsync(wgpu.MapMode_Read, 0, bufferSize, func(status wgpu.BufferMapAsyncStatus) {
 		if status != wgpu.BufferMapAsyncStatus_Success {
@@ -146,10 +158,7 @@ func main() {
 	})
 	defer outputBuffer.Unmap()
 
-	device.Poll(true, &wgpu.WrappedSubmissionIndex{
-		Queue:           queue,
-		SubmissionIndex: index,
-	})
+	device.Poll(true, nil)
 
 	data := outputBuffer.GetMappedRange(0, uint(bufferSize))
 

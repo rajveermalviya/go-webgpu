@@ -6,7 +6,7 @@ package wgpu
 #include "./lib/wgpu.h"
 
 extern void gowebgpu_request_device_callback_c(WGPURequestDeviceStatus status, WGPUDevice device, char const *message, void *userdata);
-extern void gowebgpu_device_uncaptured_error_callback_c(WGPUErrorType type, char const * message, void * userdata);
+extern void gowebgpu_device_lost_callback_c(WGPUDeviceLostReason reason, char const * message, void * userdata);
 
 */
 import "C"
@@ -71,6 +71,7 @@ func (p *Adapter) GetLimits() SupportedLimits {
 			MaxInterStageShaderComponents:             uint32(limits.maxInterStageShaderComponents),
 			MaxInterStageShaderVariables:              uint32(limits.maxInterStageShaderVariables),
 			MaxColorAttachments:                       uint32(limits.maxColorAttachments),
+			MaxColorAttachmentBytesPerSample:          uint32(limits.maxColorAttachmentBytesPerSample),
 			MaxComputeWorkgroupStorageSize:            uint32(limits.maxComputeWorkgroupStorageSize),
 			MaxComputeInvocationsPerWorkgroup:         uint32(limits.maxComputeInvocationsPerWorkgroup),
 			MaxComputeWorkgroupSizeX:                  uint32(limits.maxComputeWorkgroupSizeX),
@@ -84,8 +85,10 @@ func (p *Adapter) GetLimits() SupportedLimits {
 }
 
 type AdapterProperties struct {
-	VendorID          uint32
-	DeviceID          uint32
+	VendorId          uint32
+	VendorName        string
+	Architecture      string
+	DeviceId          uint32
 	Name              string
 	DriverDescription string
 	AdapterType       AdapterType
@@ -98,8 +101,10 @@ func (p *Adapter) GetProperties() AdapterProperties {
 	C.wgpuAdapterGetProperties(p.ref, &props)
 
 	return AdapterProperties{
-		VendorID:          uint32(props.vendorID),
-		DeviceID:          uint32(props.deviceID),
+		VendorId:          uint32(props.vendorID),
+		VendorName:        C.GoString(props.vendorName),
+		Architecture:      C.GoString(props.architecture),
+		DeviceId:          uint32(props.deviceID),
 		Name:              C.GoString(props.name),
 		DriverDescription: C.GoString(props.driverDescription),
 		AdapterType:       AdapterType(props.adapterType),
@@ -125,15 +130,16 @@ func gowebgpu_request_device_callback_go(status C.WGPURequestDeviceStatus, devic
 	}
 }
 
-type deviceUncapturedErrorCb func(typ ErrorType, message string)
+type DeviceLostCallback func(reason DeviceLostReason, message string)
 
-//export gowebgpu_device_uncaptured_error_callback_go
-func gowebgpu_device_uncaptured_error_callback_go(typ C.WGPUErrorType, message *C.char, userdata unsafe.Pointer) {
+//export gowebgpu_device_lost_callback_go
+func gowebgpu_device_lost_callback_go(reason C.WGPUDeviceLostReason, message *C.char, userdata unsafe.Pointer) {
 	handle := *(*cgo.Handle)(userdata)
+	defer handle.Delete()
 
-	device, ok := handle.Value().(*Device)
+	cb, ok := handle.Value().(DeviceLostCallback)
 	if ok {
-		device.storeErr(ErrorType(typ), C.GoString(message))
+		cb(DeviceLostReason(reason), C.GoString(message))
 	}
 }
 
@@ -142,10 +148,11 @@ type RequiredLimits struct {
 }
 
 type DeviceDescriptor struct {
-	Label            string
-	RequiredFeatures []FeatureName
-	RequiredLimits   *RequiredLimits
-	TracePath        string
+	Label              string
+	RequiredFeatures   []FeatureName
+	RequiredLimits     *RequiredLimits
+	DeviceLostCallback DeviceLostCallback
+	TracePath          string
 }
 
 func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
@@ -170,7 +177,7 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 			copy(requiredFeaturesSlice, descriptor.RequiredFeatures)
 
 			desc.requiredFeatures = (*C.WGPUFeatureName)(requiredFeatures)
-			desc.requiredFeaturesCount = C.uint32_t(requiredFeaturesCount)
+			desc.requiredFeaturesCount = C.size_t(requiredFeaturesCount)
 		}
 
 		if descriptor.RequiredLimits != nil {
@@ -222,6 +229,13 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 			desc.requiredLimits.nextInChain = (*C.WGPUChainedStruct)(unsafe.Pointer(requiredLimitsExtras))
 		}
 
+		if descriptor.DeviceLostCallback != nil {
+			handle := cgo.NewHandle(descriptor.DeviceLostCallback)
+
+			desc.deviceLostCallback = C.WGPUDeviceLostCallback(C.gowebgpu_device_lost_callback_c)
+			desc.deviceLostUserdata = unsafe.Pointer(&handle)
+		}
+
 		if descriptor.TracePath != "" {
 			deviceExtras := (*C.WGPUDeviceExtras)(C.malloc(C.size_t(unsafe.Sizeof(C.WGPUDeviceExtras{}))))
 			defer C.free(unsafe.Pointer(deviceExtras))
@@ -252,13 +266,9 @@ func (p *Adapter) RequestDevice(descriptor *DeviceDescriptor) (*Device, error) {
 		return nil, errors.New("failed to request device")
 	}
 
-	device.errChan = make(chan *Error, 1)
-	device.handle = cgo.NewHandle(device)
-	C.wgpuDeviceSetUncapturedErrorCallback(device.ref, C.WGPUErrorCallback(C.gowebgpu_device_uncaptured_error_callback_c), unsafe.Pointer(&device.handle))
-
 	return device, nil
 }
 
-func (p *Adapter) Drop() {
-	C.wgpuAdapterDrop(p.ref)
+func (p *Adapter) Release() {
+	C.wgpuAdapterRelease(p.ref)
 }

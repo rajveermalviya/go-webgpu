@@ -51,4 +51,5 @@ jobs:
           export WGPU_LOG_LEVEL=TRACE;
           go run github.com/rajveermalviya/go-webgpu/tests/compute;
           go run github.com/rajveermalviya/go-webgpu/tests/capture;
+          go run github.com/rajveermalviya/go-webgpu/tests/enumerate_adapters;
         shell: bash

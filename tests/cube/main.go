@@ -163,7 +163,7 @@ func InitState(window *glfw.Window) (s *State, err error) {
 	s = &State{}
 
 	instance := wgpu.CreateInstance(nil)
-	defer instance.Drop()
+	defer instance.Release()
 
 	s.surface = instance.CreateSurface(getSurfaceDescriptor(window))
 
@@ -174,7 +174,7 @@ func InitState(window *glfw.Window) (s *State, err error) {
 	if err != nil {
 		return s, err
 	}
-	defer adapter.Drop()
+	defer adapter.Release()
 
 	s.device, err = adapter.RequestDevice(nil)
 	if err != nil {
@@ -182,13 +182,16 @@ func InitState(window *glfw.Window) (s *State, err error) {
 	}
 	s.queue = s.device.GetQueue()
 
+	caps := s.surface.GetCapabilities(adapter)
+
 	width, height := window.GetSize()
 	s.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      s.surface.GetPreferredFormat(adapter),
+		Format:      caps.Formats[0],
 		Width:       uint32(width),
 		Height:      uint32(height),
 		PresentMode: wgpu.PresentMode_Fifo,
+		AlphaMode:   caps.AlphaModes[0],
 	}
 
 	s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
@@ -231,10 +234,13 @@ func InitState(window *glfw.Window) (s *State, err error) {
 	if err != nil {
 		return s, err
 	}
-	defer texture.Drop()
+	defer texture.Release()
 
-	textureView := texture.CreateView(nil)
-	defer textureView.Drop()
+	textureView, err := texture.CreateView(nil)
+	if err != nil {
+		return s, err
+	}
+	defer textureView.Release()
 
 	s.queue.WriteTexture(
 		texture.AsImageCopy(),
@@ -264,7 +270,7 @@ func InitState(window *glfw.Window) (s *State, err error) {
 	if err != nil {
 		return s, err
 	}
-	defer shader.Drop()
+	defer shader.Release()
 
 	s.pipeline, err = s.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Vertex: wgpu.VertexState{
@@ -300,7 +306,7 @@ func InitState(window *glfw.Window) (s *State, err error) {
 	}
 
 	bindGroupLayout := s.pipeline.GetBindGroupLayout(0)
-	defer bindGroupLayout.Drop()
+	defer bindGroupLayout.Release()
 
 	s.bindGroup, err = s.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Layout: bindGroupLayout,
@@ -333,7 +339,7 @@ func (s *State) Resize(width, height int) {
 		s.queue.WriteBuffer(s.uniformBuf, 0, wgpu.ToBytes(mxTotal[:]))
 
 		if s.swapChain != nil {
-			s.swapChain.Drop()
+			s.swapChain.Release()
 		}
 		var err error
 		s.swapChain, err = s.device.CreateSwapChain(s.surface, s.config)
@@ -348,12 +354,13 @@ func (s *State) Render() error {
 	if err != nil {
 		return err
 	}
-	defer nextTexture.Drop()
+	defer nextTexture.Release()
 
 	encoder, err := s.device.CreateCommandEncoder(nil)
 	if err != nil {
 		return err
 	}
+	defer encoder.Release()
 
 	renderPass := encoder.BeginRenderPass(&wgpu.RenderPassDescriptor{
 		ColorAttachments: []wgpu.RenderPassColorAttachment{
@@ -365,6 +372,7 @@ func (s *State) Render() error {
 			},
 		},
 	})
+	defer renderPass.Release()
 
 	renderPass.SetPipeline(s.pipeline)
 	renderPass.SetBindGroup(0, s.bindGroup, nil)
@@ -373,7 +381,13 @@ func (s *State) Render() error {
 	renderPass.DrawIndexed(uint32(len(indexData)), 1, 0, 0, 0)
 	renderPass.End()
 
-	s.queue.Submit(encoder.Finish(nil))
+	cmdBuffer, err := encoder.Finish(nil)
+	if err != nil {
+		return err
+	}
+	defer cmdBuffer.Release()
+
+	s.queue.Submit(cmdBuffer)
 	s.swapChain.Present()
 
 	return nil
@@ -381,41 +395,42 @@ func (s *State) Render() error {
 
 func (s *State) Destroy() {
 	if s.bindGroup != nil {
-		s.bindGroup.Drop()
+		s.bindGroup.Release()
 		s.bindGroup = nil
 	}
 	if s.pipeline != nil {
-		s.pipeline.Drop()
+		s.pipeline.Release()
 		s.pipeline = nil
 	}
 	if s.uniformBuf != nil {
-		s.uniformBuf.Drop()
+		s.uniformBuf.Release()
 		s.uniformBuf = nil
 	}
 	if s.indexBuf != nil {
-		s.indexBuf.Drop()
+		s.indexBuf.Release()
 		s.indexBuf = nil
 	}
 	if s.vertexBuf != nil {
-		s.vertexBuf.Drop()
+		s.vertexBuf.Release()
 		s.vertexBuf = nil
 	}
 	if s.swapChain != nil {
-		s.swapChain.Drop()
+		s.swapChain.Release()
 		s.swapChain = nil
 	}
 	if s.config != nil {
 		s.config = nil
 	}
 	if s.queue != nil {
+		s.queue.Release()
 		s.queue = nil
 	}
 	if s.device != nil {
-		s.device.Drop()
+		s.device.Release()
 		s.device = nil
 	}
 	if s.surface != nil {
-		s.surface.Drop()
+		s.surface.Release()
 		s.surface = nil
 	}
 }
@@ -448,15 +463,13 @@ func main() {
 
 		err := s.Render()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("error occured while rendering:", err)
 
 			errstr := err.Error()
 			switch {
-			case strings.Contains(errstr, "Lost"):
-				s.Resize(window.GetSize())
-			case strings.Contains(errstr, "Outdated"):
-				s.Resize(window.GetSize())
-			case strings.Contains(errstr, "Timeout"):
+			case strings.Contains(errstr, "Surface timed out"): // do nothing
+			case strings.Contains(errstr, "Surface is outdated"): // do nothing
+			case strings.Contains(errstr, "Surface was lost"): // do nothing
 			default:
 				panic(err)
 			}

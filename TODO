@@ -1,4 +1,62 @@
-# functions pending to implement from wgpu-native
+#### functions pending to implement from wgpu-native
 
-- wgpuDeviceSetDeviceLostCallback
-- wgpuDeviceDestroy (noop in wgpu-native)
+- wgpuAdapterReference
+- wgpuBindGroupReference
+- wgpuBindGroupLayoutReference
+- wgpuBufferReference
+- wgpuCommandBufferReference
+- wgpuCommandEncoderReference
+- wgpuComputePassEncoderReference
+- wgpuComputePipelineReference
+- wgpuDeviceSetUncapturedErrorCallback
+- wgpuDeviceReference
+- wgpuInstanceReference
+- wgpuPipelineLayoutReference
+- wgpuQuerySetReference
+- wgpuQueueSubmit
+- wgpuQueueReference
+- wgpuRenderBundleReference
+- wgpuRenderBundleEncoderReference
+- wgpuRenderPassEncoderReference
+- wgpuRenderPipelineReference
+- wgpuSamplerReference
+- wgpuShaderModuleReference
+- wgpuSurfaceReference
+- wgpuSwapChainReference
+- wgpuTextureReference
+- wgpuTextureViewReference
+
+
+#### unimplemented in wgpu-native
+- wgpuGetProcAddress
+- wgpuBindGroupSetLabel
+- wgpuBindGroupLayoutSetLabel
+- wgpuBufferGetMapState
+- wgpuBufferSetLabel
+- wgpuCommandBufferSetLabel
+- wgpuCommandEncoderSetLabel
+- wgpuComputePassEncoderSetLabel
+- wgpuComputePipelineSetLabel
+- wgpuDeviceCreateComputePipelineAsync
+- wgpuDeviceCreateRenderPipelineAsync
+- wgpuDeviceSetLabel
+- wgpuInstanceProcessEvents
+- wgpuPipelineLayoutSetLabel
+- wgpuQuerySetGetCount
+- wgpuQuerySetGetType
+- wgpuQuerySetSetLabel
+- wgpuQueueSetLabel
+- wgpuRenderBundleSetLabel
+- wgpuRenderBundleEncoderSetLabel
+- wgpuRenderPassEncoderSetLabel
+- wgpuRenderPipelineSetLabel
+- wgpuSamplerSetLabel
+- wgpuShaderModuleGetCompilationInfo
+- wgpuShaderModuleSetLabel
+- wgpuTextureSetLabel
+- wgpuTextureViewSetLabel
+
+
+#### noop in wgpu-native
+- wgpuDeviceDestroy
+- wgpuQuerySetDestroy

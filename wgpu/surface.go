@@ -67,6 +67,6 @@ func (p *Surface) GetCapabilities(adapter *Adapter) (ret SurfaceCapabilities) {
 	return
 }
 
-func (p *Surface) Drop() {
-	C.wgpuSurfaceDrop(p.ref)
+func (p *Surface) Release() {
+	C.wgpuSurfaceRelease(p.ref)
 }
