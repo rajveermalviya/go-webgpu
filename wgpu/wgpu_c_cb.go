@@ -35,7 +35,7 @@ void gowebgpu_error_callback_c(WGPUErrorType type, char const * message, void * 
 
 void gowebgpu_queue_work_done_callback_c(WGPUQueueWorkDoneStatus status, void * userdata) {
   extern void gowebgpu_queue_work_done_callback_go(WGPUQueueWorkDoneStatus status, void * userdata);
-  gowebgpu_queue_work_done_callback_c(status, userdata);
+  gowebgpu_queue_work_done_callback_go(status, userdata);
 }
 
 */

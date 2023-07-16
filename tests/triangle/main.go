@@ -193,7 +193,6 @@ func (s *State) Render() error {
 	s.queue.Submit(cmdBuffer)
 	s.swapChain.Present()
 
-	runtime.GC()
 	return nil
 }
 
