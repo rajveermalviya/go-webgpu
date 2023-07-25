@@ -11,8 +11,8 @@ included static libs are built via [github actions](./.github/workflows/build-wg
 
 ## Examples
 
-| | | |
-| - | - | - |
+|[boids][b]|[cube][c]|[triangle][t]|
+:-:|:-:|:-:
 | [![b-i]][b] | [![c-i]][c] | [![t-i]][t] |
 
 [b-i]: https://raw.githubusercontent.com/rajveermalviya/go-webgpu/main/tests/boids/image-msaa.png
