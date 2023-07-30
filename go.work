@@ -4,4 +4,5 @@ use (
 	./cmd/gen_enums
 	./tests
 	./wgpu
+	./wgpuext/glfw
 )
