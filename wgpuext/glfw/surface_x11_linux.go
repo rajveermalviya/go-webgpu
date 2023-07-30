@@ -1,6 +1,6 @@
 //go:build linux && !android && !wayland
 
-package main
+package wgpuext_glfw
 
 import (
 	"unsafe"
@@ -9,7 +9,7 @@ import (
 	"github.com/rajveermalviya/go-webgpu/wgpu"
 )
 
-func getSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
+func GetSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
 	return &wgpu.SurfaceDescriptor{
 		XlibWindow: &wgpu.SurfaceDescriptorFromXlibWindow{
 			Display: unsafe.Pointer(glfw.GetX11Display()),

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/rajveermalviya/go-webgpu/wgpu"
+	wgpuext_glfw "github.com/rajveermalviya/go-webgpu/wgpuext/glfw"
 
 	_ "embed"
 )
@@ -58,7 +59,7 @@ func InitState(window *glfw.Window) (s *State, err error) {
 
 	s.instance = wgpu.CreateInstance(nil)
 
-	s.surface = s.instance.CreateSurface(getSurfaceDescriptor(window))
+	s.surface = s.instance.CreateSurface(wgpuext_glfw.GetSurfaceDescriptor(window))
 
 	adapter, err := s.instance.RequestAdapter(&wgpu.RequestAdapterOptions{
 		ForceFallbackAdapter: forceFallbackAdapter,

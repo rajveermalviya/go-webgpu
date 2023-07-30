@@ -1,6 +1,6 @@
 //go:build darwin
 
-package main
+package wgpuext_glfw
 
 import (
 	"unsafe"
@@ -29,7 +29,7 @@ CFTypeRef metalLayerFromNSWindow(CFTypeRef nsWindowRef) {
 */
 import "C"
 
-func getSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
+func GetSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
 	return &wgpu.SurfaceDescriptor{
 		MetalLayer: &wgpu.SurfaceDescriptorFromMetalLayer{
 			Layer: unsafe.Pointer(C.metalLayerFromNSWindow((C.CFTypeRef)(unsafe.Pointer(w.GetCocoaWindow())))),

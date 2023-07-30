@@ -1,4 +1,6 @@
-package main
+//go:build windows
+
+package wgpuext_glfw
 
 import (
 	"unsafe"
@@ -14,7 +16,7 @@ import (
 */
 import "C"
 
-func getSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
+func GetSurfaceDescriptor(w *glfw.Window) *wgpu.SurfaceDescriptor {
 	return &wgpu.SurfaceDescriptor{
 		WindowsHWND: &wgpu.SurfaceDescriptorFromWindowsHWND{
 			Hwnd:      unsafe.Pointer(w.GetWin32Window()),
