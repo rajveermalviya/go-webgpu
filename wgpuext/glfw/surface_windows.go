@@ -1,6 +1,6 @@
 //go:build windows
 
-package wgpuext_glfw
+package wgpuext_glfw // import "github.com/rajveermalviya/go-webgpu/wgpuext/glfw"
 
 import (
 	"unsafe"

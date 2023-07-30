@@ -1,6 +1,6 @@
 //go:build linux && !android && wayland
 
-package wgpuext_glfw
+package wgpuext_glfw // import "github.com/rajveermalviya/go-webgpu/wgpuext/glfw"
 
 import (
 	"unsafe"
